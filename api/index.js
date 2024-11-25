@@ -19,6 +19,7 @@ const axios = require('axios');
 const refreshTokens = [];
 const path = require('path');
 const {body, validationResult} = require('express-validator');
+const bcrypt = require('bcrypt');
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
@@ -87,9 +88,11 @@ app.post('/register', async (req, res) => {
       communityId,
     } = req.body;
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       email,
-      password,
+      password : hashedPassword,
       firstName,
       lastName,
       role,
@@ -129,8 +132,13 @@ app.post('/login', async (req, res) => {
     const {email, password} = req.body;
     const user = await User.findOne({email});
 
-    if (!user || user.password !== password) {
+    if(!user) {
       return res.status(401).json({message: 'Invalid credentials'});
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(!isPasswordValid) {
+      return res.status(401).json({message: 'Invalid email or password'});
     }
 
     const token = jwt.sign(
