@@ -58,8 +58,12 @@ const ProfileDetailScreen = () => {
       await axios.put(`https://biletixai.onrender.com/user/${userId}/privacy`, {
         isPrivate: newPrivacyStatus,
       });
-      setIsPrivate(newPrivacyStatus); // Durumu güncelle
-      setUser(prevState => ({ ...prevState, isPrivate: newPrivacyStatus }));
+  
+      setIsPrivate(newPrivacyStatus);
+      setUser(prevState => ({ 
+        ...prevState, 
+        isPrivate: newPrivacyStatus 
+      }));
     } catch (error) {
       console.error('Failed to update privacy setting:', error.message);
     }
@@ -154,7 +158,7 @@ const ProfileDetailScreen = () => {
         </View>
 
         <View style={styles.privacyContainer}>
-          <Text style={styles.privacyText}>Hesabı Gizli Yap</Text>
+          <Text style={styles.privacyText}>Make the account private</Text>
           <Switch
             value={isPrivate}
             onValueChange={handlePrivacyToggle}

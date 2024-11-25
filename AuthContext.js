@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useEffect, useState, createContext} from 'react';
-import {decode as atob} from 'base-64';
+import { useEffect, useState, createContext } from 'react';
+import { decode as atob } from 'base-64';
 import axios from 'axios';
 
 const AuthContext = createContext();
 
-const AuthProvider = ({children}) => {
+const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [userId, setUserId] = useState(null);
   const [user, setUser] = useState(null);
@@ -15,13 +15,12 @@ const AuthProvider = ({children}) => {
   const isLoggedIn = async () => {
     try {
       const storedToken = await AsyncStorage.getItem('token');
-      console.log('Stored Token:', storedToken);
-
+      
       if (storedToken) {
-        setToken(storedToken);
+        console.log('Stored Token:', storedToken);
         decodeToken(storedToken);
       } else {
-        console.warn('Token not found, user not logged in');
+        clearUserData();
       }
     } catch (error) {
       console.log('Error fetching token:', error);
@@ -30,41 +29,52 @@ const AuthProvider = ({children}) => {
     }
   };
 
-  const decodeToken = token => {
+  const decodeToken = (token) => {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const decodedData = JSON.parse(atob(base64));
 
-      console.log('Decoded Token Data:', decodedData);
-
       const userIdFromToken = decodedData?.userId;
       const userRole = decodedData?.role;
 
       if (userIdFromToken) {
+        setToken(token);
         setUserId(userIdFromToken);
         setRole(userRole);
-        fetchUserData(userIdFromToken); // Fetch user data after decoding token
+        fetchUserData(userIdFromToken);
       } else {
         console.warn('No userId found in token');
+        clearUserData();
       }
     } catch (error) {
       console.error('Error decoding token:', error);
+      clearUserData();
     }
   };
 
-  const fetchUserData = async userId => {
+  const fetchUserData = async (userId) => {
     try {
       const response = await axios.get(
         `https://biletixai.onrender.com/user/${userId}`,
         {
-          headers: {Authorization: `Bearer ${token}`},
-        },
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setUser(response.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
+  };
+
+  const clearUserData = async () => {
+    setToken(null);
+    setUserId(null);
+    setUser(null);
+    setRole('user');
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('userId');
+    await AsyncStorage.removeItem('role');
   };
 
   useEffect(() => {
@@ -82,10 +92,12 @@ const AuthProvider = ({children}) => {
         role,
         setRole,
         setUserId,
-      }}>
+        clearUserData,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export {AuthContext, AuthProvider};
+export { AuthContext, AuthProvider };

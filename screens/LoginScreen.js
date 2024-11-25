@@ -27,7 +27,7 @@ const LoginScreen = () => {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        'https://biletixai.onrender.com/login',
+        'http://10.0.2.2:8000/login',
         { email, password }
       );
       const { token, userId, role } = response.data;
@@ -43,12 +43,14 @@ const LoginScreen = () => {
       if (role === 'organizer') {
         navigation.navigate('AdminDashboard');
       } else {
-        navigation.navigate('Drawer', {screen: 'Home'});
+        navigation.navigate('Drawer', { screen: 'Home' });
       }
-      
     } catch (error) {
-      console.error('Login failed:', error);
-      Alert.alert('Error', 'Login failed. Please try again.');
+      console.error('Login failed:', error.response?.data || error.message);
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Login failed. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
