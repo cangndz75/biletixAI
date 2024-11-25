@@ -1755,6 +1755,10 @@ app.put('/user/:userId/privacy', authenticateToken, async (req, res) => {
   const { userId } = req.params;
   const { isPrivate } = req.body;
 
+  if (req.user.userId !== userId) {
+    return res.status(403).json({ message: 'You are not authorized to update this user' });
+  }
+
   try {
     const user = await User.findByIdAndUpdate(
       userId,

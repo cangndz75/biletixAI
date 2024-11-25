@@ -39,12 +39,17 @@ const InterestSelectionScreen = ({navigation}) => {
         const response = await axios.get(
           `https://biletixai.onrender.com/user/${userId}/interests`,
         );
-
-        if (response.data.user && response.data.user.interests) {
-          setSelectedInterests(response.data.user.interests);
+  
+        if (response.data.interests) {
+          setSelectedInterests(response.data.interests);
+        } else {
+          console.warn('No interests found for this user.');
         }
       } catch (error) {
-        console.error('Error fetching interests:', error.response ? error.response.data : error.message);
+        console.error(
+          'Error fetching interests:',
+          error.response ? error.response.data : error.message,
+        );
         Dialog.show({
           type: ALERT_TYPE.DANGER,
           title: 'Error!',
@@ -55,14 +60,13 @@ const InterestSelectionScreen = ({navigation}) => {
         setIsLoading(false);
       }
     };
-
-
+  
     if (userId) {
       fetchUserInterests();
     } else {
       console.warn('User ID is not available');
     }
-  }, [userId]);
+  }, [userId]);  
 
   const toggleInterest = interest => {
     if (selectedInterests.includes(interest)) {
@@ -93,7 +97,7 @@ const InterestSelectionScreen = ({navigation}) => {
         button: 'Tamam',
       });
   
-      navigation.goBack(); 
+      navigation.navigate('ProfileDetail');
     } catch (error) {
       console.error('Error saving interests:', error);
       Dialog.show({

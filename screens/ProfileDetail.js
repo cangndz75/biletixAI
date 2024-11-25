@@ -19,6 +19,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImageViewing from 'react-native-image-viewing';
 import {TextInput} from 'react-native';
 import { Switch } from 'react-native-paper';
+import { useIsFocused } from '@react-navigation/native';
 
 const ProfileDetailScreen = () => {
   const [user, setUser] = useState(null);
@@ -28,6 +29,7 @@ const ProfileDetailScreen = () => {
   const {userId, setToken, setUserId} = useContext(AuthContext);
   const navigation = useNavigation();
   const [isPrivate, setIsPrivate] = useState(false);
+  const isFocused = useIsFocused();
 
   const fetchUser = async () => {
     try {
@@ -44,28 +46,33 @@ const ProfileDetailScreen = () => {
   };
 
   useEffect(() => {
-    if (userId) {
+    if (isFocused && userId) {
       fetchUser();
-    } else {
-      console.warn('User ID is undefined, navigating to Login');
-      navigation.navigate('Login');
     }
-  }, [userId]);
+  }, [isFocused, userId]);
 
   const handlePrivacyToggle = async () => {
     try {
       const newPrivacyStatus = !isPrivate;
-      await axios.put(`https://biletixai.onrender.com/user/${userId}/privacy`, {
-        isPrivate: newPrivacyStatus,
-      });
+      const token = await AsyncStorage.getItem('token'); 
+  
+      const response = await axios.put(
+        `https://biletixai.onrender.com/user/${userId}/privacy`,
+        { isPrivate: newPrivacyStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, 
+          },
+        }
+      );
   
       setIsPrivate(newPrivacyStatus);
-      setUser(prevState => ({ 
-        ...prevState, 
-        isPrivate: newPrivacyStatus 
+      setUser((prevState) => ({
+        ...prevState,
+        isPrivate: newPrivacyStatus,
       }));
     } catch (error) {
-      console.error('Failed to update privacy setting:', error.message);
+      console.error('Failed to update privacy setting:', error.response?.data || error.message);
     }
   };
 
