@@ -13,7 +13,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
-import {AuthContext} from '../AuthContext'; // Use the context for userId
+import {AuthContext} from '../AuthContext';
 
 const ProfileEditScreen = () => {
   const { userId } = useContext(AuthContext);
@@ -24,8 +24,8 @@ const ProfileEditScreen = () => {
   const fetchUserData = async () => {
     try {
       const response = await axios.get(`http://10.0.2.2:8000/user/${userId}`);
-      console.log('Fetched user data:', response.data); // Log to check structure
-      setUserData(response.data.user || response.data); // Adjust if `user` key is absent
+      console.log('Fetched user data:', response.data);
+      setUserData(response.data.user || response.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching user data:', error);

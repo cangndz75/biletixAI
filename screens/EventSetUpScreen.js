@@ -21,6 +21,11 @@ import {BottomModal, ModalContent, SlideAnimation} from 'react-native-modals';
 import axios from 'axios';
 import {StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+} from 'react-native-alert-notification';
 
 const EventSetUpScreen = () => {
   const navigation = useNavigation();
@@ -34,6 +39,7 @@ const EventSetUpScreen = () => {
   const [selectedTab, setSelectedTab] = useState('About');
   const {item} = route.params;
   const eventId = item?._id;
+  const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -77,6 +83,39 @@ const EventSetUpScreen = () => {
           ? 'Server encountered an issue. Please try again later.'
           : error.response?.data?.message || 'Error fetching event details.';
       Alert.alert('Error', errorMessage);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    setIsFavorited(prev => !prev);
+
+    try {
+      const response = await axios.post('http://10.0.2.2:8000/favorites', {
+        userId,
+        eventId: item._id,
+      });
+
+      setIsFavorited(response.data.isFavorited);
+
+      Dialog.show({
+        type: response.data.isFavorited ? ALERT_TYPE.SUCCESS : ALERT_TYPE.INFO,
+        title: response.data.isFavorited
+          ? 'Added to Favorites'
+          : 'Removed from Favorites',
+        textBody: response.data.isFavorited
+          ? 'This event has been added to your favorites.'
+          : 'This event has been removed from your favorites.',
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+
+      setIsFavorited(prev => !prev);
+
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: 'Error',
+        textBody: 'Failed to toggle favorite. Please try again.',
+      });
     }
   };
 
@@ -342,29 +381,23 @@ const EventSetUpScreen = () => {
           />
         </View>
 
-        <View
-          style={{
-            position: 'absolute',
-            top: 20,
-            right: 20,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-          }}>
-          <Ionicons
-            name="heart-outline"
-            size={24}
-            color="#fff"
-            onPress={() => ToastAndroid.show('Favorited!', ToastAndroid.SHORT)}
-          />
-          <Ionicons
-            name="search"
-            size={24}
-            color="#fff"
-            onPress={() =>
-              ToastAndroid.show('Search clicked!', ToastAndroid.SHORT)
-            }
-          />
+        <View style={{position: 'absolute', top: 20, right: 20}}>
+          <TouchableOpacity
+            onPress={toggleFavorite}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Ionicons
+              name="heart"
+              size={30}
+              color={isFavorited ? 'red' : 'white'}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={{padding: 16}}>

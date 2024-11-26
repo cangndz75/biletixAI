@@ -25,7 +25,6 @@ const AdminCreateVenueScreen = ({navigation}) => {
   };
 
   const handleSubmit = async () => {
-    // Basic form validation
     if (!venueData.name || !venueData.location || !venueData.address) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -39,7 +38,7 @@ const AdminCreateVenueScreen = ({navigation}) => {
       );
       console.log('Response:', response.data);
       Alert.alert('Success', 'Venue created successfully!');
-      navigation.goBack(); // Navigate back to the previous screen
+      navigation.goBack();
     } catch (error) {
       console.error(
         'Error creating venue:',
