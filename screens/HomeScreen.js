@@ -388,7 +388,10 @@ const HomeScreen = () => {
                   }}>
                   <Image
                     source={{
-                      uri: item.organizerUrl || 'https://picsum.photos/200',
+                      uri:
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : 'https://via.placeholder.com/200',
                     }}
                     style={{
                       width: '100%',
