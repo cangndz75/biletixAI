@@ -131,26 +131,31 @@ app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   console.log('Login attempt:', { email, password });
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    console.log('User not found:', email);
-    return res.status(401).json({ message: 'Invalid email or password' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log('Password mismatch for user:', email);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    console.log('Login successful:', email);
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET_KEY || 'default_secret_key',
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({ token, userId: user._id, role: user.role });
+  } catch (error) {
+    console.error('Error during login:', error.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    console.log('Password mismatch for user:', email);
-    return res.status(401).json({ message: 'Invalid email or password' });
-  }
-
-  console.log('Login successful:', email);
-  const token = jwt.sign(
-    { userId: user._id, role: user.role },
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: '1h' }
-  );
-
-  res.status(200).json({ token, userId: user._id, role: user.role });
 });
 
 

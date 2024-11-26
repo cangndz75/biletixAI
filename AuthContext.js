@@ -15,12 +15,9 @@ const AuthProvider = ({ children }) => {
   const isLoggedIn = async () => {
     try {
       const storedToken = await AsyncStorage.getItem('token');
-      
       if (storedToken) {
         console.log('Stored Token:', storedToken);
         decodeToken(storedToken);
-      } else {
-        clearUserData();
       }
     } catch (error) {
       console.log('Error fetching token:', error);
@@ -34,24 +31,23 @@ const AuthProvider = ({ children }) => {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const decodedData = JSON.parse(atob(base64));
-
-      const userIdFromToken = decodedData?.userId;
-      const userRole = decodedData?.role;
-
-      if (userIdFromToken) {
-        setToken(token);
-        setUserId(userIdFromToken);
-        setRole(userRole);
-        fetchUserData(userIdFromToken);
-      } else {
-        console.warn('No userId found in token');
+      
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (decodedData.exp < currentTime) {
         clearUserData();
+        return;
       }
+  
+      setToken(token);
+      setUserId(decodedData.userId);
+      setRole(decodedData.role);
+      fetchUserData(decodedData.userId);
     } catch (error) {
       console.error('Error decoding token:', error);
       clearUserData();
     }
   };
+  
 
   const fetchUserData = async (userId) => {
     try {
