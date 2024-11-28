@@ -7,40 +7,47 @@ const StartScreen = () => {
 
   return (
     <>
-      <SafeAreaView style={{flex: 1, backgroundColor: '#f2f2f2'}}>
+      <SafeAreaView style={{flex: 1, backgroundColor: '#e8f5fe'}}>
         <View
           style={{
             alignItems: 'center',
-            padding: 25,
+            padding: 30,
             backgroundColor: '#fff',
             flex: 1,
-            borderTopLeftRadius: 25,
-            borderTopRightRadius: 25,
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
             shadowColor: '#000',
-            shadowOpacity: 0.2,
+            shadowOpacity: 0.1,
             shadowOffset: {width: 0, height: -5},
-            shadowRadius: 10,
+            shadowRadius: 15,
             justifyContent: 'center',
           }}>
           <Text
             style={{
-              fontSize: 24,
+              fontSize: 28,
               fontWeight: 'bold',
-              marginBottom: 10,
-              color: '#333',
+              marginBottom: 15,
+              color: '#1d3557',
+              textAlign: 'center',
             }}>
-            Find Players in your neighbourhood
+            Connect, Play, and Make New Friends!
           </Text>
-          <Text style={{fontSize: 16, color: '#666', marginBottom: 20}}>
-            Just like you did as a kid!
+          <Text
+            style={{
+              fontSize: 18,
+              color: '#457b9d',
+              marginBottom: 20,
+              textAlign: 'center',
+            }}>
+            Rediscover the joy of playing with people around you.
           </Text>
           <Image
             source={{
               uri: 'https://playo.co/img/logos/logo-green-1.svg',
             }}
             style={{
-              width: 120,
-              height: 40,
+              width: 150,
+              height: 50,
               marginTop: 20,
               resizeMode: 'contain',
             }}
@@ -53,24 +60,29 @@ const StartScreen = () => {
             borderRadius: 8,
             marginHorizontal: 30,
             alignItems: 'center',
-            marginBottom: 15,
+            marginBottom: 20,
           }}
           onPress={() => navigation.navigate('Login')}>
-          <Text style={{fontSize: 16, color: 'gray', fontWeight: 'bold'}}>
+          <Text style={{fontSize: 16, color: '#1d3557', fontWeight: 'bold'}}>
             Already have an account? Login
           </Text>
         </Pressable>
       </SafeAreaView>
 
-      <View style={{padding: 10, backgroundColor: 'white', marginTop: 'auto'}}>
+      <View
+        style={{
+          padding: 15,
+          backgroundColor: '#f1faee',
+          marginTop: 'auto',
+          borderTopWidth: 1,
+          borderColor: '#ccc',
+        }}>
         <Pressable
           onPress={() => navigation.navigate('Register')}
           style={{
-            backgroundColor: '#fff',
-            padding: 12,
-            borderRadius: 7,
-            borderWidth: 2,
-            borderColor: '#000',
+            backgroundColor: '#457b9d',
+            padding: 14,
+            borderRadius: 10,
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',
@@ -78,11 +90,11 @@ const StartScreen = () => {
           <Text
             style={{
               textAlign: 'center',
-              color: '#000',
-              fontWeight: '500',
-              marginRight: 10,
+              color: '#fff',
+              fontWeight: '600',
+              fontSize: 16,
             }}>
-            READY
+            Get Started
           </Text>
         </Pressable>
       </View>
