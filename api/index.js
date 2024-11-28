@@ -25,6 +25,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use('/generate', generateRoute);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const upload = multer({ dest: 'uploads/' });
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -1656,8 +1657,8 @@ app.post('/communities/:communityId/send-request', async (req, res) => {
   }
 });
 
-app.post('/posts/create', authenticateToken, async (req, res) => {
-  const { description, imageUrl, userId } = req.body;
+app.post('/posts/create', authenticateToken, upload.single('image'), async (req, res) => {
+  const { description, userId } = req.body;
 
   if (!description || !userId) {
     return res.status(400).json({ message: 'Description and user ID are required.' });
@@ -1666,7 +1667,7 @@ app.post('/posts/create', authenticateToken, async (req, res) => {
   try {
     const newPost = new Post({
       description,
-      imageUrl,
+      imageUrl: req.file ? req.file.path : null,
       user: userId,
     });
 
@@ -1695,7 +1696,11 @@ app.post('/posts/:postId/like', authenticateToken, async (req, res) => {
     }
 
     await post.save();
-    res.status(200).json({ message: isLiked ? 'Post unliked' : 'Post liked', post });
+    res.status(200).json({ 
+      message: isLiked ? 'Post unliked' : 'Post liked', 
+      likes: post.likes.length, 
+      post 
+    });
   } catch (error) {
     console.error('Error updating like status:', error);
     res.status(500).json({ message: 'Failed to update like status' });
@@ -1706,8 +1711,8 @@ app.post('/posts/:postId/comment', authenticateToken, async (req, res) => {
   const { postId } = req.params;
   const { userId, text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ message: 'Comment text is required' });
+  if (!text || !text.trim()) {
+    return res.status(400).json({ message: 'Comment text cannot be empty.' });
   }
 
   try {
@@ -1717,7 +1722,11 @@ app.post('/posts/:postId/comment', authenticateToken, async (req, res) => {
     post.comments.push({ user: userId, text });
     await post.save();
 
-    res.status(200).json({ message: 'Comment added', post });
+    res.status(200).json({ 
+      message: 'Comment added successfully', 
+      comments: post.comments, 
+      post 
+    });
   } catch (error) {
     console.error('Error adding comment:', error);
     res.status(500).json({ message: 'Failed to add comment' });

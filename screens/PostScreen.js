@@ -6,11 +6,12 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Alert,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {AuthContext} from '../AuthContext';
 import Modal from 'react-native-modal';
 
@@ -18,7 +19,7 @@ const PostScreen = () => {
   const [posts, setPosts] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
   const [newPostDescription, setNewPostDescription] = useState('');
-  const [newPostImageUrl, setNewPostImageUrl] = useState('');
+  const [newPostImage, setNewPostImage] = useState(null);
   const [commentText, setCommentText] = useState('');
   const {user, token} = useContext(AuthContext);
 
@@ -31,7 +32,7 @@ const PostScreen = () => {
       const response = await axios.get('https://biletixai.onrender.com/posts', {
         headers: {Authorization: `Bearer ${token}`},
       });
-      setPosts(response.data.posts);
+      setPosts(response.data.posts || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
       Alert.alert('Error', 'Unable to fetch posts.');
@@ -42,25 +43,51 @@ const PostScreen = () => {
     setModalVisible(!isModalVisible);
   };
 
+  const handlePickImage = () => {
+    launchImageLibrary({mediaType: 'photo', quality: 1}, response => {
+      if (response.didCancel) {
+        console.log('Image selection canceled');
+      } else if (response.errorMessage) {
+        console.error('Error picking image:', response.errorMessage);
+      } else {
+        const image = response.assets[0];
+        setNewPostImage(image);
+      }
+    });
+  };
+
   const handleCreatePost = async () => {
-    if (!newPostDescription) {
-      Alert.alert('Error', 'Please enter a description');
+    if (!newPostDescription.trim()) {
+      Alert.alert('Error', 'Please enter a description.');
       return;
+    }
+
+    const formData = new FormData();
+    formData.append('description', newPostDescription);
+    formData.append('userId', user._id);
+
+    if (newPostImage) {
+      formData.append('image', {
+        uri: newPostImage.uri,
+        type: newPostImage.type,
+        name: newPostImage.fileName || 'post.jpg',
+      });
     }
 
     try {
       await axios.post(
         'https://biletixai.onrender.com/posts/create',
+        formData,
         {
-          description: newPostDescription,
-          imageUrl: newPostImageUrl,
-          userId: user._id,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
         },
-        {headers: {Authorization: `Bearer ${token}`}},
       );
       setModalVisible(false);
       setNewPostDescription('');
-      setNewPostImageUrl('');
+      setNewPostImage(null);
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
@@ -75,7 +102,7 @@ const PostScreen = () => {
         {userId: user._id},
         {headers: {Authorization: `Bearer ${token}`}},
       );
-      fetchPosts(); // Refresh posts after liking/unliking
+      fetchPosts();
     } catch (error) {
       console.error('Error liking post:', error);
       Alert.alert('Error', 'Unable to like post.');
@@ -84,7 +111,7 @@ const PostScreen = () => {
 
   const handleComment = async postId => {
     if (!commentText.trim()) {
-      Alert.alert('Error', 'Comment cannot be empty');
+      Alert.alert('Error', 'Comment cannot be empty.');
       return;
     }
 
@@ -95,7 +122,7 @@ const PostScreen = () => {
         {headers: {Authorization: `Bearer ${token}`}},
       );
       setCommentText('');
-      fetchPosts(); // Refresh posts after commenting
+      fetchPosts();
     } catch (error) {
       console.error('Error commenting on post:', error);
       Alert.alert('Error', 'Unable to add comment.');
@@ -113,7 +140,9 @@ const PostScreen = () => {
         </View>
         <Ionicons name="ellipsis-horizontal" size={20} color="gray" />
       </View>
-      <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+      {item.imageUrl && (
+        <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+      )}
       <View style={styles.postActions}>
         <TouchableOpacity onPress={() => handleLike(item._id)}>
           <Ionicons
@@ -171,7 +200,9 @@ const PostScreen = () => {
           renderItem={renderPost}
         />
       ) : (
-        <Text style={styles.noPostText}>No posts available</Text>
+        <Text style={styles.noPostText}>
+          There are no posts in this community yet.
+        </Text>
       )}
       <TouchableOpacity style={styles.createPostButton} onPress={toggleModal}>
         <Ionicons name="add" size={30} color="black" />
@@ -184,17 +215,24 @@ const PostScreen = () => {
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Create Post</Text>
           <TextInput
-            placeholder="Description"
+            placeholder="Enter a description"
             style={styles.textInput}
             value={newPostDescription}
             onChangeText={setNewPostDescription}
           />
-          <TextInput
-            placeholder="Image URL"
-            style={styles.textInput}
-            value={newPostImageUrl}
-            onChangeText={setNewPostImageUrl}
-          />
+          <TouchableOpacity
+            style={styles.imagePickerButton}
+            onPress={handlePickImage}>
+            <Text style={styles.imagePickerButtonText}>
+              {newPostImage ? 'Change Image' : 'Pick an Image'}
+            </Text>
+          </TouchableOpacity>
+          {newPostImage && (
+            <Image
+              source={{uri: newPostImage.uri}}
+              style={styles.previewImage}
+            />
+          )}
           <TouchableOpacity
             style={styles.submitButton}
             onPress={handleCreatePost}>
@@ -309,6 +347,24 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     marginBottom: 10,
     borderRadius: 5,
+  },
+  imagePickerButton: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  imagePickerButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  previewImage: {
+    width: '100%',
+    height: 150,
+    resizeMode: 'cover',
+    borderRadius: 5,
+    marginBottom: 10,
   },
   submitButton: {
     backgroundColor: '#007BFF',
