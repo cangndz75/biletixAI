@@ -1656,8 +1656,8 @@ app.post('/communities/:communityId/send-request', async (req, res) => {
   }
 });
 
-app.post('/posts/create', authenticateToken, upload.single('image'), async (req, res) => {
-  const { description, userId } = req.body;
+app.post('/posts/create', authenticateToken, async (req, res) => {
+  const { description, userId, imageUrl } = req.body;
 
   if (!description || !userId) {
     return res.status(400).json({ message: 'Description and user ID are required.' });
@@ -1666,7 +1666,7 @@ app.post('/posts/create', authenticateToken, upload.single('image'), async (req,
   try {
     const newPost = new Post({
       description,
-      imageUrl: req.file ? req.file.path : null,
+      imageUrl: imageUrl || null,
       user: userId,
     });
 
