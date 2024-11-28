@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useContext, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import axios from 'axios';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import {
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {BottomModal, SlideAnimation, ModalContent} from 'react-native-modals';
 import {AuthContext} from '../AuthContext';
 
@@ -39,6 +34,12 @@ const CommunityDetailScreen = () => {
   const {user, token} = useContext(AuthContext);
 
   useEffect(() => {
+    if (!user || !user._id) {
+      Alert.alert('Hata', 'Kullanıcı giriş yapmadı.');
+      navigation.navigate('Login');
+      return;
+    }
+
     const fetchCommunityDetails = async () => {
       try {
         const response = await axios.get(
@@ -46,26 +47,29 @@ const CommunityDetailScreen = () => {
         );
         const communityData = response.data;
         setCommunityDetail(communityData);
+
         const isMember = communityData.members.some(
           member => member._id === user._id,
         );
         const hasPendingRequest = communityData.joinRequests.some(
-          request => request.userId === user._id && request.status === 'pending'
+          request =>
+            request.userId === user._id && request.status === 'pending',
         );
-  
+
         setIsJoined(isMember);
-        setModalVisible(!isMember && hasPendingRequest); 
+        setModalVisible(!isMember && hasPendingRequest);
       } catch (error) {
         console.error('Error fetching community details:', error);
         Alert.alert('Hata', 'Topluluk detayları bulunamadı.');
       }
     };
+
     if (communityId) {
       fetchCommunityDetails();
     } else {
       Alert.alert('Hata', "Topluluk ID'si bulunamadı.");
     }
-  }, [communityId, user._id]);
+  }, [communityId, user, navigation]);
 
   const joinCommunity = async () => {
     if (!user || !token) {
@@ -115,6 +119,19 @@ const CommunityDetailScreen = () => {
       Alert.alert('Hata', 'Başvuru gönderilirken bir sorun oluştu.');
     }
   };
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={{textAlign: 'center', marginTop: 20}}>
+          Giriş yapmanız gerekiyor.
+        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={{color: '#007bff', textAlign: 'center'}}>Giriş Yap</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!community) {
     return null;
