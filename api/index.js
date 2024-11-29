@@ -36,9 +36,7 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res
-      .status(401)
-      .json({message: 'Token not found, unauthorized access'});
+    return res.status(401).json({message: 'Token not found, unauthorized'});
   }
 
   jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
@@ -88,16 +86,7 @@ app.post('/refresh', async (req, res) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      role,
-      image,
-      aboutMe,
-      interests,
-    } = req.body;
+    const {email, password, firstName, lastName} = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -106,39 +95,25 @@ app.post('/register', async (req, res) => {
       password: hashedPassword,
       firstName,
       lastName,
-      role,
-      image,
-      aboutMe,
-      interests,
     });
 
-    const savedUser = await newUser.save();
+    await newUser.save();
 
-    const accessToken = jwt.sign(
-      {userId: savedUser._id, role: savedUser.role},
-      process.env.JWT_SECRET_KEY,
-      {expiresIn: '1h'},
-    );
+    const token = jwt.sign({userId: newUser._id}, process.env.JWT_SECRET_KEY, {
+      expiresIn: '1h',
+    });
 
-    const refreshToken = jwt.sign(
-      {userId: savedUser._id, role: savedUser.role},
-      process.env.REFRESH_TOKEN_SECRET,
-    );
-
-    savedUser.refreshToken = refreshToken;
-    await savedUser.save();
-
-    res.status(201).json({accessToken, refreshToken, role: savedUser.role});
+    res.status(200).json({token});
   } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({message: 'Server error'});
+    console.error('Error creating user:', error);
+    res.status(500).json({error: 'Internal server error'});
   }
 });
 
 app.post('/login', async (req, res) => {
-  const {email, password} = req.body;
-
   try {
+    const {email, password} = req.body;
+
     const user = await User.findOne({email});
     if (!user) {
       return res.status(401).json({message: 'Invalid email or password'});
@@ -149,26 +124,14 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({message: 'Invalid email or password'});
     }
 
-    const accessToken = jwt.sign(
-      {userId: user._id, role: user.role},
-      process.env.JWT_SECRET_KEY,
-      {expiresIn: '1h'},
-    );
+    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET_KEY, {
+      expiresIn: '1h',
+    });
 
-    const refreshToken = jwt.sign(
-      {userId: user._id, role: user.role},
-      process.env.REFRESH_TOKEN_SECRET,
-    );
-
-    user.refreshToken = refreshToken;
-    await user.save();
-
-    res
-      .status(200)
-      .json({accessToken, refreshToken, userId: user._id, role: user.role});
+    res.status(200).json({token});
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({message: 'Server error'});
+    console.error('Error logging in:', error);
+    res.status(500).json({message: 'Error logging in'});
   }
 });
 

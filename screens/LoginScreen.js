@@ -25,7 +25,7 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Hata', 'Lütfen email ve şifrenizi giriniz.');
+      Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
 
@@ -35,7 +35,7 @@ const LoginScreen = () => {
         'https://biletixai.onrender.com/login',
         {email, password},
         {
-          timeout: 10000, // 10 saniye timeout
+          timeout: 10000,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -45,13 +45,11 @@ const LoginScreen = () => {
       const {accessToken, refreshToken, role} = response.data;
 
       if (!accessToken || !refreshToken) {
-        throw new Error('Token bilgileri eksik');
+        throw new Error('Missing token information.');
       }
 
-      // AuthContext'teki login fonksiyonunu çağır
       await login(accessToken, refreshToken);
 
-      // Role göre yönlendirme
       if (role === 'organizer') {
         navigation.reset({
           index: 0,
@@ -64,18 +62,16 @@ const LoginScreen = () => {
         });
       }
     } catch (error) {
-      let errorMessage = 'Giriş yapılırken bir hata oluştu.';
+      let errorMessage = 'An error occurred during login.';
 
       if (error.response) {
-        // Sunucudan gelen hata mesajı
         errorMessage = error.response.data?.message || errorMessage;
       } else if (error.request) {
-        // Sunucuya ulaşılamadı
         errorMessage =
-          'Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.';
+          'Unable to connect to the server. Please check your internet connection.';
       }
 
-      Alert.alert('Hata', errorMessage);
+      Alert.alert('Error', errorMessage);
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -88,7 +84,7 @@ const LoginScreen = () => {
       style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.inner}>
-          <Text style={styles.title}>Giriş Yap</Text>
+          <Text style={styles.title}>Login</Text>
 
           <TextInput
             placeholder="Email"
@@ -101,7 +97,7 @@ const LoginScreen = () => {
           />
 
           <TextInput
-            placeholder="Şifre"
+            placeholder="Password"
             value={password}
             onChangeText={setPassword}
             style={styles.input}
@@ -116,7 +112,7 @@ const LoginScreen = () => {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+              <Text style={styles.loginButtonText}>Login</Text>
             )}
           </TouchableOpacity>
 
@@ -124,7 +120,7 @@ const LoginScreen = () => {
             onPress={() => navigation.navigate('Register')}
             style={styles.registerButton}>
             <Text style={styles.registerButtonText}>
-              Hesabınız yok mu? Kayıt olun
+              Don’t have an account? Sign up
             </Text>
           </TouchableOpacity>
         </View>

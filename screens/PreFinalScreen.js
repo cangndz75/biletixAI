@@ -1,3 +1,4 @@
+import React, {useEffect, useContext, useState} from 'react';
 import {
   Alert,
   Pressable,
@@ -6,7 +7,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import React, {useEffect, useContext, useState} from 'react';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import {getRegistrationProgress} from '../registrationUtils';
@@ -25,18 +25,22 @@ const PreFinalScreen = () => {
   const getAllUserData = async () => {
     try {
       const screens = ['Register', 'Password', 'Name', 'Image'];
-      let userData = {};
+      let accumulatedData = {};
 
       for (const screenName of screens) {
         const screenData = await getRegistrationProgress(screenName);
         if (screenData) {
-          userData = {...userData, ...screenData};
+          accumulatedData = {...accumulatedData, ...screenData};
         }
       }
 
-      setUserData(userData);
+      setUserData(accumulatedData);
     } catch (error) {
       console.log('Error fetching registration progress:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load your registration data. Please try again.',
+      );
     }
   };
 
@@ -49,7 +53,7 @@ const PreFinalScreen = () => {
         await AsyncStorage.removeItem(key);
       }
 
-      console.log('All screen data cleared!');
+      console.log('All screen data cleared successfully!');
     } catch (error) {
       console.log('Error clearing screen data:', error);
     }
@@ -57,47 +61,53 @@ const PreFinalScreen = () => {
 
   const registerUser = async () => {
     try {
+      if (Object.keys(userData).length === 0) {
+        Alert.alert('Error', 'Registration data is missing. Please try again.');
+        return;
+      }
+
       const response = await axios.post(
-        'http://10.0.2.2:8000/register',
+        'https://biletixai.onrender.com/register', 
         userData,
       );
 
-      if (response.data.accessToken) {
-        const {accessToken, refreshToken, userId, role} = response.data;
+      const {accessToken, refreshToken, userId, role} = response.data;
 
-        await AsyncStorage.setItem('accessToken', accessToken);
-        await AsyncStorage.setItem('refreshToken', refreshToken);
-        await AsyncStorage.setItem('userId', String(userId));
-        await AsyncStorage.setItem('role', role);
-
-        setAccessToken(accessToken);
-        setUserId(userId);
-        setRole(role);
-
-        clearAllScreenData();
-
-        navigation.replace('InterestSelectionScreen');
-      } else {
-        throw new Error('Access token alınamadı');
+      if (!accessToken || !refreshToken) {
+        throw new Error('Invalid token received during registration.');
       }
+
+      await AsyncStorage.multiSet([
+        ['accessToken', accessToken],
+        ['refreshToken', refreshToken],
+        ['userId', String(userId)],
+        ['role', role],
+      ]);
+
+      setAccessToken(accessToken);
+      setUserId(userId);
+      setRole(role);
+
+      clearAllScreenData();
+
+      navigation.replace('InterestSelectionScreen');
     } catch (error) {
-      console.log(
-        'Error during registration:',
-        error.response?.data || error.message,
-      );
+      console.error('Error during registration:', error);
       Alert.alert(
         'Registration Failed',
         error.response?.data?.message ||
-          'Something went wrong. Please try again later.',
+          'An error occurred during registration. Please try again later.',
       );
     }
   };
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: 'white'}}>
-      <View style={{marginTop: 80}}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
         <Text style={styles.heading}>All set to register</Text>
-        <Text style={styles.heading}>Setting up your profile for you</Text>
+        <Text style={styles.subHeading}>
+          Setting up your profile for you...
+        </Text>
       </View>
 
       <Pressable onPress={registerUser} style={styles.button}>
@@ -108,22 +118,38 @@ const PreFinalScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingHorizontal: 20,
+  },
+  content: {
+    marginTop: 80,
+  },
   heading: {
     fontSize: 32,
     fontWeight: 'bold',
-    fontFamily: 'GeezaPro-Bold',
-    marginLeft: 20,
+    color: '#333',
+    textAlign: 'center',
+  },
+  subHeading: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 10,
   },
   button: {
     backgroundColor: '#03C03C',
     padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
     marginTop: 'auto',
+    marginBottom: 20,
   },
   buttonText: {
-    textAlign: 'center',
     color: 'white',
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 16,
   },
 });
 
