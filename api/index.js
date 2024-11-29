@@ -36,102 +36,126 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({message: 'Token not found, unauthorized'});
+    return res.status(401).json({message: 'No token provided, unauthorized'});
   }
 
-  jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({message: 'Invalid token'});
     }
+
     req.user = user;
     next();
   });
 };
 
 app.post('/refresh', async (req, res) => {
-  const {refreshToken} = req.body;
-
-  if (!refreshToken) {
+  const {token} = req.body;
+  if (!token) {
     return res.status(400).json({message: 'Refresh token is required'});
   }
 
   try {
-    const user = await User.findOne({refreshToken});
-    if (!user) {
-      return res.status(403).json({message: 'Invalid refresh token'});
-    }
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
+      if (err) return res.status(403).json({message: 'Invalid refresh token'});
 
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET,
-      (err, decoded) => {
-        if (err) {
-          return res.status(403).json({message: 'Invalid refresh token'});
-        }
+      const newAccessToken = jwt.sign(
+        {userId: user.userId, role: user.role},
+        process.env.JWT_SECRET_KEY,
+        {expiresIn: '1h'},
+      );
 
-        const accessToken = jwt.sign(
-          {userId: decoded.userId, role: decoded.role},
-          process.env.JWT_SECRET_KEY,
-          {expiresIn: '1h'},
-        );
-
-        res.status(200).json({accessToken});
-      },
-    );
+      res.status(200).json({token: newAccessToken});
+    });
   } catch (error) {
-    console.error('Refresh token error:', error);
-    res.status(500).json({message: 'Server error'});
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
 app.post('/register', async (req, res) => {
   try {
-    const {email, password, firstName, lastName} = req.body;
+    console.log('Incoming user data:', req.body);
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      image,
+      aboutMe,
+      interests,
+      communityId,
+    } = req.body;
 
     const newUser = new User({
       email,
-      password: hashedPassword,
+      password,
       firstName,
       lastName,
+      role,
+      image,
+      aboutMe,
+      interests,
+      community: communityId || null,
     });
 
     await newUser.save();
 
-    const token = jwt.sign({userId: newUser._id}, process.env.JWT_SECRET_KEY, {
-      expiresIn: '1h',
-    });
+    if (communityId) {
+      const community = await Community.findById(communityId);
+      if (community) {
+        community.members.push(newUser._id);
+        await community.save();
+      } else {
+        console.log('Community not found with provided ID');
+      }
+    }
 
-    res.status(200).json({token});
+    const token = jwt.sign(
+      {userId: newUser._id, role: newUser.role},
+      process.env.JWT_SECRET_KEY,
+      {expiresIn: '1h'},
+    );
+
+    res.status(201).json({token, role: newUser.role});
   } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({error: 'Internal server error'});
+    console.error('Error during registration:', error);
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
 app.post('/login', async (req, res) => {
   try {
     const {email, password} = req.body;
-
     const user = await User.findOne({email});
-    if (!user) {
-      return res.status(401).json({message: 'Invalid email or password'});
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({message: 'Invalid credentials'});
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({message: 'Invalid email or password'});
-    }
+    const token = jwt.sign(
+      {userId: user._id, role: user.role},
+      process.env.JWT_SECRET_KEY,
+      {expiresIn: '1h'},
+    );
 
-    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET_KEY, {
-      expiresIn: '1h',
+    res.status(200).json({
+      token,
+      userId: user._id,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      image: user.image,
+      aboutMe: user.aboutMe,
+      interests: user.interests,
+      followers: user.followers,
+      following: user.following,
     });
-
-    res.status(200).json({token});
   } catch (error) {
-    console.error('Error logging in:', error);
-    res.status(500).json({message: 'Error logging in'});
+    console.error('Login error:', error);
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 

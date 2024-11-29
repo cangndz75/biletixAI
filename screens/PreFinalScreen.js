@@ -1,4 +1,3 @@
-import React, {useEffect, useContext, useState} from 'react';
 import {
   Alert,
   Pressable,
@@ -7,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import React, {useEffect, useContext, useState} from 'react';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import {getRegistrationProgress} from '../registrationUtils';
@@ -14,9 +14,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 
 const PreFinalScreen = () => {
-  const {setAccessToken, setUserId, setRole} = useContext(AuthContext);
+  const {token, setToken} = useContext(AuthContext);
   const [userData, setUserData] = useState({});
   const navigation = useNavigation();
+
+  useEffect(() => {
+    if (token) {
+      navigation.replace('InterestSelectionScreen', {
+        screen: 'InterestSelectionScreen',
+      });
+    }
+  }, [token]);
 
   useEffect(() => {
     getAllUserData();
@@ -25,22 +33,18 @@ const PreFinalScreen = () => {
   const getAllUserData = async () => {
     try {
       const screens = ['Register', 'Password', 'Name', 'Image'];
-      let accumulatedData = {};
+      let userData = {};
 
       for (const screenName of screens) {
         const screenData = await getRegistrationProgress(screenName);
         if (screenData) {
-          accumulatedData = {...accumulatedData, ...screenData};
+          userData = {...userData, ...screenData};
         }
       }
 
-      setUserData(accumulatedData);
+      setUserData(userData);
     } catch (error) {
       console.log('Error fetching registration progress:', error);
-      Alert.alert(
-        'Error',
-        'Failed to load your registration data. Please try again.',
-      );
     }
   };
 
@@ -53,61 +57,47 @@ const PreFinalScreen = () => {
         await AsyncStorage.removeItem(key);
       }
 
-      console.log('All screen data cleared successfully!');
+      console.log('All screen data cleared!');
     } catch (error) {
       console.log('Error clearing screen data:', error);
     }
   };
 
+  console.log('User Data:', userData);
   const registerUser = async () => {
     try {
-      if (Object.keys(userData).length === 0) {
-        Alert.alert('Error', 'Registration data is missing. Please try again.');
-        return;
-      }
+      console.log('User Data being sent:', userData);
 
       const response = await axios.post(
-        'https://biletixai.onrender.com/register', 
+        'http://10.0.2.2:8000/register',
         userData,
       );
 
-      const {accessToken, refreshToken, userId, role} = response.data;
-
-      if (!accessToken || !refreshToken) {
-        throw new Error('Invalid token received during registration.');
+      if (response.data.token) {
+        const token = response.data.token;
+        await AsyncStorage.setItem('token', token);
+        setToken(token);
+        clearAllScreenData();
+        navigation.replace('InterestSelectionScreen');
       }
-
-      await AsyncStorage.multiSet([
-        ['accessToken', accessToken],
-        ['refreshToken', refreshToken],
-        ['userId', String(userId)],
-        ['role', role],
-      ]);
-
-      setAccessToken(accessToken);
-      setUserId(userId);
-      setRole(role);
-
-      clearAllScreenData();
-
-      navigation.replace('InterestSelectionScreen');
     } catch (error) {
-      console.error('Error during registration:', error);
+      console.log(
+        'Error during registration:',
+        error.response?.data || error.message,
+      );
       Alert.alert(
         'Registration Failed',
         error.response?.data?.message ||
-          'An error occurred during registration. Please try again later.',
+          'Something went wrong. Please try again later.',
       );
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+    <SafeAreaView style={{flex: 1, backgroundColor: 'white'}}>
+      <View style={{marginTop: 80}}>
         <Text style={styles.heading}>All set to register</Text>
-        <Text style={styles.subHeading}>
-          Setting up your profile for you...
-        </Text>
+        <Text style={styles.heading}>Setting up your profile for you</Text>
       </View>
 
       <Pressable onPress={registerUser} style={styles.button}>
@@ -118,38 +108,22 @@ const PreFinalScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-    paddingHorizontal: 20,
-  },
-  content: {
-    marginTop: 80,
-  },
   heading: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  subHeading: {
-    fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
-    marginVertical: 10,
+    fontFamily: 'GeezaPro-Bold',
+    marginLeft: 20,
   },
   button: {
     backgroundColor: '#03C03C',
     padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
     marginTop: 'auto',
-    marginBottom: 20,
   },
   buttonText: {
+    textAlign: 'center',
     color: 'white',
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 15,
   },
 });
 

@@ -10,9 +10,9 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  StyleSheet,
 } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AuthContext} from '../AuthContext';
 import {useNavigation} from '@react-navigation/native';
 
@@ -20,59 +20,34 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const {login} = useContext(AuthContext);
+  const {setToken, setUserId, setRole} = useContext(AuthContext);
   const navigation = useNavigation();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await axios.post(
         'https://biletixai.onrender.com/login',
         {email, password},
-        {
-          timeout: 10000,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
       );
+      const {token, userId, role} = response.data;
 
-      const {accessToken, refreshToken, role} = response.data;
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('userId', String(userId));
+      await AsyncStorage.setItem('role', role);
 
-      if (!accessToken || !refreshToken) {
-        throw new Error('Missing token information.');
-      }
-
-      await login(accessToken, refreshToken);
+      setToken(token);
+      setUserId(userId);
+      setRole(role);
 
       if (role === 'organizer') {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'AdminDashboard'}],
-        });
+        navigation.navigate('AdminDashboard');
       } else {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'MainApp'}],
-        });
+        navigation.navigate('Main');
       }
     } catch (error) {
-      let errorMessage = 'An error occurred during login.';
-
-      if (error.response) {
-        errorMessage = error.response.data?.message || errorMessage;
-      } else if (error.request) {
-        errorMessage =
-          'Unable to connect to the server. Please check your internet connection.';
-      }
-
-      Alert.alert('Error', errorMessage);
-      console.error('Login error:', error);
+      console.error('Login failed:', error);
+      Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -81,100 +56,67 @@ const LoginScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
+      style={{flex: 1}}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.inner}>
-          <Text style={styles.title}>Login</Text>
+        <View style={{flex: 1, justifyContent: 'center', padding: 20}}>
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: 'bold',
+              textAlign: 'center',
+              marginBottom: 20,
+            }}>
+            Login
+          </Text>
 
           <TextInput
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
-            style={styles.input}
+            style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              padding: 10,
+              marginVertical: 10,
+              borderRadius: 5,
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
-            autoCorrect={false}
           />
 
           <TextInput
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
-            style={styles.input}
+            style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              padding: 10,
+              marginVertical: 10,
+              borderRadius: 5,
+            }}
             secureTextEntry
-            autoCapitalize="none"
           />
 
           <TouchableOpacity
             onPress={handleLogin}
-            style={styles.loginButton}
-            disabled={isLoading}>
+            style={{
+              backgroundColor: '#007bff',
+              padding: 15,
+              borderRadius: 5,
+              alignItems: 'center',
+              marginVertical: 10,
+            }}>
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
+              <Text style={{color: '#fff', fontWeight: 'bold'}}>Login</Text>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
-            style={styles.registerButton}>
-            <Text style={styles.registerButtonText}>
-              Don’t have an account? Sign up
-            </Text>
           </TouchableOpacity>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    marginVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#f9f9f9',
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  registerButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  registerButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-  },
-});
 
 export default LoginScreen;
