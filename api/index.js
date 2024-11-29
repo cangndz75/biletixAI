@@ -32,50 +32,62 @@ mongoose
   .catch(error => console.log('Connection error:', error));
 
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-  
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided, unauthorized' });
-    }
-  
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) {
-        return res.status(403).json({ message: 'Invalid token' }); 
-      }
-  
-      req.user = user;
-      next();
-    });
-};
-  
-app.post('/refresh', async (req, res) => {
-  const {token} = req.body;
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
   if (!token) {
+    return res
+      .status(401)
+      .json({message: 'Token not found, unauthorized access'});
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({message: 'Invalid token'});
+    }
+    req.user = user;
+    next();
+  });
+};
+
+app.post('/refresh', async (req, res) => {
+  const {refreshToken} = req.body;
+
+  if (!refreshToken) {
     return res.status(400).json({message: 'Refresh token is required'});
   }
 
   try {
-    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, user) => {
-      if (err) return res.status(403).json({message: 'Invalid refresh token'});
+    const user = await User.findOne({refreshToken});
+    if (!user) {
+      return res.status(403).json({message: 'Invalid refresh token'});
+    }
 
-      const newAccessToken = jwt.sign(
-        {userId: user.userId, role: user.role},
-        process.env.JWT_SECRET_KEY,
-        {expiresIn: '1h'},
-      );
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      (err, decoded) => {
+        if (err) {
+          return res.status(403).json({message: 'Invalid refresh token'});
+        }
 
-      res.status(200).json({token: newAccessToken});
-    });
+        const accessToken = jwt.sign(
+          {userId: decoded.userId, role: decoded.role},
+          process.env.JWT_SECRET_KEY,
+          {expiresIn: '1h'},
+        );
+
+        res.status(200).json({accessToken});
+      },
+    );
   } catch (error) {
-    res.status(500).json({message: 'Internal Server Error'});
+    console.error('Refresh token error:', error);
+    res.status(500).json({message: 'Server error'});
   }
 });
 
 app.post('/register', async (req, res) => {
   try {
-    console.log('Incoming user data:', req.body);
-
     const {
       email,
       password,
@@ -85,79 +97,80 @@ app.post('/register', async (req, res) => {
       image,
       aboutMe,
       interests,
-      communityId,
     } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       email,
-      password : hashedPassword,
+      password: hashedPassword,
       firstName,
       lastName,
       role,
       image,
       aboutMe,
       interests,
-      community: communityId || null,
     });
 
-    await newUser.save();
+    const savedUser = await newUser.save();
 
-    if (communityId) {
-      const community = await Community.findById(communityId);
-      if (community) {
-        community.members.push(newUser._id);
-        await community.save();
-      } else {
-        console.log('Community not found with provided ID');
-      }
-    }
-
-    const token = jwt.sign(
-      {userId: newUser._id, role: newUser.role},
+    const accessToken = jwt.sign(
+      {userId: savedUser._id, role: savedUser.role},
       process.env.JWT_SECRET_KEY,
       {expiresIn: '1h'},
     );
 
-    res.status(201).json({token, role: newUser.role});
+    const refreshToken = jwt.sign(
+      {userId: savedUser._id, role: savedUser.role},
+      process.env.REFRESH_TOKEN_SECRET,
+    );
+
+    savedUser.refreshToken = refreshToken;
+    await savedUser.save();
+
+    res.status(201).json({accessToken, refreshToken, role: savedUser.role});
   } catch (error) {
     console.error('Error during registration:', error);
-    res.status(500).json({message: 'Internal Server Error'});
+    res.status(500).json({message: 'Server error'});
   }
 });
 
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  console.log('Login attempt:', { email, password });
+  const {email, password} = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({email});
     if (!user) {
-      console.log('User not found:', email);
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({message: 'Invalid email or password'});
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      console.log('Password mismatch for user:', email);
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({message: 'Invalid email or password'});
     }
 
-    console.log('Login successful:', email);
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET_KEY || 'default_secret_key',
-      { expiresIn: '1h' }
+    const accessToken = jwt.sign(
+      {userId: user._id, role: user.role},
+      process.env.JWT_SECRET_KEY,
+      {expiresIn: '1h'},
     );
 
-    res.status(200).json({ token, userId: user._id, role: user.role });
+    const refreshToken = jwt.sign(
+      {userId: user._id, role: user.role},
+      process.env.REFRESH_TOKEN_SECRET,
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res
+      .status(200)
+      .json({accessToken, refreshToken, userId: user._id, role: user.role});
   } catch (error) {
-    console.error('Error during login:', error.message);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error during login:', error);
+    res.status(500).json({message: 'Server error'});
   }
 });
-
 
 app.get('/recent-participants', async (req, res) => {
   try {
@@ -998,13 +1011,13 @@ app.post('/rejectrequest', async (req, res) => {
 
 app.post('/favorites', async (req, res) => {
   try {
-    const { userId, eventId } = req.body;
+    const {userId, eventId} = req.body;
 
     if (
       !mongoose.Types.ObjectId.isValid(userId) ||
       !mongoose.Types.ObjectId.isValid(eventId)
     ) {
-      return res.status(400).json({ message: 'Invalid user or event ID' });
+      return res.status(400).json({message: 'Invalid user or event ID'});
     }
 
     const [user, event] = await Promise.all([
@@ -1012,8 +1025,8 @@ app.post('/favorites', async (req, res) => {
       Event.findById(eventId),
     ]);
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+    if (!user) return res.status(404).json({message: 'User not found'});
+    if (!event) return res.status(404).json({message: 'Event not found'});
 
     const isFavorited = user.favorites.includes(eventId);
 
@@ -1022,26 +1035,26 @@ app.post('/favorites', async (req, res) => {
       await user.save();
       return res
         .status(200)
-        .json({ message: 'Event removed from favorites', isFavorited: false });
+        .json({message: 'Event removed from favorites', isFavorited: false});
     } else {
       user.favorites.addToSet(eventId);
       await user.save();
       return res
         .status(200)
-        .json({ message: 'Event added to favorites', isFavorited: true });
+        .json({message: 'Event added to favorites', isFavorited: true});
     }
   } catch (error) {
     console.error('Error toggling favorite:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
 app.get('/favorites/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const {userId} = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
+      return res.status(400).json({message: 'Invalid user ID'});
     }
 
     const user = await User.findById(userId).populate({
@@ -1051,13 +1064,13 @@ app.get('/favorites/:userId', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     res.status(200).json(user.favorites);
   } catch (error) {
     console.error('Error fetching favorites:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
@@ -1191,7 +1204,7 @@ app.post('/venues/:venueId/comments', async (req, res) => {
 });
 
 app.put('/event/:eventId', async (req, res) => {
-  const { eventId } = req.params;
+  const {eventId} = req.params;
   const updateData = req.body;
 
   try {
@@ -1200,13 +1213,15 @@ app.put('/event/:eventId', async (req, res) => {
     });
 
     if (!updatedEvent) {
-      return res.status(404).json({ message: 'Event not found' });
+      return res.status(404).json({message: 'Event not found'});
     }
 
     res.status(200).json(updatedEvent);
   } catch (error) {
     console.error('Error updating event:', error.message);
-    res.status(500).json({ message: 'Failed to update event', error: error.message });
+    res
+      .status(500)
+      .json({message: 'Failed to update event', error: error.message});
   }
 });
 
@@ -1346,14 +1361,14 @@ app.put('/user/:userId/about', async (req, res) => {
 });
 
 app.post('/user/followRequest', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const followingUser = await User.findById(fromUserId);
 
     if (!targetUser || !followingUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     if (targetUser.isPrivate) {
@@ -1372,7 +1387,7 @@ app.post('/user/followRequest', async (req, res) => {
       targetUser.notifications.push(notification);
 
       await targetUser.save();
-      res.status(200).json({ message: 'Follow request sent successfully' });
+      res.status(200).json({message: 'Follow request sent successfully'});
     } else {
       if (!targetUser.followers.includes(fromUserId)) {
         targetUser.followers.push(fromUserId);
@@ -1383,7 +1398,7 @@ app.post('/user/followRequest', async (req, res) => {
 
       await targetUser.save();
       await followingUser.save();
-      res.status(200).json({ message: 'User followed successfully' });
+      res.status(200).json({message: 'User followed successfully'});
     }
   } catch (error) {
     console.error('Error handling follow request:', error);
@@ -1445,14 +1460,14 @@ app.get('/communities', async (req, res) => {
 });
 
 app.post('/communities/:communityId/join', async (req, res) => {
-  const { communityId } = req.params;
-  const { answers, userId } = req.body;
+  const {communityId} = req.params;
+  const {answers, userId} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     if (!community.isPrivate) {
@@ -1460,18 +1475,17 @@ app.post('/communities/:communityId/join', async (req, res) => {
         community.members.push(userId);
         await community.save();
       }
-      return res.status(200).json({ message: 'Joined community' });
+      return res.status(200).json({message: 'Joined community'});
     }
 
-    community.joinRequests.push({ userId, answers, status: 'pending' });
+    community.joinRequests.push({userId, answers, status: 'pending'});
     await community.save();
-    return res.status(200).json({ message: 'Join request sent' });
+    return res.status(200).json({message: 'Join request sent'});
   } catch (error) {
     console.error('Error joining community:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
-
 
 app.get(
   '/communities/:communityId/requests',
@@ -1482,7 +1496,7 @@ app.get(
     try {
       const community = await Community.findById(communityId).populate(
         'joinRequests.userId',
-        'firstName lastName image'
+        'firstName lastName image',
       );
 
       if (!community) {
@@ -1494,173 +1508,191 @@ app.get(
       }
 
       const pendingRequests = community.joinRequests.filter(
-        request => request.status === 'pending'
+        request => request.status === 'pending',
       );
       res.status(200).json(pendingRequests);
     } catch (error) {
       console.error('Error fetching join requests:', error);
       res.status(500).json({message: 'Internal server error'});
     }
-  }
+  },
 );
 app.post(
   '/communities/:communityId/accept-request',
   authenticateToken,
   async (req, res) => {
-    const { communityId } = req.params;
-    const { requestId } = req.body;
+    const {communityId} = req.params;
+    const {requestId} = req.body;
 
     try {
       const community = await Community.findById(communityId);
       if (!community) {
-        return res.status(404).json({ message: 'Community not found' });
+        return res.status(404).json({message: 'Community not found'});
       }
 
       if (req.user.userId !== community.organizer.toString()) {
-        return res.status(403).json({ message: 'Unauthorized access' });
+        return res.status(403).json({message: 'Unauthorized access'});
       }
 
       const request = community.joinRequests.id(requestId);
       if (!request) {
-        return res.status(404).json({ message: 'Request not found' });
+        return res.status(404).json({message: 'Request not found'});
       }
 
       request.status = 'approved';
       community.members.push(request.userId);
       await community.save();
 
-      res.status(200).json({ message: 'Request approved successfully' });
+      res.status(200).json({message: 'Request approved successfully'});
     } catch (error) {
       console.error('Error approving request:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({message: 'Internal server error'});
     }
-  }
+  },
 );
 
 app.post(
   '/communities/:communityId/reject-request',
   authenticateToken,
   async (req, res) => {
-    const { communityId } = req.params;
-    const { requestId } = req.body;
+    const {communityId} = req.params;
+    const {requestId} = req.body;
 
     try {
       const community = await Community.findById(communityId);
       if (!community) {
-        return res.status(404).json({ message: 'Community not found' });
+        return res.status(404).json({message: 'Community not found'});
       }
 
       if (req.user.userId !== community.organizer.toString()) {
-        return res.status(403).json({ message: 'Unauthorized access' });
+        return res.status(403).json({message: 'Unauthorized access'});
       }
 
       const request = community.joinRequests.id(requestId);
       if (!request) {
-        return res.status(404).json({ message: 'Request not found' });
+        return res.status(404).json({message: 'Request not found'});
       }
 
       request.status = 'rejected';
       await community.save();
 
-      res.status(200).json({ message: 'Request rejected successfully' });
+      res.status(200).json({message: 'Request rejected successfully'});
     } catch (error) {
       console.error('Error rejecting request:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({message: 'Internal server error'});
     }
-  }
+  },
 );
 
 app.get('/communities/:communityId', async (req, res) => {
-  const { communityId } = req.params;
+  const {communityId} = req.params;
   try {
     const community = await Community.findById(communityId)
       .populate('members', 'firstName lastName image')
       .populate('joinRequests.userId', 'firstName lastName');
-    
+
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
     res.json(community);
   } catch (error) {
     console.error('Error fetching community:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
-app.put('/communities/:communityId/name', authenticateToken, async (req, res) => {
-  const { communityId } = req.params;
-  const { name } = req.body;
+app.put(
+  '/communities/:communityId/name',
+  authenticateToken,
+  async (req, res) => {
+    const {communityId} = req.params;
+    const {name} = req.body;
 
-  console.log('Update request for community name:', name);
+    console.log('Update request for community name:', name);
 
-  try {
-    const community = await Community.findByIdAndUpdate(communityId, { name }, { new: true });
-    if (!community) {
-      console.error('Community not found for ID:', communityId);
-      return res.status(404).json({ message: 'Community not found' });
+    try {
+      const community = await Community.findByIdAndUpdate(
+        communityId,
+        {name},
+        {new: true},
+      );
+      if (!community) {
+        console.error('Community not found for ID:', communityId);
+        return res.status(404).json({message: 'Community not found'});
+      }
+
+      res.status(200).json(community);
+    } catch (error) {
+      console.error('Error updating community name:', error);
+      res.status(500).json({message: 'Internal Server Error'});
     }
+  },
+);
 
-    res.status(200).json(community);
-  } catch (error) {
-    console.error('Error updating community name:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
+app.put(
+  '/communities/:communityId/description',
+  authenticateToken,
+  async (req, res) => {
+    const {communityId} = req.params;
+    const {description} = req.body;
 
-app.put('/communities/:communityId/description', authenticateToken, async (req, res) => {
-  const { communityId } = req.params;
-  const { description } = req.body;
+    console.log('Update request for community description:', description);
 
-  console.log('Update request for community description:', description);
+    try {
+      const community = await Community.findByIdAndUpdate(
+        communityId,
+        {description},
+        {new: true},
+      );
+      if (!community) {
+        console.error('Community not found for ID:', communityId);
+        return res.status(404).json({message: 'Community not found'});
+      }
 
-  try {
-    const community = await Community.findByIdAndUpdate(communityId, { description }, { new: true });
-    if (!community) {
-      console.error('Community not found for ID:', communityId);
-      return res.status(404).json({ message: 'Community not found' });
+      res.status(200).json(community);
+    } catch (error) {
+      console.error('Error updating community description:', error);
+      res.status(500).json({message: 'Internal Server Error'});
     }
-
-    res.status(200).json(community);
-  } catch (error) {
-    console.error('Error updating community description:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
+  },
+);
 
 app.post('/communities/:communityId/send-request', async (req, res) => {
-  const { communityId } = req.params;
-  const { answers, userId } = req.body;
+  const {communityId} = req.params;
+  const {answers, userId} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     const existingRequest = community.joinRequests.find(
-      (request) => request.userId.toString() === userId
+      request => request.userId.toString() === userId,
     );
 
     if (existingRequest) {
-      return res.status(400).json({ message: 'Join request already exists' });
+      return res.status(400).json({message: 'Join request already exists'});
     }
 
-    community.joinRequests.push({ userId, answers, status: 'pending' });
+    community.joinRequests.push({userId, answers, status: 'pending'});
     await community.save();
 
-    return res.status(200).json({ message: 'Join request sent' });
+    return res.status(200).json({message: 'Join request sent'});
   } catch (error) {
     console.error('Error sending join request:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
 app.post('/posts/create', authenticateToken, async (req, res) => {
-  const { description, userId, imageUrl } = req.body;
+  const {description, userId, imageUrl} = req.body;
 
   if (!description || !userId) {
-    return res.status(400).json({ message: 'Description and user ID are required.' });
+    return res
+      .status(400)
+      .json({message: 'Description and user ID are required.'});
   }
 
   try {
@@ -1671,64 +1703,64 @@ app.post('/posts/create', authenticateToken, async (req, res) => {
     });
 
     await newPost.save();
-    res.status(201).json({ message: 'Post created successfully', post: newPost });
+    res.status(201).json({message: 'Post created successfully', post: newPost});
   } catch (error) {
     console.error('Error creating post:', error);
-    res.status(500).json({ message: 'Failed to create post.' });
+    res.status(500).json({message: 'Failed to create post.'});
   }
 });
 
 app.post('/posts/:postId/like', authenticateToken, async (req, res) => {
-  const { postId } = req.params;
-  const { userId } = req.body;
+  const {postId} = req.params;
+  const {userId} = req.body;
 
   try {
     const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({message: 'Post not found'});
 
     const isLiked = post.likes.some(like => like.user.toString() === userId);
 
     if (isLiked) {
       post.likes = post.likes.filter(like => like.user.toString() !== userId);
     } else {
-      post.likes.push({ user: userId });
+      post.likes.push({user: userId});
     }
 
     await post.save();
-    res.status(200).json({ 
-      message: isLiked ? 'Post unliked' : 'Post liked', 
-      likes: post.likes.length, 
-      post 
+    res.status(200).json({
+      message: isLiked ? 'Post unliked' : 'Post liked',
+      likes: post.likes.length,
+      post,
     });
   } catch (error) {
     console.error('Error updating like status:', error);
-    res.status(500).json({ message: 'Failed to update like status' });
+    res.status(500).json({message: 'Failed to update like status'});
   }
 });
 
 app.post('/posts/:postId/comment', authenticateToken, async (req, res) => {
-  const { postId } = req.params;
-  const { userId, text } = req.body;
+  const {postId} = req.params;
+  const {userId, text} = req.body;
 
   if (!text || !text.trim()) {
-    return res.status(400).json({ message: 'Comment text cannot be empty.' });
+    return res.status(400).json({message: 'Comment text cannot be empty.'});
   }
 
   try {
     const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({message: 'Post not found'});
 
-    post.comments.push({ user: userId, text });
+    post.comments.push({user: userId, text});
     await post.save();
 
-    res.status(200).json({ 
-      message: 'Comment added successfully', 
-      comments: post.comments, 
-      post 
+    res.status(200).json({
+      message: 'Comment added successfully',
+      comments: post.comments,
+      post,
     });
   } catch (error) {
     console.error('Error adding comment:', error);
-    res.status(500).json({ message: 'Failed to add comment' });
+    res.status(500).json({message: 'Failed to add comment'});
   }
 });
 
@@ -1738,15 +1770,15 @@ app.get('/posts', authenticateToken, async (req, res) => {
       .populate('user', 'firstName lastName image')
       .populate('comments.user', 'firstName lastName image');
 
-    res.status(200).json({ posts });
+    res.status(200).json({posts});
   } catch (error) {
     console.error('Error fetching posts:', error);
-    res.status(500).json({ message: 'Failed to fetch posts' });
+    res.status(500).json({message: 'Failed to fetch posts'});
   }
 });
 
 app.get('/posts/:postId', authenticateToken, async (req, res) => {
-  const { postId } = req.params;
+  const {postId} = req.params;
 
   try {
     const post = await Post.findById(postId)
@@ -1754,38 +1786,32 @@ app.get('/posts/:postId', authenticateToken, async (req, res) => {
       .populate('comments.user', 'firstName lastName image');
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      return res.status(404).json({message: 'Post not found'});
     }
 
-    res.status(200).json({ post });
+    res.status(200).json({post});
   } catch (error) {
     console.error('Error fetching post:', error);
-    res.status(500).json({ message: 'Failed to fetch post' });
+    res.status(500).json({message: 'Failed to fetch post'});
   }
 });
 
-app.put('/user/:userId/privacy', authenticateToken, async (req, res) => {
-  const { userId } = req.params;
-  const { isPrivate } = req.body;
-
-  if (req.user.userId !== userId) {
-    return res.status(403).json({ message: 'You are not authorized to update this user' });
-  }
+app.put('/user/:userId/privacy', async (req, res) => {
+  const {userId} = req.params;
+  const {isPrivate} = req.body;
 
   try {
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { isPrivate },
-      { new: true }
-    );
+    const user = await User.findByIdAndUpdate(userId, {isPrivate}, {new: true});
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
-    res.status(200).json({ message: 'Privacy setting updated', isPrivate: user.isPrivate });
+    res
+      .status(200)
+      .json({message: 'Privacy setting updated', isPrivate: user.isPrivate});
   } catch (error) {
     console.error('Error updating privacy setting:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });

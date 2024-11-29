@@ -85,6 +85,10 @@ const userSchema = mongoose.Schema(
       },
     ],
     friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
+    refreshToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

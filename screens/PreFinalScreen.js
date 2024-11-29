@@ -8,21 +8,15 @@ import {
 } from 'react-native';
 import React, {useEffect, useContext, useState} from 'react';
 import axios from 'axios';
-import {AuthContext} from '../AuthContext'; // Ensure the path to AuthContext is correct
+import {AuthContext} from '../AuthContext';
 import {getRegistrationProgress} from '../registrationUtils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 
 const PreFinalScreen = () => {
-  const {token, setToken} = useContext(AuthContext);
+  const {setAccessToken, setUserId, setRole} = useContext(AuthContext);
   const [userData, setUserData] = useState({});
   const navigation = useNavigation();
-
-  useEffect(() => {
-    if (token) {
-      navigation.replace('InterestSelectionScreen', {screen: 'InterestSelectionScreen'});
-    }
-  }, [token]);
 
   useEffect(() => {
     getAllUserData();
@@ -61,36 +55,43 @@ const PreFinalScreen = () => {
     }
   };
 
-  console.log('User Data:', userData);
   const registerUser = async () => {
     try {
-      console.log('User Data being sent:', userData); 
-  
       const response = await axios.post(
         'http://10.0.2.2:8000/register',
-        userData
+        userData,
       );
-  
-      if (response.data.token) {
-        const token = response.data.token;
-        await AsyncStorage.setItem('token', token);
-        setToken(token);
+
+      if (response.data.accessToken) {
+        const {accessToken, refreshToken, userId, role} = response.data;
+
+        await AsyncStorage.setItem('accessToken', accessToken);
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+        await AsyncStorage.setItem('userId', String(userId));
+        await AsyncStorage.setItem('role', role);
+
+        setAccessToken(accessToken);
+        setUserId(userId);
+        setRole(role);
+
         clearAllScreenData();
+
         navigation.replace('InterestSelectionScreen');
+      } else {
+        throw new Error('Access token alınamadı');
       }
     } catch (error) {
       console.log(
         'Error during registration:',
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       Alert.alert(
         'Registration Failed',
         error.response?.data?.message ||
-          'Something went wrong. Please try again later.'
+          'Something went wrong. Please try again later.',
       );
     }
   };
-  
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: 'white'}}>

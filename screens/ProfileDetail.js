@@ -54,14 +54,19 @@ const ProfileDetailScreen = () => {
   const handlePrivacyToggle = async () => {
     try {
       const newPrivacyStatus = !isPrivate;
-      const token = await AsyncStorage.getItem('token'); 
+  
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('Token not found. Please log in again.');
+        return;
+      }
   
       const response = await axios.put(
         `https://biletixai.onrender.com/user/${userId}/privacy`,
         { isPrivate: newPrivacyStatus },
         {
           headers: {
-            Authorization: `Bearer ${token}`, 
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -71,11 +76,18 @@ const ProfileDetailScreen = () => {
         ...prevState,
         isPrivate: newPrivacyStatus,
       }));
+
+      console.log('Privacy setting updated successfully:', response.data);
     } catch (error) {
-      console.error('Failed to update privacy setting:', error.response?.data || error.message);
+      if (error.response) {
+        console.error('Server responded with an error:', error.response.data);
+      } else if (error.request) {
+        console.error('No response received from server:', error.request);
+      } else {
+        console.error('Error occurred during request setup:', error.message);
+      }
     }
   };
-
 
   const clearAuthToken = async () => {
     try {
