@@ -533,7 +533,7 @@ const HomeScreen = () => {
             style={{marginRight: 5}}
           />
           <Text style={{color: '#7b61ff', fontWeight: 'bold', fontSize: 16}}>
-            Topluluk Oluştur
+            Create Community
           </Text>
         </TouchableOpacity>
 
@@ -556,7 +556,7 @@ const HomeScreen = () => {
             style={{marginRight: 5}}
           />
           <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 16}}>
-            Organizatör Ol
+            Become Organizer
           </Text>
         </TouchableOpacity>
       </View>
