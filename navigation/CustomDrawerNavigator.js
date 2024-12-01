@@ -11,7 +11,6 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerNavigator = () => {
-  const userRole = 'organizer';
 
   return (
     <Drawer.Navigator

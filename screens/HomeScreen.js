@@ -466,7 +466,7 @@ const HomeScreen = () => {
         }}>
         <View style={{flex: 1, paddingRight: 10}}>
           <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 5}}>
-            Brown Lamp
+            Concert Night
           </Text>
           <Text
             style={{
@@ -475,10 +475,11 @@ const HomeScreen = () => {
               fontWeight: '700',
               marginBottom: 5,
             }}>
-            New Collection Special Sale Up to 70%
+            Limited Seats Available! Book Now
           </Text>
           <Text style={{fontSize: 14, color: '#777', marginBottom: 10}}>
-            Lorem ipsum is placeholder text commonly used in the graphic.
+            Join us for an unforgettable evening with live music and
+            entertainment.
           </Text>
           <TouchableOpacity
             style={{
@@ -488,7 +489,9 @@ const HomeScreen = () => {
               borderRadius: 20,
               alignSelf: 'flex-start',
             }}>
-            <Text style={{color: '#fff', fontWeight: 'bold'}}>Shop Now</Text>
+            <Text style={{color: '#fff', fontWeight: 'bold'}}>
+              Explore Events
+            </Text>
           </TouchableOpacity>
         </View>
 
