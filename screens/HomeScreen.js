@@ -234,7 +234,7 @@ const HomeScreen = () => {
           placeholder="What event are you looking for..."
           style={{flex: 1, fontSize: 16}}
         />
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
           <Ionicons name="options-outline" size={20} color="#777" />
         </TouchableOpacity>
       </View>
