@@ -32,7 +32,9 @@ function App() {
         <AuthProvider>
           <SocketProvider>
             <EventProvider>
-              <StackNavigator />
+              <NavigationContainer>
+                <CustomDrawerNavigator />
+              </NavigationContainer>
               <ModalPortal />
             </EventProvider>
           </SocketProvider>

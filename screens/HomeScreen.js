@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {DrawerActions, useFocusEffect, useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -82,7 +82,7 @@ const HomeScreen = () => {
       );
       setUser(response.data);
     } else {
-      navigation.navigate('Login');
+      setUser(null);
     }
   };
 
@@ -191,7 +191,7 @@ const HomeScreen = () => {
         <TouchableOpacity
           onPress={() => {
             active.value = !active.value;
-            navigation.openDrawer();
+            navigation.dispatch(DrawerActions.openDrawer());
           }}
           style={{padding: 10}}>
           <Ionicons name="menu-outline" size={28} color="#333" />
