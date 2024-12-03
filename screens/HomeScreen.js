@@ -287,7 +287,7 @@ const HomeScreen = () => {
         </Text>
         {popularEvent && (
           <Pressable
-            onPress={() => navigation.navigate('Event', {item: popularEvent})}
+            onPress={() => navigation.navigate('EventScreen', {item: popularEvent})}
             style={{borderRadius: 15, overflow: 'hidden'}}>
             <ImageBackground
               source={{
@@ -364,7 +364,7 @@ const HomeScreen = () => {
             marginBottom: 10,
           }}>
           <Text style={{fontSize: 18, fontWeight: '700'}}>Popular</Text>
-          <TouchableOpacity onPress={() => console.log('See all clicked')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Event')}>
             <Text style={{color: '#7b61ff', fontWeight: 'bold'}}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -374,7 +374,7 @@ const HomeScreen = () => {
               {filteredEvents.map(item => (
                 <Pressable
                   key={item._id}
-                  onPress={() => navigation.navigate('EventDetails', {item})}
+                  onPress={() => navigation.navigate('Event', {item})}
                   style={{
                     width: 180,
                     marginRight: 15,
