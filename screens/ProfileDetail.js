@@ -18,8 +18,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImageViewing from 'react-native-image-viewing';
 import {TextInput} from 'react-native';
-import { Switch } from 'react-native-paper';
-import { useIsFocused } from '@react-navigation/native';
+import {Switch} from 'react-native-paper';
+import {useIsFocused} from '@react-navigation/native';
 
 const ProfileDetailScreen = () => {
   const [user, setUser] = useState(null);
@@ -33,11 +33,9 @@ const ProfileDetailScreen = () => {
 
   const fetchUser = async () => {
     try {
-      console.log('Fetching data for user ID:', userId);
       if (!userId) throw new Error('User ID is undefined');
 
       const response = await axios.get(`https://biletixai.onrender.com/user/${userId}`);
-      console.log('User data fetched:', response.data);
       setUser(response.data);
       setIsPrivate(response.data.isPrivate);
     } catch (error) {
@@ -54,49 +52,40 @@ const ProfileDetailScreen = () => {
   const handlePrivacyToggle = async () => {
     try {
       const newPrivacyStatus = !isPrivate;
-  
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         console.error('Token not found. Please log in again.');
         return;
       }
-  
-      const response = await axios.put(
+
+      await axios.put(
         `https://biletixai.onrender.com/user/${userId}/privacy`,
-        { isPrivate: newPrivacyStatus },
+        {isPrivate: newPrivacyStatus},
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-  
+
       setIsPrivate(newPrivacyStatus);
-      setUser((prevState) => ({
+      setUser(prevState => ({
         ...prevState,
         isPrivate: newPrivacyStatus,
       }));
-
-      console.log('Privacy setting updated successfully:', response.data);
     } catch (error) {
-      if (error.response) {
-        console.error('Server responded with an error:', error.response.data);
-      } else if (error.request) {
-        console.error('No response received from server:', error.request);
-      } else {
-        console.error('Error occurred during request setup:', error.message);
-      }
+      console.error('Error updating privacy:', error.message);
     }
   };
 
   const clearAuthToken = async () => {
     try {
       await AsyncStorage.removeItem('token');
-      setToken('');
-      setUserId('');
+      if (typeof setToken === 'function') setToken(null);
+      if (typeof setUserId === 'function') setUserId(null);
       navigation.navigate('Start');
     } catch (error) {
-      console.log('Error during logout:', error);
+      console.error('Error during logout:', error.message);
     }
   };
 
@@ -135,15 +124,10 @@ const ProfileDetailScreen = () => {
 
           <Text style={styles.userName}>{user?.firstName || 'User Name'}</Text>
           <View style={styles.followContainer}>
-            <Text style={styles.followText}>
-              {user?.followers || 0} Followers
-            </Text>
+            <Text style={styles.followText}>{user?.followers || 0} Followers</Text>
             <Text style={styles.followText}>|</Text>
-            <Text style={styles.followText}>
-              {user?.following || 0} Following
-            </Text>
+            <Text style={styles.followText}>{user?.following || 0} Following</Text>
           </View>
-          
         </View>
 
         <View style={styles.aboutMeContainer}>
@@ -161,8 +145,7 @@ const ProfileDetailScreen = () => {
         <View style={styles.interestsContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.interestsTitle}>Interests</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('InterestSelectionScreen')}>
+            <TouchableOpacity onPress={() => navigation.navigate('InterestSelectionScreen')}>
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -178,36 +161,24 @@ const ProfileDetailScreen = () => {
 
         <View style={styles.privacyContainer}>
           <Text style={styles.privacyText}>Make the account private</Text>
-          <Switch
-            value={isPrivate}
-            onValueChange={handlePrivacyToggle}
-          />
+          <Switch value={isPrivate} onValueChange={handlePrivacyToggle} />
         </View>
 
-        <TouchableOpacity
-          style={styles.optionContainer}
-          onPress={() => navigation.navigate('BookingsScreen')}>
+        <TouchableOpacity style={styles.optionContainer} onPress={() => navigation.navigate('BookingsScreen')}>
           <View style={styles.iconContainer}>
             <AntDesign name="calendar" size={24} color="green" />
           </View>
           <Text style={styles.optionText}>My Bookings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.optionContainer}
-          onPress={clearAuthToken}>
+        <TouchableOpacity style={styles.optionContainer} onPress={clearAuthToken}>
           <View style={styles.iconContainer}>
             <Ionicons name="log-out-outline" size={24} color="red" />
           </View>
           <Text style={styles.optionText}>Logout</Text>
         </TouchableOpacity>
 
-        <ImageViewing
-          images={images}
-          imageIndex={0}
-          visible={visible}
-          onRequestClose={() => setVisible(false)}
-        />
+        <ImageViewing images={images} imageIndex={0} visible={visible} onRequestClose={() => setVisible(false)} />
       </ScrollView>
 
       <Modal visible={isModalVisible} animationType="slide" transparent>
@@ -223,9 +194,7 @@ const ProfileDetailScreen = () => {
             <TouchableOpacity onPress={updateAboutMe} style={styles.saveButton}>
               <Text style={styles.saveButtonText}>Save</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setIsModalVisible(false)}
-              style={styles.cancelButton}>
+            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>

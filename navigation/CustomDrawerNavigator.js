@@ -7,11 +7,11 @@ import CustomDrawerContent from './CustomDrawerContent';
 import EventScreen from '../screens/EventScreen';
 import CommunityScreen from '../screens/CommunityScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
+import EventSetUpScreen from '../screens/EventSetUpScreen';
 
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerNavigator = () => {
-
   return (
     <Drawer.Navigator
       drawerContent={props => <CustomDrawerContent {...props} />}
