@@ -7,16 +7,16 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UpComingEvent = ({item}) => {
   const navigation = useNavigation();
-  const {role, userId} = useContext(AuthContext); 
+  const {userId} = useContext(AuthContext); 
   const [isBooked, setIsBooked] = useState(false);
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,11 +31,10 @@ const UpComingEvent = ({item}) => {
   const fetchEventData = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('token');
       const response = await axios.get(
         `https://biletixai.onrender.com/events/${item?._id}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          params: { userId }, // userId'yi parametre olarak gönder
         }
       );
       setEventData(response.data);
@@ -47,7 +46,6 @@ const UpComingEvent = ({item}) => {
       setLoading(false);
     }
   };
-  
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -56,8 +54,7 @@ const UpComingEvent = ({item}) => {
   };
 
   const handleNavigation = () => {
-    const targetScreen =
-      role === 'organizer' ? 'AdminEventSetUp' : 'EventSetUp';
+    const targetScreen = 'EventSetUp';
     navigation.navigate(targetScreen, {
       item: eventData,
     });
@@ -84,7 +81,7 @@ const UpComingEvent = ({item}) => {
 
   const renderEventItem = () => (
     <Pressable
-      onPress={handleNavigation} // Call the handler here
+      onPress={handleNavigation}
       style={{
         backgroundColor: '#fff',
         padding: 16,

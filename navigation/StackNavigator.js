@@ -15,6 +15,8 @@ import ChatsScreen from '../screens/ChatsScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import StartScreen from '../screens/StartScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import EventSetUpScreen from '../screens/EventSetUpScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -134,6 +136,21 @@ const MainStack = () => (
     <Stack.Screen
       name="Login"
       component={LoginScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="Register"
+      component={RegisterScreen}
+      options={{headerShown: false}}
+    />
+     <Stack.Screen
+      name="Favorites"
+      component={FavoritesScreen}
+      options={{headerShown: false}}
+    />
+     <Stack.Screen
+      name="EventSetUp"
+      component={EventSetUpScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
