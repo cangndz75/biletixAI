@@ -1,132 +1,80 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useEffect, useState, createContext} from 'react';
-import {decode as atob} from 'base-64';
-import axios from 'axios';
+import {createContext, useState, useEffect} from 'react';
 
 const AuthContext = createContext();
 
 const AuthProvider = ({children}) => {
-  const [accessToken, setAccessToken] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [user, setUser] = useState(null);
   const [role, setRole] = useState('user');
+  const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const clearUserData = async () => {
+  const saveUserData = async (userId, role, user) => {
     try {
-      setAccessToken(null);
-      setUserId(null);
-      setUser(null);
-      setRole('user');
-      await AsyncStorage.multiRemove([
-        'accessToken',
-        'refreshToken',
-        'userId',
-        'role',
+      setUserId(userId);
+      setRole(role);
+      setUser(user);
+
+      await AsyncStorage.multiSet([
+        ['userId', userId],
+        ['role', role],
+        ['user', JSON.stringify(user)],
       ]);
     } catch (error) {
-      console.error('Error clearing user data:', error);
+      console.error('Error saving user data:', error);
     }
   };
 
-  const decodeToken = async (token, refreshToken) => {
+  const loadUserData = async () => {
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const decodedData = JSON.parse(atob(base64));
+      const storedUserId = await AsyncStorage.getItem('userId');
+      const storedRole = await AsyncStorage.getItem('role');
+      const storedUser = await AsyncStorage.getItem('user');
 
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (decodedData.exp < currentTime) {
-        if (refreshToken) {
-          await refreshAccessToken(refreshToken);
-          return;
-        }
-        throw new Error('Token has expired');
-      }
-
-      setAccessToken(token);
-      setUserId(decodedData.userId);
-      setRole(decodedData.role);
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      await clearUserData();
-    }
-  };
-
-  const refreshAccessToken = async refreshToken => {
-    try {
-      if (!refreshToken) {
-        throw new Error('Refresh token not found');
-      }
-
-      const response = await axios.post(
-        'https://biletixai.onrender.com/refresh',
-        {token: refreshToken},
-        {timeout: 5000},
-      );
-
-      const {accessToken: newAccessToken} = response.data;
-      if (!newAccessToken) {
-        throw new Error('Failed to fetch new access token');
-      }
-
-      await AsyncStorage.setItem('accessToken', newAccessToken);
-      await decodeToken(newAccessToken, refreshToken);
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      await clearUserData();
-    }
-  };
-
-  const isLoggedIn = async () => {
-    try {
-      const [storedAccessToken, storedRefreshToken] = await Promise.all([
-        AsyncStorage.getItem('accessToken'),
-        AsyncStorage.getItem('refreshToken'),
-      ]);
-
-      if (storedAccessToken) {
-        await decodeToken(storedAccessToken, storedRefreshToken);
-      } else if (storedRefreshToken) {
-        await refreshAccessToken(storedRefreshToken);
+      if (storedUserId && storedRole && storedUser) {
+        setUserId(storedUserId);
+        setRole(storedRole);
+        setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error('Error checking session:', error);
-      await clearUserData();
+      console.error('Error loading user data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (newAccessToken, newRefreshToken) => {
+  const clearUserData = async () => {
     try {
-      await AsyncStorage.setItem('accessToken', newAccessToken);
-      await AsyncStorage.setItem('refreshToken', newRefreshToken);
-      await decodeToken(newAccessToken, newRefreshToken);
+      setUserId(null);
+      setRole('user');
+      setUser(null);
+      await AsyncStorage.multiRemove(['userId', 'role', 'user']);
     } catch (error) {
-      console.error('Login error:', error);
-      await clearUserData();
+      console.error('Error clearing user data:', error);
     }
   };
 
+  const login = async (userId, role, user) => {
+    await saveUserData(userId, role, user);
+  };
+
+  const logout = async () => {
+    await clearUserData();
+  };
+
   useEffect(() => {
-    isLoggedIn();
+    loadUserData();
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
-        accessToken,
-        isLoading,
-        setAccessToken,
         userId,
-        user,
         role,
-        setRole,
-        setUserId,
-        clearUserData,
+        user,
+        isLoading,
         login,
-        isLoggedIn,
+        logout,
       }}>
       {children}
     </AuthContext.Provider>
