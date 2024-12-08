@@ -21,17 +21,27 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post('http://10.0.2.2:8000/login', {
-        email,
-        password,
-      });
-      await login(response.data);
-      if (response.data.role === 'organizer') {
-        navigation.navigate('AdminDashboard');
-      } else {
-        navigation.navigate('Home');
+      const response = await axios.post(
+        'https://biletixai.onrender.com/login',
+        {
+          email,
+          password,
+        },
+      );
+
+      const {userId, role, user} = response.data;
+
+      if (!userId || !role) {
+        throw new Error('Invalid login response. Missing userId or role.');
       }
+
+      await login(userId, role, user);
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'BottomTabs'}],
+      });
     } catch (error) {
+      console.error('Login failed:', error);
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);

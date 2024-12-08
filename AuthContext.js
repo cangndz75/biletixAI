@@ -11,15 +11,20 @@ const AuthProvider = ({children}) => {
 
   const saveUserData = async (userId, role, user) => {
     try {
+      if (!userId || !role) {
+        throw new Error('User ID or Role is undefined. Cannot save.');
+      }
+
+      const safeUser = user ? JSON.stringify(user) : JSON.stringify({});
+      await AsyncStorage.multiSet([
+        ['userId', String(userId)],
+        ['role', String(role)],
+        ['user', safeUser],
+      ]);
+
       setUserId(userId);
       setRole(role);
-      setUser(user);
-
-      await AsyncStorage.multiSet([
-        ['userId', userId],
-        ['role', role],
-        ['user', JSON.stringify(user)],
-      ]);
+      setUser(user || {});
     } catch (error) {
       console.error('Error saving user data:', error);
     }
