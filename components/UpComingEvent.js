@@ -9,6 +9,8 @@ import {
   Alert,
   StyleSheet,
   TouchableOpacity,
+  Modal,
+  TextInput,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import axios from 'axios';
@@ -20,6 +22,8 @@ const UpComingEvent = ({item}) => {
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editedEventData, setEditedEventData] = useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -48,7 +52,30 @@ const UpComingEvent = ({item}) => {
   };
 
   const handleEdit = () => {
-    navigation.navigate('AdminEventSetUp', {item: eventData});
+    setEditedEventData({
+      title: eventData.title || '',
+      location: eventData.location || '',
+      description: eventData.description || '',
+      date: eventData.date || '',
+      images: eventData.images || [],
+      organizerName: eventData.organizerName || '',
+    });
+    setEditModalVisible(true);
+  };
+
+  const saveChanges = async () => {
+    try {
+      const response = await axios.put(
+        `https://biletixai.onrender.com/events/${eventData?._id}`,
+        editedEventData,
+        {headers: {'Content-Type': 'application/json'}},
+      );
+      setEventData(response.data);
+      Alert.alert('Success', 'Event updated successfully!');
+      setEditModalVisible(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update the event.');
+    }
   };
 
   const handleManage = () => {
@@ -75,47 +102,97 @@ const UpComingEvent = ({item}) => {
   }
 
   return (
-    <FlatList
-      data={[eventData]}
-      keyExtractor={item => item._id}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-      renderItem={({item}) => (
-        <View style={styles.eventCard}>
-          <Text style={styles.dateText}>
-            {new Date(item.date).toDateString()}
-          </Text>
-          <View style={styles.row}>
-            <Image
-              style={styles.eventImage}
-              source={{
-                uri: item.images?.[0] || 'https://via.placeholder.com/100',
-              }}
+    <>
+      <FlatList
+        data={[eventData]}
+        keyExtractor={item => item._id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        renderItem={({item}) => (
+          <View style={styles.eventCard}>
+            <Text style={styles.dateText}>
+              {new Date(item.date).toDateString()}
+            </Text>
+            <View style={styles.row}>
+              <Image
+                style={styles.eventImage}
+                source={{
+                  uri: item.images?.[0] || 'https://via.placeholder.com/100',
+                }}
+              />
+              <View style={styles.eventDetails}>
+                <Text style={styles.eventTitle}>{item.title}</Text>
+                <Text style={styles.eventLocation}>{item.location}</Text>
+                <Text style={styles.hostedBy}>
+                  Hosted by {item.organizerName}
+                </Text>
+              </View>
+            </View>
+            {role === 'organizer' && (
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={handleEdit}>
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.manageButton}
+                  onPress={handleManage}>
+                  <Text style={styles.buttonText}>Manage</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+      />
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={editModalVisible}
+        onRequestClose={() => setEditModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Event</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Event Title"
+              value={editedEventData.title}
+              onChangeText={text =>
+                setEditedEventData({...editedEventData, title: text})
+              }
             />
-            <View style={styles.eventDetails}>
-              <Text style={styles.eventTitle}>{item.title}</Text>
-              <Text style={styles.eventLocation}>{item.location}</Text>
-              <Text style={styles.hostedBy}>
-                Hosted by {item.organizerName}
-              </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Event Location"
+              value={editedEventData.location}
+              onChangeText={text =>
+                setEditedEventData({...editedEventData, location: text})
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Event Description"
+              value={editedEventData.description}
+              onChangeText={text =>
+                setEditedEventData({...editedEventData, description: text})
+              }
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
-          {role === 'organizer' && (
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.manageButton}
-                onPress={handleManage}>
-                <Text style={styles.buttonText}>Manage</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
-      )}
-    />
+      </Modal>
+    </>
   );
 };
 
@@ -199,5 +276,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#ddd',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: '#5c6bc0',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 10,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
