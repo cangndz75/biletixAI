@@ -7,11 +7,13 @@ import {
   ScrollView,
   FlatList,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {AuthContext} from '../../AuthContext';
 import UpComingEvent from '../../components/UpComingEvent';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const AdminEventScreen = () => {
   const [events, setEvents] = useState([]);
@@ -59,7 +61,7 @@ const AdminEventScreen = () => {
 
   if (loading) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#07bc0c" />
       </View>
     );
@@ -67,46 +69,37 @@ const AdminEventScreen = () => {
 
   if (events.length === 0) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <Text style={{fontSize: 18, color: '#888'}}>No Events Found</Text>
+      <View style={styles.centeredContainer}>
+        <Text style={styles.noEventText}>No Events Found</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#f0f0f5'}}>
+    <SafeAreaView style={styles.container}>
       <ScrollView>
+        <View style={styles.header}>
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color="#000"
+            onPress={() => navigation.goBack()}
+            style={styles.backIcon}
+          />
+          <Text style={styles.headerTitle}>My Events</Text>
+        </View>
+
         <Pressable
           onPress={() => navigation.navigate('AdminCreate')}
-          style={{
-            backgroundColor: '#07bc0c',
-            padding: 12,
-            margin: 10,
-            borderRadius: 4,
-          }}>
-          <Text
-            style={{
-              textAlign: 'center',
-              color: 'white',
-              fontSize: 15,
-              fontWeight: '500',
-            }}>
-            Create Event
-          </Text>
+          style={styles.createButton}>
+          <Text style={styles.createButtonText}>Create Event</Text>
         </Pressable>
 
-        <View style={{padding: 12}}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-            <Text style={{fontSize: 16, fontWeight: '700', color: '#333'}}>
-              My Events
-            </Text>
+        <View style={styles.eventSection}>
+          <View style={styles.eventHeader}>
+            <Text style={styles.sectionTitle}>My Events</Text>
             <Pressable onPress={() => fetchOrganizerEvents()}>
-              <Text style={{color: '#ff6b6b', fontWeight: '600'}}>See All</Text>
+              <Text style={styles.seeAllText}>See All</Text>
             </Pressable>
           </View>
 
@@ -116,7 +109,7 @@ const AdminEventScreen = () => {
             renderItem={({item}) => <UpComingEvent item={item} />}
             keyExtractor={item => item._id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{paddingVertical: 10}}
+            contentContainerStyle={styles.eventList}
           />
         </View>
       </ScrollView>
@@ -125,3 +118,68 @@ const AdminEventScreen = () => {
 };
 
 export default AdminEventScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noEventText: {
+    fontSize: 18,
+    color: '#888',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backIcon: {
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  createButton: {
+    backgroundColor: '#07bc0c',
+    padding: 15,
+    margin: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  eventSection: {
+    paddingHorizontal: 15,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+  },
+  seeAllText: {
+    color: '#ff6b6b',
+    fontWeight: '600',
+  },
+  eventList: {
+    paddingVertical: 10,
+  },
+});

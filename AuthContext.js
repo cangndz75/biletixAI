@@ -11,17 +11,12 @@ const AuthProvider = ({children}) => {
 
   const saveUserData = async (userId, role, user) => {
     try {
-      if (!userId || !role) {
-        throw new Error('User ID or Role is undefined. Cannot save.');
-      }
-
       const safeUser = user ? JSON.stringify(user) : JSON.stringify({});
       await AsyncStorage.multiSet([
         ['userId', String(userId)],
         ['role', String(role)],
         ['user', safeUser],
       ]);
-
       setUserId(userId);
       setRole(role);
       setUser(user || {});
@@ -50,10 +45,10 @@ const AuthProvider = ({children}) => {
 
   const clearUserData = async () => {
     try {
+      await AsyncStorage.multiRemove(['userId', 'role', 'user']);
       setUserId(null);
       setRole('user');
       setUser(null);
-      await AsyncStorage.multiRemove(['userId', 'role', 'user']);
     } catch (error) {
       console.error('Error clearing user data:', error);
     }

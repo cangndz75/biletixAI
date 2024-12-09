@@ -10,10 +10,12 @@ import {
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import {useNavigation} from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const {login} = useContext(AuthContext);
   const navigation = useNavigation();
@@ -56,38 +58,59 @@ const LoginScreen = () => {
           fontWeight: 'bold',
           textAlign: 'center',
           marginBottom: 20,
+          color: '#dc3545',
         }}>
         Login
       </Text>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          marginVertical: 10,
-          borderRadius: 5,
-        }}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          marginVertical: 10,
-          borderRadius: 5,
-        }}
-        secureTextEntry
-      />
+      <View style={{marginBottom: 20}}>
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          style={{
+            borderWidth: 1,
+            borderColor: '#ccc',
+            padding: 10,
+            borderRadius: 5,
+            marginBottom: 10,
+          }}
+          autoCapitalize="none"
+        />
+        <View
+          style={{
+            position: 'relative',
+          }}>
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              padding: 10,
+              borderRadius: 5,
+            }}
+            secureTextEntry={!isPasswordVisible}
+          />
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+            }}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+            <Ionicons
+              name={isPasswordVisible ? 'eye' : 'eye-off'}
+              size={20}
+              color="#ccc"
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
       <TouchableOpacity
         onPress={handleLogin}
         style={{
-          backgroundColor: '#007bff',
+          backgroundColor: '#dc3545',
           padding: 15,
           borderRadius: 5,
           alignItems: 'center',
@@ -98,6 +121,16 @@ const LoginScreen = () => {
         ) : (
           <Text style={{color: '#fff', fontWeight: 'bold'}}>Login</Text>
         )}
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Register')}
+        style={{marginTop: 20, alignItems: 'center'}}>
+        <Text style={{color: '#007bff', fontSize: 14}}>Get Started</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('ForgotPassword')}
+        style={{marginTop: 10, alignItems: 'center'}}>
+        <Text style={{color: '#007bff', fontSize: 14}}>Forgot Password?</Text>
       </TouchableOpacity>
     </View>
   );

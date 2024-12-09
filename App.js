@@ -27,6 +27,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import StackNavigator from './navigation/StackNavigator';
 import {AuthProvider} from './AuthContext';
 import {ModalPortal} from 'react-native-modals';
+import { EventProvider } from './EventContext';
 
 function Section({children, title}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -63,8 +64,10 @@ function App() {
 
   return (
     <AuthProvider>
-      <StackNavigator />
-      <ModalPortal />
+      <EventProvider>
+        <StackNavigator />
+        <ModalPortal />
+      </EventProvider>
     </AuthProvider>
   );
 }

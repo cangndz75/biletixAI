@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 
@@ -18,7 +18,7 @@ const CommunityScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
-  const {user, userId, token} = useContext(AuthContext); // Access user, userId, token from context
+  const {userId} = useContext(AuthContext);
 
   useEffect(() => {
     if (userId) {
@@ -50,7 +50,7 @@ const CommunityScreen = () => {
   };
 
   const handleNavigation = communityId => {
-    navigation.navigate('CommunityDetailScreen', {communityId, user});
+    navigation.navigate('CommunityDetailScreen', {communityId});
   };
 
   const renderCommunityItem = ({item: community}) => (

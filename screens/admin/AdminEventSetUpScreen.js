@@ -42,7 +42,6 @@ const AdminEventSetUpScreen = () => {
   useEffect(() => {
     setOrganizer(route?.params?.item?.organizer || null);
   }, [route?.params?.item]);
-  
 
   useEffect(() => {
     const fetchAttendees = async () => {
@@ -105,7 +104,7 @@ const AdminEventSetUpScreen = () => {
       Alert.alert('Unauthorized', 'Only the organizer can update this event.');
       return;
     }
-  
+
     try {
       const response = await axios.put(
         `https://biletixai.onrender.com/event/${eventId}`,
@@ -114,9 +113,9 @@ const AdminEventSetUpScreen = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
-  
+
       if (response.status === 200) {
         Alert.alert('Success', 'Event updated successfully!');
         updateEvent(response.data);
@@ -129,7 +128,7 @@ const AdminEventSetUpScreen = () => {
         error.response?.data?.message || 'An unexpected error occurred.';
       Alert.alert('Error', errorMessage);
     }
-  };  
+  };
 
   const generateDates = () => {
     const dates = [];

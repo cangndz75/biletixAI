@@ -10,7 +10,11 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import {DrawerActions, useFocusEffect, useNavigation} from '@react-navigation/native';
+import {
+  DrawerActions,
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -287,7 +291,9 @@ const HomeScreen = () => {
         </Text>
         {popularEvent && (
           <Pressable
-            onPress={() => navigation.navigate('EventScreen', {item: popularEvent})}
+            onPress={() =>
+              navigation.navigate('EventScreen', {item: popularEvent})
+            }
             style={{borderRadius: 15, overflow: 'hidden'}}>
             <ImageBackground
               source={{
@@ -505,58 +511,58 @@ const HomeScreen = () => {
           flexDirection: 'row',
           backgroundColor: '#fff',
           borderRadius: 10,
-          padding: 15,
+          padding: 10,
           marginVertical: 20,
           shadowColor: '#000',
           shadowOffset: {width: 0, height: 2},
           shadowOpacity: 0.1,
           shadowRadius: 5,
           elevation: 5,
+          alignItems: 'center',
+          justifyContent: 'space-around',
         }}>
         <TouchableOpacity
           style={{
-            flex: 1,
-            borderWidth: 2,
-            borderColor: '#7b61ff',
-            paddingVertical: 15,
-            alignItems: 'center',
-            marginRight: 10,
-            borderRadius: 10,
             flexDirection: 'row',
+            alignItems: 'center',
             justifyContent: 'center',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#7b61ff',
+            paddingHorizontal: 12,
+            paddingVertical: 8,
           }}
-          onPress={() => console.log('Topluluk Oluştur Pressed')}>
+          onPress={() => navigation.navigate('CommunityScreen')}>
           <Ionicons
             name="people-outline"
-            size={18}
+            size={16}
             color="#7b61ff"
             style={{marginRight: 5}}
           />
-          <Text style={{color: '#7b61ff', fontWeight: 'bold', fontSize: 16}}>
-            Create Community
+          <Text style={{color: '#7b61ff', fontWeight: '500', fontSize: 14}}>
+            Community
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={{
-            flex: 1,
-            backgroundColor: '#ff8c42',
-            paddingVertical: 15,
-            alignItems: 'center',
-            marginLeft: 10,
-            borderRadius: 10,
             flexDirection: 'row',
+            alignItems: 'center',
             justifyContent: 'center',
+            borderRadius: 8,
+            backgroundColor: '#ff8c42',
+            paddingHorizontal: 12,
+            paddingVertical: 8,
           }}
-          onPress={() => console.log('Organizatör Ol Pressed')}>
+          onPress={() => navigation.navigate('CommunityScreen')}>
           <Ionicons
             name="person-add-outline"
-            size={18}
+            size={16}
             color="#fff"
             style={{marginRight: 5}}
           />
-          <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 16}}>
-            Become Organizer
+          <Text style={{color: '#fff', fontWeight: '500', fontSize: 14}}>
+            Organizer
           </Text>
         </TouchableOpacity>
       </View>

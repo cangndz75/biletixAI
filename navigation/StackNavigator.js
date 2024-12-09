@@ -13,10 +13,17 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileDetailScreen from '../screens/ProfileDetail';
 import ChatsScreen from '../screens/ChatsScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
-import StartScreen from '../screens/StartScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import EventSetUpScreen from '../screens/EventSetUpScreen';
+import CommunityScreen from '../screens/CommunityScreen';
+import CommunityDetailScreen from '../screens/CommunityDetailScreen';
+import AdminCreateScreen from '../screens/admin/AdminCreateScreen';
+import AdminCommunityScreen from '../screens/admin/AdminCommunityScreen';
+import AdminEventSetUpScreen from '../screens/admin/AdminEventSetUpScreen';
+import AdminCreateVenueScreen from '../screens/admin/AdminCreateVenueScreen';
+import AdminCreateCommunityScreen from '../screens/admin/AdminCreateCommunityScreen';
+import ManageRequest from '../screens/admin/ManageRequest';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -129,11 +136,6 @@ const MainStack = () => (
       options={{headerShown: false}}
     />
     <Stack.Screen
-      name="Start"
-      component={StartScreen}
-      options={{headerShown: false}}
-    />
-    <Stack.Screen
       name="Login"
       component={LoginScreen}
       options={{headerShown: false}}
@@ -143,14 +145,59 @@ const MainStack = () => (
       component={RegisterScreen}
       options={{headerShown: false}}
     />
-     <Stack.Screen
+    <Stack.Screen
       name="Favorites"
       component={FavoritesScreen}
       options={{headerShown: false}}
     />
-     <Stack.Screen
+    <Stack.Screen
       name="EventSetUp"
       component={EventSetUpScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="CommunityScreen"
+      component={CommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="CommunityDetailScreen"
+      component={CommunityDetailScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCreate"
+      component={AdminCreateScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminEvents"
+      component={AdminEventScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCommunityScreen"
+      component={AdminCommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCreateCommunity"
+      component={AdminCreateCommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCreateVenue"
+      component={AdminCreateVenueScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminEventSetUp"
+      component={AdminEventSetUpScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ManageRequest"
+      component={ManageRequest}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
@@ -158,11 +205,11 @@ const MainStack = () => (
 
 const AuthStack = () => (
   <Stack.Navigator>
-    <Stack.Screen
+    {/* <Stack.Screen
       name="Start"
       component={StartScreen}
       options={{headerShown: false}}
-    />
+    /> */}
     <Stack.Screen
       name="Login"
       component={LoginScreen}

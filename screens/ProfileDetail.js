@@ -8,11 +8,11 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Modal,
+  Alert,
 } from 'react-native';
 import React, {useContext, useState, useEffect} from 'react';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -26,20 +26,22 @@ const ProfileDetailScreen = () => {
   const [visible, setVisible] = useState(false);
   const [aboutText, setAboutText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const {userId, setToken, setUserId} = useContext(AuthContext);
-  const navigation = useNavigation();
   const [isPrivate, setIsPrivate] = useState(false);
+  const {userId, logout} = useContext(AuthContext);
+  const navigation = useNavigation();
   const isFocused = useIsFocused();
 
   const fetchUser = async () => {
     try {
       if (!userId) throw new Error('User ID is undefined');
-
-      const response = await axios.get(`https://biletixai.onrender.com/user/${userId}`);
+      const response = await axios.get(
+        `https://biletixai.onrender.com/user/${userId}`,
+      );
       setUser(response.data);
       setIsPrivate(response.data.isPrivate);
     } catch (error) {
       console.error('Error fetching user data:', error.message);
+      Alert.alert('Error', 'Failed to fetch user data.');
     }
   };
 
@@ -52,22 +54,9 @@ const ProfileDetailScreen = () => {
   const handlePrivacyToggle = async () => {
     try {
       const newPrivacyStatus = !isPrivate;
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        console.error('Token not found. Please log in again.');
-        return;
-      }
-
-      await axios.put(
-        `https://biletixai.onrender.com/user/${userId}/privacy`,
-        {isPrivate: newPrivacyStatus},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      await axios.put(`https://biletixai.onrender.com/user/${userId}/privacy`, {
+        isPrivate: newPrivacyStatus,
+      });
       setIsPrivate(newPrivacyStatus);
       setUser(prevState => ({
         ...prevState,
@@ -75,17 +64,20 @@ const ProfileDetailScreen = () => {
       }));
     } catch (error) {
       console.error('Error updating privacy:', error.message);
+      Alert.alert('Error', 'Failed to update privacy setting.');
     }
   };
 
   const clearAuthToken = async () => {
     try {
-      await AsyncStorage.removeItem('token');
-      if (typeof setToken === 'function') setToken(null);
-      if (typeof setUserId === 'function') setUserId(null);
-      navigation.navigate('Start');
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
     } catch (error) {
       console.error('Error during logout:', error.message);
+      Alert.alert('Error', 'Failed to log out.');
     }
   };
 
@@ -93,7 +85,6 @@ const ProfileDetailScreen = () => {
     try {
       const url = `https://biletixai.onrender.com/user/${userId}/about`;
       await axios.put(url, {aboutMe: aboutText});
-
       setUser(prevState => ({
         ...prevState,
         aboutMe: aboutText,
@@ -101,6 +92,7 @@ const ProfileDetailScreen = () => {
       setIsModalVisible(false);
     } catch (error) {
       console.error('Failed to update about me:', error.message);
+      Alert.alert('Error', 'Failed to update About Me section.');
     }
   };
 
@@ -121,12 +113,15 @@ const ProfileDetailScreen = () => {
               source={{uri: user?.image || 'https://via.placeholder.com/150'}}
             />
           </Pressable>
-
           <Text style={styles.userName}>{user?.firstName || 'User Name'}</Text>
           <View style={styles.followContainer}>
-            <Text style={styles.followText}>{user?.followers || 0} Followers</Text>
+            <Text style={styles.followText}>
+              {user?.followers?.length || 0} Followers
+            </Text>
             <Text style={styles.followText}>|</Text>
-            <Text style={styles.followText}>{user?.following || 0} Following</Text>
+            <Text style={styles.followText}>
+              {user?.following?.length || 0} Following
+            </Text>
           </View>
         </View>
 
@@ -145,11 +140,11 @@ const ProfileDetailScreen = () => {
         <View style={styles.interestsContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.interestsTitle}>Interests</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('InterestSelectionScreen')}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('InterestSelectionScreen')}>
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.tagsContainer}>
             {user?.interests?.map((interest, index) => (
               <View key={index} style={styles.tag}>
@@ -161,24 +156,38 @@ const ProfileDetailScreen = () => {
 
         <View style={styles.privacyContainer}>
           <Text style={styles.privacyText}>Make the account private</Text>
-          <Switch value={isPrivate} onValueChange={handlePrivacyToggle} />
+          <Switch
+            value={isPrivate}
+            onValueChange={handlePrivacyToggle}
+            color="#007bff"
+            style={styles.switchStyle}
+          />
         </View>
 
-        <TouchableOpacity style={styles.optionContainer} onPress={() => navigation.navigate('BookingsScreen')}>
+        <TouchableOpacity
+          style={styles.optionContainer}
+          onPress={() => navigation.navigate('BookingsScreen')}>
           <View style={styles.iconContainer}>
             <AntDesign name="calendar" size={24} color="green" />
           </View>
           <Text style={styles.optionText}>My Bookings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.optionContainer} onPress={clearAuthToken}>
+        <TouchableOpacity
+          style={styles.optionContainer}
+          onPress={clearAuthToken}>
           <View style={styles.iconContainer}>
             <Ionicons name="log-out-outline" size={24} color="red" />
           </View>
           <Text style={styles.optionText}>Logout</Text>
         </TouchableOpacity>
 
-        <ImageViewing images={images} imageIndex={0} visible={visible} onRequestClose={() => setVisible(false)} />
+        <ImageViewing
+          images={images}
+          imageIndex={0}
+          visible={visible}
+          onRequestClose={() => setVisible(false)}
+        />
       </ScrollView>
 
       <Modal visible={isModalVisible} animationType="slide" transparent>
@@ -194,7 +203,9 @@ const ProfileDetailScreen = () => {
             <TouchableOpacity onPress={updateAboutMe} style={styles.saveButton}>
               <Text style={styles.saveButtonText}>Save</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.cancelButton}>
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(false)}
+              style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -240,19 +251,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'gray',
     marginHorizontal: 8,
-  },
-  editProfileButton: {
-    borderWidth: 1,
-    borderColor: '#007bff',
-    borderRadius: 8,
-    paddingHorizontal: 25,
-    paddingVertical: 8,
-    marginTop: 10,
-  },
-  editProfileText: {
-    color: '#007bff',
-    fontWeight: '600',
-    fontSize: 16,
   },
   aboutMeContainer: {
     backgroundColor: 'white',
@@ -311,6 +309,19 @@ const styles = StyleSheet.create({
     color: '#007bff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  privacyContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  privacyText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  switchStyle: {
+    transform: [{scale: 1.2}],
   },
   optionContainer: {
     flexDirection: 'row',
