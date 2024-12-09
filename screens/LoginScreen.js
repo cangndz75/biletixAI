@@ -23,13 +23,10 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        'https://biletixai.onrender.com/login',
-        {
-          email,
-          password,
-        },
-      );
+      const response = await axios.post('https://biletixai.onrender.com/login', {
+        email,
+        password,
+      });
 
       const {userId, role, user} = response.data;
 

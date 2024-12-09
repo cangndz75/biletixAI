@@ -29,6 +29,7 @@ const EventScreen = () => {
     route.params?.searchQuery || '',
   );
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({});
 
   const categories = ['All', 'Sports', 'Music', 'Football'];
 
@@ -48,12 +49,18 @@ const EventScreen = () => {
     }
   };
 
-  const filteredEvents = events.filter(
-    event =>
-      (selectedCategory === 'All' ||
-        event.eventType.toLowerCase() === selectedCategory.toLowerCase()) &&
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredEvents = events.filter(event => {
+    const matchesCategory =
+      selectedCategory === 'All' ||
+      event.eventType.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesQuery = event.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesFilters = Object.keys(appliedFilters).every(key =>
+      event[key] ? appliedFilters[key].includes(event[key]) : true,
+    );
+    return matchesCategory && matchesQuery && matchesFilters;
+  });
 
   const renderHeader = () => (
     <View style={{padding: 12, backgroundColor: '#7b61ff'}}>
@@ -133,7 +140,14 @@ const EventScreen = () => {
             <FilterModal
               visible={filterModalVisible}
               onClose={() => setFilterModalVisible(false)}
-              onApply={filters => console.log(filters)}
+              onApply={filters => {
+                setAppliedFilters(filters);
+                setFilterModalVisible(false);
+              }}
+              onReset={() => {
+                setAppliedFilters({});
+                setFilterModalVisible(false);
+              }}
             />
           </>
         }

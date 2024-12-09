@@ -24,6 +24,8 @@ import AdminEventSetUpScreen from '../screens/admin/AdminEventSetUpScreen';
 import AdminCreateVenueScreen from '../screens/admin/AdminCreateVenueScreen';
 import AdminCreateCommunityScreen from '../screens/admin/AdminCreateCommunityScreen';
 import ManageRequest from '../screens/admin/ManageRequest';
+import SearchScreen from '../screens/SearchScreen';
+import BecomeOrganizerScreen from '../screens/BecomeOrganizerScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -198,6 +200,16 @@ const MainStack = () => (
     <Stack.Screen
       name="ManageRequest"
       component={ManageRequest}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="SearchScreen"
+      component={SearchScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="BecomeOrganizerScreen"
+      component={BecomeOrganizerScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

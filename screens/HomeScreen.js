@@ -250,7 +250,7 @@ const HomeScreen = () => {
         {[
           {title: 'Concert', image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png'},
           {title: 'Sport Events', image: 'https://picsum.photos/201'},
-          {title: 'Fashion Shows', image: 'https://picsum.photos/202'},
+          {title: 'Theatre', image: 'https://picsum.photos/202'},
           {title: 'Book Fair', image: 'https://picsum.photos/203'},
         ].map((category, index) => (
           <Pressable key={index} style={{marginRight: 10}}>
@@ -459,87 +459,103 @@ const HomeScreen = () => {
       <View
         style={{
           flexDirection: 'row',
-          backgroundColor: '#fff',
-          borderRadius: 15,
-          padding: 15,
+          backgroundColor: '#fefefe',
+          borderRadius: 20,
+          padding: 20,
           marginVertical: 20,
           shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: {width: 0, height: 4},
           shadowOpacity: 0.1,
-          shadowRadius: 5,
-          elevation: 5,
+          shadowRadius: 6,
+          elevation: 6,
           alignItems: 'center',
         }}>
-        <View style={{flex: 1, paddingRight: 10}}>
-          <Text style={{fontSize: 18, fontWeight: 'bold', marginBottom: 5}}>
+        <View style={{flex: 1, paddingRight: 15}}>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: '#333',
+              marginBottom: 5,
+            }}>
             Concert Night
           </Text>
           <Text
             style={{
               fontSize: 16,
-              color: '#7b61ff',
+              color: '#ff6b6b',
               fontWeight: '700',
-              marginBottom: 5,
+              marginBottom: 10,
             }}>
             Limited Seats Available! Book Now
           </Text>
-          <Text style={{fontSize: 14, color: '#777', marginBottom: 10}}>
-            Join us for an unforgettable evening with live music and
-            entertainment.
+          <Text style={{fontSize: 14, color: '#666', marginBottom: 15}}>
+            Enjoy a magical evening of live music and entertainment with your
+            loved ones.
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: '#7b61ff',
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              borderRadius: 20,
+              backgroundColor: '#4A90E2',
+              paddingVertical: 12,
+              paddingHorizontal: 25,
+              borderRadius: 30,
               alignSelf: 'flex-start',
             }}>
-            <Text style={{color: '#fff', fontWeight: 'bold'}}>
+            <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 14}}>
               Explore Events
             </Text>
           </TouchableOpacity>
         </View>
 
         <Image
-          source={{uri: 'https://picsum.photos/200'}}
-          style={{width: 100, height: 100, resizeMode: 'contain'}}
+          source={{uri: 'https://via.placeholder.com/120'}}
+          style={{
+            width: 120,
+            height: 120,
+            borderRadius: 10,
+            resizeMode: 'cover',
+          }}
         />
       </View>
       <View
         style={{
           flexDirection: 'row',
           backgroundColor: '#fff',
-          borderRadius: 10,
-          padding: 10,
+          borderRadius: 15,
+          padding: 15,
           marginVertical: 20,
           shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
+          shadowOffset: {width: 0, height: 4},
           shadowOpacity: 0.1,
-          shadowRadius: 5,
+          shadowRadius: 6,
           elevation: 5,
+          justifyContent: 'space-evenly',
           alignItems: 'center',
-          justifyContent: 'space-around',
         }}>
         <TouchableOpacity
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: '#7b61ff',
-            paddingHorizontal: 12,
-            paddingVertical: 8,
+            borderRadius: 30,
+            borderWidth: 2,
+            borderColor: '#5c6bc0',
+            paddingVertical: 10,
+            paddingHorizontal: 20,
           }}
           onPress={() => navigation.navigate('CommunityScreen')}>
           <Ionicons
             name="people-outline"
-            size={16}
-            color="#7b61ff"
-            style={{marginRight: 5}}
+            size={18}
+            color="#5c6bc0"
+            style={{marginRight: 8}}
           />
-          <Text style={{color: '#7b61ff', fontWeight: '500', fontSize: 14}}>
+          <Text
+            style={{
+              color: '#5c6bc0',
+              fontWeight: '600',
+              fontSize: 16,
+            }}>
             Community
           </Text>
         </TouchableOpacity>
@@ -549,19 +565,24 @@ const HomeScreen = () => {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 8,
-            backgroundColor: '#ff8c42',
-            paddingHorizontal: 12,
-            paddingVertical: 8,
+            borderRadius: 30,
+            backgroundColor: '#ff7043',
+            paddingVertical: 10,
+            paddingHorizontal: 20,
           }}
-          onPress={() => navigation.navigate('CommunityScreen')}>
+          onPress={() => navigation.navigate('BecomeOrganizerScreen')}>
           <Ionicons
             name="person-add-outline"
-            size={16}
+            size={18}
             color="#fff"
-            style={{marginRight: 5}}
+            style={{marginRight: 8}}
           />
-          <Text style={{color: '#fff', fontWeight: '500', fontSize: 14}}>
+          <Text
+            style={{
+              color: '#fff',
+              fontWeight: '600',
+              fontSize: 16,
+            }}>
             Organizer
           </Text>
         </TouchableOpacity>

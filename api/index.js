@@ -51,7 +51,17 @@ const authenticateToken = (req, res, next) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, role, image, aboutMe, interests, communityId } = req.body;
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      image,
+      aboutMe,
+      interests,
+      communityId,
+    } = req.body;
 
     const newUser = new User({
       email,
@@ -75,19 +85,21 @@ app.post('/register', async (req, res) => {
       }
     }
 
-    res.status(201).json({ message: 'User registered successfully', userId: newUser._id });
+    res
+      .status(201)
+      .json({message: 'User registered successfully', userId: newUser._id});
   } catch (error) {
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
 app.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const {email, password} = req.body;
+    const user = await User.findOne({email});
 
     if (!user || user.password !== password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({message: 'Invalid credentials'});
     }
 
     res.status(200).json({
@@ -103,7 +115,7 @@ app.post('/login', async (req, res) => {
       following: user.following,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
@@ -1748,5 +1760,32 @@ app.put('/user/:userId/privacy', async (req, res) => {
   } catch (error) {
     console.error('Error updating privacy setting:', error);
     res.status(500).json({message: 'Internal server error'});
+  }
+});
+
+app.post('/beorganizator', async (req, res) => {
+  console.log('Request received:', req.body);
+
+  const {email, firstName, lastName, reason} = req.body;
+
+  if (!email || !firstName || !lastName || !reason) {
+    return res.status(400).json({message: 'Please fill out all required fields.'});
+  }
+
+  try {
+    const user = await User.findOne({email});
+
+    if (!user) {
+      return res.status(404).json({message: 'User not found.'});
+    }
+
+    user.role = 'organizer';
+    user.aboutMe = reason; 
+    await user.save();
+
+    return res.status(200).json({message: 'You are now an organizer!'});
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    return res.status(500).json({message: 'An unexpected error occurred. Please try again later.'});
   }
 });
