@@ -97,18 +97,6 @@ const AdminDashboard = () => {
           ))}
         </ScrollView>
 
-        <View style={styles.dashboardGrid}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>$12,487</Text>
-            <Text style={styles.cardSubTitle}>+864 Comp.</Text>
-            <Text style={styles.cardPercentage}>+24%</Text>
-          </View>
-          <View style={[styles.card, styles.highlightCard]}>
-            <Text style={styles.cardTitle}>35%</Text>
-            <Text style={styles.cardSubTitle}>Desktop users</Text>
-          </View>
-        </View>
-
         <Text style={styles.recentTitle}>Recent Participants</Text>
         <FlatList
           horizontal

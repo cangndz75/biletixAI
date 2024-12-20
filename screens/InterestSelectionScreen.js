@@ -21,7 +21,6 @@ const interests = [
   'Dance',
   'Trade Shows',
   'Charity Events',
-  'Fashion Shows',
   'Science & Tech',
   'Travel & Tourism',
   'Carnivals',

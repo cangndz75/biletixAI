@@ -91,7 +91,6 @@ const AdminCreateScreen = () => {
 
   const generateContent = async field => {
     try {
-      const token = await AsyncStorage.getItem('token');
       if (!event || !taggedVenue) {
         return Alert.alert(
           'Error',
@@ -101,8 +100,7 @@ const AdminCreateScreen = () => {
 
       const response = await axios.post(
         'http://10.0.2.2:8000/generate',
-        {eventName: event, location: taggedVenue},
-        {headers: {Authorization: `Bearer ${token.replace(/"/g, '')}`}},
+        {eventName: event, location: taggedVenue}
       );
 
       if (response.status === 200) {
@@ -128,55 +126,25 @@ const AdminCreateScreen = () => {
   console.log('Type:', selectedType);
   console.log('Participants:', noOfParticipants);
 
-  const refreshToken = async () => {
-    try {
-      const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
-      if (!storedRefreshToken) throw new Error('No refresh token found');
-  
-      const response = await axios.post('http://10.0.2.2:8000/refresh', {
-        token: storedRefreshToken.replace(/"/g, ''),
-      });
-  
-      if (response.status === 200) {
-        const newToken = response.data.token;
-        await AsyncStorage.setItem('token', newToken);
-        return newToken;
-      } else {
-        throw new Error('Failed to refresh token');
-      }
-    } catch (error) {
-      Alert.alert('Session expired', 'Please login again.');
-      navigation.navigate('Login');
-      throw error;
-    }
-  };
   
   const createEvent = async (eventData) => {
     try {
-      const token = await AsyncStorage.getItem('token');
-  
       const response = await axios.post(
         'https://biletixai.onrender.com/createevent',
         eventData,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
       );
-  
+
       if (response.status === 201) {
         Alert.alert('Success', 'Event created successfully!');
       }
     } catch (error) {
       console.error('Event creation error:', error.message);
-      if (error.response && error.response.status === 403) {
-        Alert.alert('Error', 'Your session has expired. Please log in again.');
-        navigation.navigate('Login');
-      } else {
-        Alert.alert('Error', 'Failed to create event. Please try again.');
-      }
+      Alert.alert('Error', 'Failed to create event. Please try again.');
     }
   };
   

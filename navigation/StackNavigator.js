@@ -26,6 +26,10 @@ import AdminCreateCommunityScreen from '../screens/admin/AdminCreateCommunityScr
 import ManageRequest from '../screens/admin/ManageRequest';
 import SearchScreen from '../screens/SearchScreen';
 import BecomeOrganizerScreen from '../screens/BecomeOrganizerScreen';
+import InterestSelectionScreen from '../screens/InterestSelectionScreen';
+import TagVenueScreen from '../screens/TagVenueScreen';
+import AdminCommunityDetailScreen from '../screens/admin/AdminCommunityDetailScreen';
+import AdminManageCommunityScreen from '../screens/admin/AdminManageCommunityScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -178,11 +182,6 @@ const MainStack = () => (
       options={{headerShown: false}}
     />
     <Stack.Screen
-      name="AdminCommunityScreen"
-      component={AdminCommunityScreen}
-      options={{headerShown: false}}
-    />
-    <Stack.Screen
       name="AdminCreateCommunity"
       component={AdminCreateCommunityScreen}
       options={{headerShown: false}}
@@ -210,6 +209,31 @@ const MainStack = () => (
     <Stack.Screen
       name="BecomeOrganizerScreen"
       component={BecomeOrganizerScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="InterestSelectionScreen"
+      component={InterestSelectionScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="TagVenue"
+      component={TagVenueScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCommunityScreen"
+      component={AdminCommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminCommunityDetailScreen"
+      component={AdminCommunityDetailScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminManageCommunityScreen"
+      component={AdminManageCommunityScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

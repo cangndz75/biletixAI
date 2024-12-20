@@ -249,8 +249,8 @@ const HomeScreen = () => {
         style={{marginBottom: 20}}>
         {[
           {title: 'Concert', image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png'},
-          {title: 'Sport Events', image: 'https://picsum.photos/201'},
-          {title: 'Theatre', image: 'https://picsum.photos/202'},
+          {title: 'Sport Events', image: 'https://media.istockphoto.com/id/469569148/tr/foto%C4%9Fraf/soccer-fans-at-stadium.jpg?s=2048x2048&w=is&k=20&c=9lF6InxcOnYcJXsuYoFScnmtyrRrnXu3F21B5FRuEF4='},
+          {title: 'Theatre', image: 'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'},
           {title: 'Book Fair', image: 'https://picsum.photos/203'},
         ].map((category, index) => (
           <Pressable key={index} style={{marginRight: 10}}>
