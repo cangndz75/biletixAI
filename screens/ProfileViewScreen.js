@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
-import {useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {AuthContext} from '../AuthContext';
 
 const ProfileViewScreen = () => {
@@ -21,6 +21,7 @@ const ProfileViewScreen = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('About');
   const [isFollowing, setIsFollowing] = useState(false);
+  const navigation = useNavigation();
 
   const fetchUserData = async () => {
     try {
@@ -113,7 +114,9 @@ const ProfileViewScreen = () => {
               {isFollowing ? 'Following' : '+ Follow'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.messageButton}>
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() => navigation.navigate('ChatRoom', { userId })}>
             <Text style={styles.messageButtonText}>Messages</Text>
           </TouchableOpacity>
         </View>

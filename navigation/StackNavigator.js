@@ -30,6 +30,9 @@ import InterestSelectionScreen from '../screens/InterestSelectionScreen';
 import TagVenueScreen from '../screens/TagVenueScreen';
 import AdminCommunityDetailScreen from '../screens/admin/AdminCommunityDetailScreen';
 import AdminManageCommunityScreen from '../screens/admin/AdminManageCommunityScreen';
+import EventAttendeesScreen from '../screens/EventAttendeesScreen';
+import ProfileViewScreen from '../screens/ProfileViewScreen';
+import ChatRoom from '../screens/ChatRoom';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -234,6 +237,21 @@ const MainStack = () => (
     <Stack.Screen
       name="AdminManageCommunityScreen"
       component={AdminManageCommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="EventAttendees"
+      component={EventAttendeesScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ProfileView"
+      component={ProfileViewScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ChatRoom"
+      component={ChatRoom}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

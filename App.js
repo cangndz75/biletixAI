@@ -28,6 +28,7 @@ import StackNavigator from './navigation/StackNavigator';
 import {AuthProvider} from './AuthContext';
 import {ModalPortal} from 'react-native-modals';
 import { EventProvider } from './EventContext';
+import { SocketProvider } from './SocketContext';
 
 function Section({children, title}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -65,8 +66,10 @@ function App() {
   return (
     <AuthProvider>
       <EventProvider>
-        <StackNavigator />
-        <ModalPortal />
+        <SocketProvider>
+          <StackNavigator />
+          <ModalPortal />
+        </SocketProvider>
       </EventProvider>
     </AuthProvider>
   );

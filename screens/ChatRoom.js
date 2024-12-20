@@ -21,12 +21,12 @@ const ChatRoom = () => {
   const navigation = useNavigation();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const {token, userId, setToken, setUserId} = useContext(AuthContext);
+  const {userId} = useContext(AuthContext);
   const {socket} = useSocketContext();
   const route = useRoute();
 
   useLayoutEffect(() => {
-    return navigation.setOptions({
+    navigation.setOptions({
       headerTitle: '',
       headerLeft: () => (
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
@@ -37,39 +37,28 @@ const ChatRoom = () => {
         </View>
       ),
     });
-  }, []);
+  }, [navigation, route?.params?.name]);
 
-  const listeMessages = () => {
-    const {socket} = useSocketContext();
-
-    useEffect(() => {
-      socket?.on('newMessage', newMessage => {
-        setMessages([...messages, newMessage]);
-      });
-
-      return () => socket?.off('newMessage');
-    }, [socket, messages]);
-  };
-
-  listeMessages();
+  useEffect(() => {
+    if (!socket) return;
+    socket.on('newMessage', newMessage => {
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+    });
+    return () => socket.off('newMessage');
+  }, [socket]);
 
   const sendMessage = async (senderId, receiverId) => {
     try {
-      console.log('Sending message:', {senderId, receiverId, message});
       await axios.post('https://biletixai.onrender.com/sendMessage', {
         senderId,
         receiverId,
         message,
       });
-
       socket.emit('sendMessage', {senderId, receiverId, message});
       setMessage('');
-
-      setTimeout(() => {
-        fetchMessages();
-      }, 100);
+      fetchMessages();
     } catch (error) {
-      console.log('Error sending message:', error);
+      console.error(error);
     }
   };
 
@@ -77,23 +66,26 @@ const ChatRoom = () => {
     try {
       const senderId = userId;
       const receiverId = route?.params?.receiverId;
-
-      const response = await axios.get('https://biletixai.onrender.com/messages', {
-        params: {senderId, receiverId},
-      });
-
+      const response = await axios.get(
+        'https://biletixai.onrender.com/messages',
+        {
+          params: {senderId, receiverId},
+        },
+      );
       setMessages(response.data);
     } catch (error) {
-      console.log('Error', error);
+      console.error(error);
     }
   };
 
   const deleteMessage = async messageId => {
     try {
-      await axios.delete(`https://biletixai.onrender.com/messages/${messageId}`);
+      await axios.delete(
+        `https://biletixai.onrender.com/messages/${messageId}`,
+      );
       setMessages(messages.filter(item => item._id !== messageId));
     } catch (error) {
-      console.log('Error deleting message:', error);
+      console.error(error);
     }
   };
 
@@ -109,57 +101,54 @@ const ChatRoom = () => {
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: 'white'}}>
       <ScrollView>
-        {messages?.map((item, index) => {
-          return (
-            <Pressable
-              key={index} // Add a key to avoid warning
-              style={[
-                item?.senderId?._id === userId
-                  ? {
-                      alignSelf: 'flex-end',
-                      backgroundColor: '#DCF8C6',
-                      padding: 8,
-                      maxWidth: '60%',
-                      borderRadius: 7,
-                      margin: 10,
-                    }
-                  : {
-                      alignSelf: 'flex-start',
-                      backgroundColor: 'white',
-                      padding: 8,
-                      margin: 10,
-                      borderRadius: 7,
-                      maxWidth: '60%',
-                    },
-              ]}>
-              <Text style={{fontSize: 13, textAlign: 'left'}}>
-                {item?.message}
-              </Text>
-              <Text
+        {messages.map((item, index) => (
+          <Pressable
+            key={index}
+            style={[
+              item?.senderId?._id === userId
+                ? {
+                    alignSelf: 'flex-end',
+                    backgroundColor: '#DCF8C6',
+                    padding: 8,
+                    maxWidth: '60%',
+                    borderRadius: 7,
+                    margin: 10,
+                  }
+                : {
+                    alignSelf: 'flex-start',
+                    backgroundColor: 'white',
+                    padding: 8,
+                    margin: 10,
+                    borderRadius: 7,
+                    maxWidth: '60%',
+                  },
+            ]}>
+            <Text style={{fontSize: 13, textAlign: 'left'}}>
+              {item?.message}
+            </Text>
+            <Text
+              style={{
+                textAlign: 'right',
+                fontSize: 9,
+                color: 'gray',
+                marginTop: 4,
+              }}>
+              {formatTime(item?.timeStamp)}
+            </Text>
+            {item?.senderId?._id === userId && (
+              <Pressable
+                onPress={() => deleteMessage(item?._id)}
                 style={{
-                  textAlign: 'right',
-                  fontSize: 9,
-                  color: 'gray',
-                  marginTop: 4,
+                  position: 'absolute',
+                  top: -8,
+                  right: -8,
                 }}>
-                {formatTime(item?.timeStamp)}
-              </Text>
-              {item?.senderId?._id === userId && (
-                <Pressable
-                  onPress={() => deleteMessage(item?._id)} // Delete message function
-                  style={{
-                    position: 'absolute',
-                    top: -8,
-                    right: -8,
-                  }}>
-                  <AntDesign name="delete" size={16} color="red" />
-                </Pressable>
-              )}
-            </Pressable>
-          );
-        })}
+                <AntDesign name="delete" size={16} color="red" />
+              </Pressable>
+            )}
+          </Pressable>
+        ))}
       </ScrollView>
-
       <View
         style={{
           backgroundColor: 'white',
@@ -172,7 +161,6 @@ const ChatRoom = () => {
           marginBottom: 20,
         }}>
         <Entypo name="emoji-happy" size={24} color="gray" />
-
         <TextInput
           placeholder="type your message..."
           value={message}
@@ -187,7 +175,6 @@ const ChatRoom = () => {
             marginLeft: 10,
           }}
         />
-
         <View
           style={{
             flexDirection: 'row',
@@ -196,10 +183,8 @@ const ChatRoom = () => {
             marginHorizontal: 8,
           }}>
           <Entypo name="camera" size={24} color="gray" />
-
           <Feather name="mic" size={24} color="gray" />
         </View>
-
         <Pressable
           onPress={() => sendMessage(userId, route?.params?.receiverId)}
           style={{
