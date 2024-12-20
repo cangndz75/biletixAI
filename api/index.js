@@ -1356,15 +1356,15 @@ app.post('/user/followRequest', async (req, res) => {
   }
 });
 
-app.post('/communities', authenticateToken, async (req, res) => {
-  const {name, description, tags, isPrivate, headerImage, profileImage, links} =
-    req.body;
-  const organizerId = req.user.userId;
+app.post('/communities', async (req, res) => {
+  const { name, description, tags, isPrivate, headerImage, profileImage, links, organizer } = req.body;
 
   if (!name || !description) {
-    return res
-      .status(400)
-      .json({message: 'Name and description are required.'});
+    return res.status(400).json({ message: 'Name and description are required.' });
+  }
+
+  if (!organizer) {
+    return res.status(400).json({ message: 'Organizer ID is required.' });
   }
 
   try {
@@ -1376,23 +1376,24 @@ app.post('/communities', authenticateToken, async (req, res) => {
       headerImage,
       profileImage,
       links,
-      organizer: organizerId,
+      organizer,
     });
 
     const savedCommunity = await newCommunity.save();
 
     await User.findByIdAndUpdate(
-      organizerId,
-      {$push: {communities: savedCommunity._id}},
-      {new: true},
+      organizer,
+      { $push: { communities: savedCommunity._id } },
+      { new: true }
     );
 
     res.status(201).json(savedCommunity);
   } catch (error) {
-    console.error('Topluluk oluşturma hatası:', error);
-    res.status(500).json({message: 'Topluluk oluşturulamadı.'});
+    console.error('Error creating community:', error);
+    res.status(500).json({ message: 'Failed to create community.' });
   }
 });
+
 
 app.get('/communities', async (req, res) => {
   try {
@@ -1434,102 +1435,85 @@ app.post('/communities/:communityId/join', async (req, res) => {
   }
 });
 
-app.get(
-  '/communities/:communityId/requests',
-  authenticateToken,
-  async (req, res) => {
-    const {communityId} = req.params;
+app.get('/communities/:communityId/requests', async (req, res) => {
+  const { communityId } = req.params;
 
-    try {
-      const community = await Community.findById(communityId).populate(
-        'joinRequests.userId',
-        'firstName lastName image',
-      );
+  try {
+    const community = await Community.findById(communityId).populate(
+      'joinRequests.userId',
+      'firstName lastName image'
+    );
 
-      if (!community) {
-        return res.status(404).json({message: 'Community not found'});
-      }
-
-      if (req.user.userId !== community.organizer.toString()) {
-        return res.status(403).json({message: 'Unauthorized access'});
-      }
-
-      const pendingRequests = community.joinRequests.filter(
-        request => request.status === 'pending',
-      );
-      res.status(200).json(pendingRequests);
-    } catch (error) {
-      console.error('Error fetching join requests:', error);
-      res.status(500).json({message: 'Internal server error'});
+    if (!community) {
+      return res.status(404).json({ message: 'Community not found' });
     }
-  },
-);
-app.post(
-  '/communities/:communityId/accept-request',
-  authenticateToken,
-  async (req, res) => {
-    const {communityId} = req.params;
-    const {requestId} = req.body;
 
-    try {
-      const community = await Community.findById(communityId);
-      if (!community) {
-        return res.status(404).json({message: 'Community not found'});
-      }
+    const pendingRequests = community.joinRequests.filter(
+      request => request.status === 'pending'
+    );
 
-      if (req.user.userId !== community.organizer.toString()) {
-        return res.status(403).json({message: 'Unauthorized access'});
-      }
+    res.status(200).json(pendingRequests);
+  } catch (error) {
+    console.error('Error fetching join requests:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
-      const request = community.joinRequests.id(requestId);
-      if (!request) {
-        return res.status(404).json({message: 'Request not found'});
-      }
+app.post('/communities/:communityId/accept-request', async (req, res) => {
+  const { communityId } = req.params;
+  const { requestId } = req.body;
 
-      request.status = 'approved';
-      community.members.push(request.userId);
-      await community.save();
+  try {
+    const community = await Community.findById(communityId);
 
-      res.status(200).json({message: 'Request approved successfully'});
-    } catch (error) {
-      console.error('Error approving request:', error);
-      res.status(500).json({message: 'Internal server error'});
+    if (!community) {
+      return res.status(404).json({ message: 'Community not found' });
     }
-  },
-);
 
-app.post(
-  '/communities/:communityId/reject-request',
-  authenticateToken,
-  async (req, res) => {
-    const {communityId} = req.params;
-    const {requestId} = req.body;
+    const request = community.joinRequests.id(requestId);
 
-    try {
-      const community = await Community.findById(communityId);
-      if (!community) {
-        return res.status(404).json({message: 'Community not found'});
-      }
-
-      if (req.user.userId !== community.organizer.toString()) {
-        return res.status(403).json({message: 'Unauthorized access'});
-      }
-
-      const request = community.joinRequests.id(requestId);
-      if (!request) {
-        return res.status(404).json({message: 'Request not found'});
-      }
-
-      request.status = 'rejected';
-      await community.save();
-
-      res.status(200).json({message: 'Request rejected successfully'});
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      res.status(500).json({message: 'Internal server error'});
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
     }
-  },
-);
+
+    request.status = 'approved';
+    community.members.push(request.userId);
+    await community.save();
+
+    res.status(200).json({ message: 'Request approved successfully' });
+  } catch (error) {
+    console.error('Error approving request:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post('/communities/:communityId/reject-request', async (req, res) => {
+  const { communityId } = req.params;
+  const { requestId } = req.body;
+
+  try {
+    const community = await Community.findById(communityId);
+
+    if (!community) {
+      return res.status(404).json({ message: 'Community not found' });
+    }
+
+    const request = community.joinRequests.id(requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    request.status = 'rejected';
+    await community.save();
+
+    res.status(200).json({ message: 'Request rejected successfully' });
+  } catch (error) {
+    console.error('Error rejecting request:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 app.get('/communities/:communityId', async (req, res) => {
   const {communityId} = req.params;
@@ -1605,31 +1589,31 @@ app.put(
 );
 
 app.post('/communities/:communityId/send-request', async (req, res) => {
-  const {communityId} = req.params;
-  const {answers, userId} = req.body;
+  const { communityId } = req.params;
+  const { answers, userId } = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({message: 'Community not found'});
+      return res.status(404).json({ message: 'Community not found' });
     }
 
     const existingRequest = community.joinRequests.find(
-      request => request.userId.toString() === userId,
+      request => request.userId.toString() === userId
     );
 
     if (existingRequest) {
-      return res.status(400).json({message: 'Join request already exists'});
+      return res.status(400).json({ message: 'Join request already exists' });
     }
 
-    community.joinRequests.push({userId, answers, status: 'pending'});
+    community.joinRequests.push({ userId, answers, status: 'pending' });
     await community.save();
 
-    return res.status(200).json({message: 'Join request sent'});
+    res.status(200).json({ message: 'Join request sent successfully' });
   } catch (error) {
     console.error('Error sending join request:', error);
-    res.status(500).json({message: 'Internal server error'});
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -1787,5 +1771,27 @@ app.post('/beorganizator', async (req, res) => {
   } catch (error) {
     console.error('Error updating user role:', error);
     return res.status(500).json({message: 'An unexpected error occurred. Please try again later.'});
+  }
+});
+
+
+app.post('/communities/:communityId/add-questions', async (req, res) => {
+  const { communityId } = req.params;
+  const { questions } = req.body;
+
+  try {
+    const community = await Community.findById(communityId);
+
+    if (!community) {
+      return res.status(404).json({ message: 'Community not found' });
+    }
+
+    community.joinQuestions = questions;
+    await community.save();
+
+    res.status(200).json({ message: 'Questions added successfully', questions });
+  } catch (error) {
+    console.error('Error adding questions:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });

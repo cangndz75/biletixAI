@@ -55,7 +55,6 @@ const AdminCommunityDetailScreen = () => {
       const token = await AsyncStorage.getItem('token');
       let updateUrl = `https://biletixai.onrender.com/communities/${communityId}`;
 
-      // Use different endpoints for name and description
       if (editField === 'name') {
         updateUrl += '/name';
       } else if (editField === 'description') {

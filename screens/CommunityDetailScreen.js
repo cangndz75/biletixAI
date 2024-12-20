@@ -8,7 +8,6 @@ import {
   Alert,
   StyleSheet,
   TextInput,
-  Linking,
 } from 'react-native';
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -19,15 +18,8 @@ const CommunityDetailScreen = () => {
   const [community, setCommunityDetail] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
-  const [answers, setAnswers] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    gender: '',
-    age: '',
-    reason: '',
-  });
-
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
   const navigation = useNavigation();
   const route = useRoute();
   const {communityId} = route.params;
@@ -52,6 +44,16 @@ const CommunityDetailScreen = () => {
           member => member._id === userId,
         );
         setIsJoined(isMember);
+
+        if (communityData.joinQuestions) {
+          setQuestions(communityData.joinQuestions);
+          setAnswers(
+            communityData.joinQuestions.reduce((acc, question) => {
+              acc[question] = '';
+              return acc;
+            }, {}),
+          );
+        }
       } catch (error) {
         console.error('Error fetching community details:', error);
         Alert.alert('Hata', 'Topluluk detayları bulunamadı.');
@@ -64,22 +66,6 @@ const CommunityDetailScreen = () => {
       Alert.alert('Hata', "Topluluk ID'si bulunamadı.");
     }
   }, [communityId, userId, navigation]);
-
-  const joinCommunity = async () => {
-    try {
-      const response = await axios.post(
-        `https://biletixai.onrender.com/communities/${communityId}/join`,
-        {userId, answers},
-      );
-      if (response.status === 200) {
-        Alert.alert('Başarılı', 'Topluluğa başarıyla katıldınız!');
-        setIsJoined(true);
-      }
-    } catch (error) {
-      console.error('Topluluğa katılırken hata:', error.message);
-      Alert.alert('Hata', 'Topluluğa katılırken bir sorun oluştu.');
-    }
-  };
 
   const submitAnswers = async () => {
     try {
@@ -134,7 +120,7 @@ const CommunityDetailScreen = () => {
               ? null
               : community.isPrivate
               ? () => setModalVisible(true)
-              : joinCommunity
+              : () => Alert.alert('Topluluğa katılım başarıyla sağlandı.')
           }
           disabled={isJoined}>
           <Text style={styles.joinButtonText}>
@@ -148,21 +134,29 @@ const CommunityDetailScreen = () => {
 
         <Text style={styles.description}>{community.description}</Text>
 
+        {/* Modal for answering questions */}
         <BottomModal
           visible={modalVisible}
           onTouchOutside={() => setModalVisible(false)}
           modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}>
           <ModalContent style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Topluluğa Katıl</Text>
-            {Object.keys(answers).map((key, index) => (
-              <TextInput
-                key={index}
-                placeholder={key}
-                value={answers[key]}
-                onChangeText={text => setAnswers({...answers, [key]: text})}
-                style={styles.input}
-              />
-            ))}
+            <ScrollView style={styles.modalScroll}>
+              {questions.map((question, index) => (
+                <View key={index} style={styles.questionContainer}>
+                  <Text style={styles.questionText}>{question}</Text>
+                  <TextInput
+                    placeholder="Cevabınızı yazın..."
+                    style={styles.input}
+                    multiline
+                    value={answers[question]}
+                    onChangeText={text =>
+                      setAnswers(prev => ({...prev, [question]: text}))
+                    }
+                  />
+                </View>
+              ))}
+            </ScrollView>
             <TouchableOpacity
               style={styles.submitButton}
               onPress={submitAnswers}>
@@ -193,16 +187,33 @@ const styles = StyleSheet.create({
   },
   joinButtonText: {color: '#fff', fontWeight: 'bold'},
   description: {fontSize: 16, color: 'gray', marginVertical: 10},
-  modalContainer: {padding: 20, borderRadius: 10},
+  modalContainer: {padding: 20, borderRadius: 10, maxHeight: '80%'},
   modalTitle: {fontSize: 18, fontWeight: 'bold', marginBottom: 15},
-  input: {borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10},
+  modalScroll: {maxHeight: '60%'},
+  questionContainer: {marginBottom: 15},
+  questionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 14,
+    backgroundColor: '#f9f9f9',
+    color: '#333',
+  },
   submitButton: {
     backgroundColor: '#28a745',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
+    marginTop: 20,
   },
-  submitButtonText: {color: '#fff', fontWeight: 'bold'},
+  submitButtonText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
 });
 
 export default CommunityDetailScreen;

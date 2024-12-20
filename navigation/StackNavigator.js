@@ -33,6 +33,7 @@ import AdminManageCommunityScreen from '../screens/admin/AdminManageCommunityScr
 import EventAttendeesScreen from '../screens/EventAttendeesScreen';
 import ProfileViewScreen from '../screens/ProfileViewScreen';
 import ChatRoom from '../screens/ChatRoom';
+import AddCustomQuestion from '../screens/admin/AddCustomQuestion';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -252,6 +253,11 @@ const MainStack = () => (
     <Stack.Screen
       name="ChatRoom"
       component={ChatRoom}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AddCustomQuestion"
+      component={AddCustomQuestion}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

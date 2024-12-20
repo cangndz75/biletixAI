@@ -33,6 +33,13 @@ const communitySchema = new Schema(
         createdAt: {type: Date, default: Date.now},
       },
     ],
+    questions: [
+      {
+        text: {type: String, required: true},
+        type: {type: String, enum: ['text', 'multiple-choice'], required: true},
+        options: {type: [String], default: []},
+      },
+    ],
   },
   {timestamps: true},
 );

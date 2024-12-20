@@ -29,6 +29,7 @@ import {AuthProvider} from './AuthContext';
 import {ModalPortal} from 'react-native-modals';
 import { EventProvider } from './EventContext';
 import { SocketProvider } from './SocketContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function Section({children, title}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -64,6 +65,7 @@ function App() {
   };
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <EventProvider>
         <SocketProvider>
@@ -72,6 +74,7 @@ function App() {
         </SocketProvider>
       </EventProvider>
     </AuthProvider>
+  </GestureHandlerRootView>
   );
 }
 

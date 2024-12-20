@@ -249,8 +249,16 @@ const HomeScreen = () => {
         style={{marginBottom: 20}}>
         {[
           {title: 'Concert', image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png'},
-          {title: 'Sport Events', image: 'https://media.istockphoto.com/id/469569148/tr/foto%C4%9Fraf/soccer-fans-at-stadium.jpg?s=2048x2048&w=is&k=20&c=9lF6InxcOnYcJXsuYoFScnmtyrRrnXu3F21B5FRuEF4='},
-          {title: 'Theatre', image: 'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'},
+          {
+            title: 'Sport Events',
+            image:
+              'https://media.istockphoto.com/id/469569148/tr/foto%C4%9Fraf/soccer-fans-at-stadium.jpg?s=2048x2048&w=is&k=20&c=9lF6InxcOnYcJXsuYoFScnmtyrRrnXu3F21B5FRuEF4=',
+          },
+          {
+            title: 'Theatre',
+            image:
+              'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          },
           {title: 'Book Fair', image: 'https://picsum.photos/203'},
         ].map((category, index) => (
           <Pressable key={index} style={{marginRight: 10}}>
@@ -458,65 +466,54 @@ const HomeScreen = () => {
 
       <View
         style={{
-          flexDirection: 'row',
           backgroundColor: '#fefefe',
           borderRadius: 20,
-          padding: 20,
+          padding: 15,
           marginVertical: 20,
           shadowColor: '#000',
           shadowOffset: {width: 0, height: 4},
           shadowOpacity: 0.1,
           shadowRadius: 6,
           elevation: 6,
-          alignItems: 'center',
         }}>
-        <View style={{flex: 1, paddingRight: 15}}>
+        <Image
+          source={{uri: 'https://via.placeholder.com/300'}}
+          style={{
+            width: '100%',
+            height: 150,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            resizeMode: 'cover',
+          }}
+        />
+        <View style={{padding: 15}}>
           <Text
             style={{
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: 'bold',
               color: '#333',
               marginBottom: 5,
             }}>
-            Concert Night
+            Up to 50% OFF
           </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              color: '#ff6b6b',
-              fontWeight: '700',
-              marginBottom: 10,
-            }}>
-            Limited Seats Available! Book Now
-          </Text>
-          <Text style={{fontSize: 14, color: '#666', marginBottom: 15}}>
-            Enjoy a magical evening of live music and entertainment with your
-            loved ones.
+          <Text style={{fontSize: 14, color: '#666', marginBottom: 10}}>
+            Don't miss out on our summer sale. Shop now and save big!
           </Text>
           <TouchableOpacity
             style={{
-              backgroundColor: '#4A90E2',
-              paddingVertical: 12,
-              paddingHorizontal: 25,
+              backgroundColor: '#ff6b6b',
+              paddingVertical: 10,
+              paddingHorizontal: 20,
               borderRadius: 30,
               alignSelf: 'flex-start',
             }}>
             <Text style={{color: '#fff', fontWeight: 'bold', fontSize: 14}}>
-              Explore Events
+              Shop Now
             </Text>
           </TouchableOpacity>
         </View>
-
-        <Image
-          source={{uri: 'https://via.placeholder.com/120'}}
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 10,
-            resizeMode: 'cover',
-          }}
-        />
       </View>
+
       <View
         style={{
           flexDirection: 'row',
