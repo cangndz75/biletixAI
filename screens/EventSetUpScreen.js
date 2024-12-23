@@ -40,6 +40,7 @@ const EventSetUpScreen = () => {
   const {item} = route.params;
   const eventId = item?._id;
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -195,6 +196,37 @@ const EventSetUpScreen = () => {
     }
   };
 
+  const joinEvent = async () => {
+    try {
+      await axios.post(
+        `https://biletixai.onrender.com/events/${eventId}/join`,
+        {
+          userId,
+          comment,
+        },
+      );
+      setIsJoined(true);
+      Alert.alert('Success', 'You have joined the event.');
+    } catch (error) {
+      console.error('Error joining event:', error);
+      Alert.alert('Error', 'Failed to join the event. Please try again.');
+    }
+  };
+
+  const leaveEvent = async () => {
+    try {
+      await axios.post(
+        `https://biletixai.onrender.com/events/${eventId}/leave`,
+        {userId},
+      );
+      setIsJoined(false);
+      Alert.alert('Success', 'You have left the event.');
+    } catch (error) {
+      console.error('Error leaving event:', error);
+      Alert.alert('Error', 'Failed to leave the event. Please try again.');
+    }
+  };
+
   const renderGoingSection = () => (
     <TouchableOpacity
       onPress={() => navigation.navigate('EventAttendees', {eventId})}>
@@ -242,6 +274,29 @@ const EventSetUpScreen = () => {
   );
 
   const renderActionButton = () => {
+    if (isJoined) {
+      return (
+        <TouchableOpacity
+          onPress={leaveEvent}
+          style={{
+            backgroundColor: 'red',
+            padding: 15,
+            margin: 10,
+            borderRadius: 4,
+          }}>
+          <Text
+            style={{
+              color: 'white',
+              textAlign: 'center',
+              fontSize: 15,
+              fontWeight: '500',
+            }}>
+            Leave Event
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
     switch (requestStatus) {
       case 'none':
         return (
