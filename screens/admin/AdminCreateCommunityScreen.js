@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,11 @@ import {useNavigation} from '@react-navigation/native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
+import {AuthContext} from '../../AuthContext';
 
 const AdminCreateCommunityScreen = () => {
   const navigation = useNavigation();
+  const {userId} = useContext(AuthContext); // Moved here to the main body
 
   const [communityName, setCommunityName] = useState('');
   const [description, setDescription] = useState('');
@@ -87,6 +89,7 @@ const AdminCreateCommunityScreen = () => {
         headerImage,
         profileImage,
         link,
+        organizer: userId, // Using userId directly from the context
       };
 
       const response = await axios.post(
@@ -106,8 +109,15 @@ const AdminCreateCommunityScreen = () => {
         Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
       }
     } catch (error) {
-      console.error('Topluluk oluşturma hatası:', error.message);
-      Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
+      console.error(
+        'Topluluk oluşturma hatası:',
+        error.response?.data || error.message,
+      );
+      Alert.alert(
+        'Hata',
+        error.response?.data?.message ||
+          'Topluluk oluşturulamadı. Tekrar deneyin.',
+      );
     }
   };
 
@@ -199,75 +209,6 @@ const AdminCreateCommunityScreen = () => {
           style={styles.createButton}>
           <Text style={styles.buttonText}>Create Community</Text>
         </TouchableOpacity>
-
-        {isPrivate && (
-          <View>
-            <Text
-              style={{fontSize: 18, fontWeight: 'bold', marginVertical: 10}}>
-              Your Questions
-            </Text>
-            {[...selectedQuestions, ...customQuestions].map(
-              (question, index) => (
-                <Swipeable
-                  key={index}
-                  renderRightActions={() =>
-                    renderRightActions(
-                      index,
-                      customQuestions.includes(question),
-                    )
-                  }>
-                  <View style={styles.questionOption}>
-                    <Text>{question.text || question}</Text>
-                  </View>
-                </Swipeable>
-              ),
-            )}
-          </View>
-        )}
-
-        <Modal visible={modalVisible} transparent={true} animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Add Questions</Text>
-              <ScrollView style={{maxHeight: 300}}>
-                {basicQuestions.map(question => (
-                  <TouchableOpacity
-                    key={question.id}
-                    style={[
-                      styles.questionOption,
-                      selectedQuestions.includes(question.text) &&
-                        styles.questionSelected,
-                    ]}
-                    onPress={() => toggleQuestionSelection(question.text)}>
-                    <Text>{question.text}</Text>
-                    {selectedQuestions.includes(question.text) && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color="#28a745"
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('AddCustomQuestion', {
-                    setCustomQuestions,
-                    customQuestions,
-                  })
-                }
-                style={styles.addCustomButton}>
-                <Text style={styles.buttonText}>Add Different Questions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={styles.closeButton}>
-                <Text style={styles.buttonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -312,54 +253,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  questionOption: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  questionSelected: {
-    backgroundColor: '#cce5ff',
-    borderColor: '#007bff',
-  },
-  addCustomButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 10,
-    alignItems: 'center',
-    width: '100%',
-  },
-  closeButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 20,
-    alignItems: 'center',
-    width: '100%',
   },
   deleteButton: {
     backgroundColor: '#dc3545',

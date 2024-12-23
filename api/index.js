@@ -1357,35 +1357,33 @@ app.post('/user/followRequest', async (req, res) => {
 });
 
 app.post('/communities', async (req, res) => {
-  const { name, description, tags, isPrivate, headerImage, profileImage, links, organizer } = req.body;
+  const { name, description, tags, isPrivate, headerImage, profileImage, links } = req.body;
 
   if (!name || !description) {
     return res.status(400).json({ message: 'Name and description are required.' });
-  }
-
-  if (!organizer) {
-    return res.status(400).json({ message: 'Organizer ID is required.' });
   }
 
   try {
     const newCommunity = new Community({
       name,
       description,
-      tags,
-      isPrivate,
-      headerImage,
-      profileImage,
-      links,
-      organizer,
+      tags: tags || [],
+      isPrivate: isPrivate || false,
+      headerImage: headerImage || null,
+      profileImage: profileImage || null,
+      links: links || [],
+      organizer: req.user?.userId || null,
     });
 
     const savedCommunity = await newCommunity.save();
 
-    await User.findByIdAndUpdate(
-      organizer,
-      { $push: { communities: savedCommunity._id } },
-      { new: true }
-    );
+    if (req.user?.userId) {
+      await User.findByIdAndUpdate(
+        req.user.userId,
+        { $push: { communities: savedCommunity._id } },
+        { new: true }
+      );
+    }
 
     res.status(201).json(savedCommunity);
   } catch (error) {
