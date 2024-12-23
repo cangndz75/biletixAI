@@ -34,6 +34,7 @@ import EventAttendeesScreen from '../screens/EventAttendeesScreen';
 import ProfileViewScreen from '../screens/ProfileViewScreen';
 import ChatRoom from '../screens/ChatRoom';
 import AddCustomQuestion from '../screens/admin/AddCustomQuestion';
+import NotificationScreen from '../screens/NotificationScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -258,6 +259,11 @@ const MainStack = () => (
     <Stack.Screen
       name="AddCustomQuestion"
       component={AddCustomQuestion}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="NotificationScreen"
+      component={NotificationScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

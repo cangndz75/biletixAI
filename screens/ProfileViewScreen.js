@@ -29,9 +29,9 @@ const ProfileViewScreen = () => {
         `https://biletixai.onrender.com/user/${userId}`,
       );
       setUserData(response.data);
+      setIsFollowing(response.data.followers.includes(loggedInUserId));
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching user data:', error);
       setLoading(false);
     }
   };
@@ -46,27 +46,67 @@ const ProfileViewScreen = () => {
       return;
     }
 
+    if (userData.isPrivate) {
+      try {
+        const response = await axios.post(
+          `https://biletixai.onrender.com/user/followRequest`,
+          {
+            fromUserId: loggedInUserId,
+            toUserId: userId,
+          },
+        );
+
+        if (response.status === 200) {
+          Alert.alert('Request Sent', 'Follow request sent successfully!');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to send follow request.');
+      }
+    } else {
+      try {
+        const response = await axios.post(
+          `https://biletixai.onrender.com/user/follow`,
+          {
+            fromUserId: loggedInUserId,
+            toUserId: userId,
+          },
+        );
+
+        if (response.status === 200) {
+          setIsFollowing(true);
+          setUserData(prev => ({
+            ...prev,
+            followers: [...prev.followers, loggedInUserId],
+          }));
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to follow user.');
+      }
+    }
+  };
+
+  const handleUnfollow = async () => {
     try {
       const response = await axios.post(
-        `https://biletixai.onrender.com/user/followRequest`,
+        `https://biletixai.onrender.com/user/unfollow`,
         {
           fromUserId: loggedInUserId,
           toUserId: userId,
-          fromFirstName: userData.firstName,
-          fromLastName: userData.lastName,
-          fromImage: userData.image,
         },
       );
 
       if (response.status === 200) {
-        setIsFollowing(true);
-        Alert.alert('Request Sent', 'Follow request sent successfully!');
+        setIsFollowing(false);
+        setUserData(prev => ({
+          ...prev,
+          followers: prev.followers.filter(id => id !== loggedInUserId),
+        }));
       }
     } catch (error) {
-      console.error('Error sending follow request:', error);
-      Alert.alert('Error', 'Failed to send follow request.');
+      Alert.alert('Error', 'Failed to unfollow user.');
     }
   };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -97,10 +137,10 @@ const ProfileViewScreen = () => {
 
       <View style={styles.stats}>
         <Text style={styles.statText}>
-          {userData.following ? userData.following.length : 0} Following
+          {userData.following.length} Following
         </Text>
         <Text style={styles.statText}>
-          {userData.followers ? userData.followers.length : 0} Followers
+          {userData.followers.length} Followers
         </Text>
       </View>
 
@@ -108,15 +148,14 @@ const ProfileViewScreen = () => {
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.followButton}
-            onPress={handleFollowRequest}
-            disabled={isFollowing}>
+            onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
             <Text style={styles.followButtonText}>
-              {isFollowing ? 'Following' : '+ Follow'}
+              {isFollowing ? 'Unfollow' : '+ Follow'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.messageButton}
-            onPress={() => navigation.navigate('ChatRoom', { userId })}>
+            onPress={() => navigation.navigate('ChatRoom', {userId})}>
             <Text style={styles.messageButtonText}>Messages</Text>
           </TouchableOpacity>
         </View>
@@ -141,7 +180,7 @@ const ProfileViewScreen = () => {
         </View>
       ) : (
         <View style={styles.eventSection}>
-          {userData.events && userData.events.length > 0 ? (
+          {userData.events.length > 0 ? (
             userData.events.map(event => (
               <View key={event._id} style={styles.eventItem}>
                 <Text style={styles.eventTitle}>{event.title}</Text>

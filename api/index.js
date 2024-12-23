@@ -1308,14 +1308,14 @@ app.put('/user/:userId/about', async (req, res) => {
 });
 
 app.post('/user/followRequest', async (req, res) => {
-  const {fromUserId, toUserId} = req.body;
+  const { fromUserId, toUserId } = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const followingUser = await User.findById(fromUserId);
 
     if (!targetUser || !followingUser) {
-      return res.status(404).json({message: 'User not found'});
+      return res.status(404).json({ message: 'User not found' });
     }
 
     if (targetUser.isPrivate) {
@@ -1334,7 +1334,7 @@ app.post('/user/followRequest', async (req, res) => {
       targetUser.notifications.push(notification);
 
       await targetUser.save();
-      res.status(200).json({message: 'Follow request sent successfully'});
+      return res.status(200).json({ message: 'Follow request sent successfully' });
     } else {
       if (!targetUser.followers.includes(fromUserId)) {
         targetUser.followers.push(fromUserId);
@@ -1345,14 +1345,61 @@ app.post('/user/followRequest', async (req, res) => {
 
       await targetUser.save();
       await followingUser.save();
-      res.status(200).json({message: 'User followed successfully'});
+      return res.status(200).json({ message: 'User followed successfully' });
     }
   } catch (error) {
     console.error('Error handling follow request:', error);
-    res.status(500).json({
-      message: 'Failed to handle follow request',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Failed to handle follow request', error: error.message });
+  }
+});
+
+app.post('/user/follow', async (req, res) => {
+  const { fromUserId, toUserId } = req.body;
+
+  try {
+    const targetUser = await User.findById(toUserId);
+    const followingUser = await User.findById(fromUserId);
+
+    if (!targetUser || !followingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!targetUser.followers.includes(fromUserId)) {
+      targetUser.followers.push(fromUserId);
+    }
+    if (!followingUser.following.includes(toUserId)) {
+      followingUser.following.push(toUserId);
+    }
+
+    await targetUser.save();
+    await followingUser.save();
+    res.status(200).json({ message: 'User followed successfully' });
+  } catch (error) {
+    console.error('Error following user:', error);
+    res.status(500).json({ message: 'Failed to follow user', error: error.message });
+  }
+});
+
+app.post('/user/unfollow', async (req, res) => {
+  const { fromUserId, toUserId } = req.body;
+
+  try {
+    const targetUser = await User.findById(toUserId);
+    const followingUser = await User.findById(fromUserId);
+
+    if (!targetUser || !followingUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    targetUser.followers = targetUser.followers.filter(id => id.toString() !== fromUserId);
+    followingUser.following = followingUser.following.filter(id => id.toString() !== toUserId);
+
+    await targetUser.save();
+    await followingUser.save();
+    res.status(200).json({ message: 'User unfollowed successfully' });
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    res.status(500).json({ message: 'Failed to unfollow user', error: error.message });
   }
 });
 
@@ -1791,5 +1838,56 @@ app.post('/communities/:communityId/add-questions', async (req, res) => {
   } catch (error) {
     console.error('Error adding questions:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.post('/user/acceptFriendRequest', async (req, res) => {
+  const { fromUserId, toUserId } = req.body;
+
+  try {
+    const targetUser = await User.findById(toUserId);
+    const fromUser = await User.findById(fromUserId);
+
+    if (!targetUser || !fromUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    targetUser.followers.push(fromUserId);
+    fromUser.following.push(toUserId);
+
+    targetUser.friendRequests = targetUser.friendRequests.filter(
+      (req) => req.from.toString() !== fromUserId
+    );
+
+    await targetUser.save();
+    await fromUser.save();
+
+    res.status(200).json({ message: 'Friend request accepted' });
+  } catch (error) {
+    console.error('Error accepting friend request:', error);
+    res.status(500).json({ message: 'Error accepting friend request' });
+  }
+});
+
+app.post('/user/rejectFriendRequest', async (req, res) => {
+  const { fromUserId, toUserId } = req.body;
+
+  try {
+    const targetUser = await User.findById(toUserId);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    targetUser.friendRequests = targetUser.friendRequests.filter(
+      (req) => req.from.toString() !== fromUserId
+    );
+
+    await targetUser.save();
+
+    res.status(200).json({ message: 'Friend request rejected' });
+  } catch (error) {
+    console.error('Error rejecting friend request:', error);
+    res.status(500).json({ message: 'Error rejecting friend request' });
   }
 });
