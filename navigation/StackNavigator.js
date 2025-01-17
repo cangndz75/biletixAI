@@ -36,6 +36,11 @@ import ChatRoom from '../screens/ChatRoom';
 import AddCustomQuestion from '../screens/admin/AddCustomQuestion';
 import NotificationScreen from '../screens/NotificationScreen';
 import StaffDashboard from '../screens/StaffDashboard';
+import SuperAdminDashboard from '../screens/SuperAdminDashboard';
+import ManageOrganizersScreen from '../screens/super-admin/ManageOrganizersScreen';
+import AddStaffScreen from '../screens/super-admin/AddStaffScreen';
+import ManageStaffScreen from '../screens/super-admin/ManageStaffScreen';
+import StaffDetailsScreen from '../screens/super-admin/StaffDetailsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -51,6 +56,8 @@ const BottomTabs = () => {
             ? AdminDashboard
             : role === 'staff'
             ? StaffDashboard
+            : role === 'super_admin'
+            ? SuperAdminDashboard
             : HomeScreen
         }
         options={{
@@ -271,6 +278,26 @@ const MainStack = () => (
     <Stack.Screen
       name="NotificationScreen"
       component={NotificationScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ManageOrganizersScreen"
+      component={ManageOrganizersScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AddStaffScreen"
+      component={AddStaffScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ManageStaffScreen"
+      component={ManageStaffScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="StaffDetailsScreen"
+      component={StaffDetailsScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
