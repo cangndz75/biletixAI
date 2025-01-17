@@ -35,6 +35,7 @@ import ProfileViewScreen from '../screens/ProfileViewScreen';
 import ChatRoom from '../screens/ChatRoom';
 import AddCustomQuestion from '../screens/admin/AddCustomQuestion';
 import NotificationScreen from '../screens/NotificationScreen';
+import StaffDashboard from '../screens/StaffDashboard';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -45,7 +46,13 @@ const BottomTabs = () => {
     <Tab.Navigator>
       <Tab.Screen
         name="Home"
-        component={role === 'organizer' ? AdminDashboard : HomeScreen}
+        component={
+          role === 'organizer'
+            ? AdminDashboard
+            : role === 'staff'
+            ? StaffDashboard
+            : HomeScreen
+        }
         options={{
           headerShown: false,
           tabBarActiveTintColor: 'green',
