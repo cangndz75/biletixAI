@@ -36,9 +36,15 @@ const userSchema = mongoose.Schema(
     points: {type: Number, default: 0},
     role: {
       type: String,
-      enum: ['user', 'organizer'],
+      enum: ['user', 'organizer', 'staff', 'super_admin'],
       default: 'user',
     },
+    subscriptionType: {
+      type: String,
+      enum: ['free', 'UserPlus', 'OrganizerPlus'],
+      default: 'free',
+    },
+    vipBadge: {type: Boolean, default: false},
     favorites: [{type: mongoose.Schema.Types.ObjectId, ref: 'Event'}],
     interests: [{type: String}],
     aboutMe: {type: String, default: ''},
@@ -56,7 +62,7 @@ const userSchema = mongoose.Schema(
         requestedAt: {type: Date, default: Date.now},
       },
     ],
-    community: { type: mongoose.Schema.Types.ObjectId, ref: 'Community' },
+    community: {type: mongoose.Schema.Types.ObjectId, ref: 'Community'},
     notifications: [
       {
         type: {
@@ -84,7 +90,6 @@ const userSchema = mongoose.Schema(
         seen: {type: Boolean, default: false},
       },
     ],
-    friends: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
   },
   {
     timestamps: true,
