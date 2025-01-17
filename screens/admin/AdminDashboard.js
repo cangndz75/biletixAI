@@ -115,6 +115,15 @@ const AdminDashboard = () => {
             </View>
           )}
         />
+
+        <TouchableOpacity
+          style={styles.premiumButton}
+          onPress={() => navigation.navigate('OrganizerSubscribe')}>
+          <Ionicons name="star" size={24} color="white" />
+          <Text style={styles.premiumButtonText}>
+            Become a Premium Organizer
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -208,5 +217,20 @@ const getStyles = darkMode =>
       color: darkMode ? '#FFF' : '#333',
       marginTop: 6,
       fontSize: 12,
+    },
+    premiumButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: darkMode ? '#FFD700' : '#FFA500',
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 20,
+    },
+    premiumButtonText: {
+      color: '#FFF',
+      marginLeft: 8,
+      fontSize: 16,
+      fontWeight: 'bold',
     },
   });

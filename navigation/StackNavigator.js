@@ -41,6 +41,8 @@ import ManageOrganizersScreen from '../screens/super-admin/ManageOrganizersScree
 import AddStaffScreen from '../screens/super-admin/AddStaffScreen';
 import ManageStaffScreen from '../screens/super-admin/ManageStaffScreen';
 import StaffDetailsScreen from '../screens/super-admin/StaffDetailsScreen';
+import OrganizerSubscribe from '../screens/OrganizerSubscribe';
+import UserSubscribe from '../screens/UserSubscribe';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -298,6 +300,16 @@ const MainStack = () => (
     <Stack.Screen
       name="StaffDetailsScreen"
       component={StaffDetailsScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="OrganizerSubscribe"
+      component={OrganizerSubscribe}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="UserSubscribe"
+      component={UserSubscribe}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
