@@ -1,4 +1,4 @@
-export const QUESTIONS = [
+const QUESTIONS = [
   {id: '1', text: 'Ad Soyad', type: 'text'},
   {id: '2', text: 'E-mail', type: 'text'},
   {id: '3', text: 'Telefon Numarası', type: 'text'},
@@ -15,3 +15,5 @@ export const QUESTIONS = [
     options: ['Lise', 'Önlisans', 'Lisans', 'Yüksek Lisans', 'Doktora'],
   },
 ];
+
+module.exports = { QUESTIONS };
