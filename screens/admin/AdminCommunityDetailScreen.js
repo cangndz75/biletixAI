@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const AdminCommunityDetailScreen = () => {
   const [community, setCommunity] = useState(null);
@@ -90,6 +91,11 @@ const AdminCommunityDetailScreen = () => {
         style={styles.headerImage}
       />
       <View style={styles.profileContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <Ionicons name="arrow-back" size={28} color="black" />
+        </TouchableOpacity>
         <Image
           source={{
             uri: community.profileImage || 'https://via.placeholder.com/100',
@@ -219,4 +225,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {color: 'black', fontWeight: 'bold'},
+  backButton: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    zIndex: 10,
+  },
 });

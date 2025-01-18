@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, {useContext, useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,19 @@ import {
   ScrollView,
   Alert,
   SafeAreaView,
-  Modal,
   StyleSheet,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useNavigation} from '@react-navigation/native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import {AuthContext} from '../../AuthContext';
 
 const AdminCreateCommunityScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const {userId} = useContext(AuthContext);
+
   const [communityName, setCommunityName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -29,39 +29,21 @@ const AdminCreateCommunityScreen = () => {
   const [headerImage, setHeaderImage] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [link, setLink] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [customQuestions, setCustomQuestions] = useState([]);
+  const [selectedQuestions, setSelectedQuestions] = useState(
+    route.params?.selectedQuestions || [],
+  );
+  const [customQuestions, setCustomQuestions] = useState(
+    route.params?.customQuestions || [],
+  );
 
-  const basicQuestions = [
-    {id: '1', text: 'Ad Soyad'},
-    {id: '2', text: 'E-mail'},
-    {id: '3', text: 'Telefon Numarası'},
-    {id: '4', text: 'Yaş Aralığı'},
-    {id: '5', text: 'Eğitim Durumu'},
-    {id: '6', text: 'Meslek'},
-    {id: '7', text: 'Katılma Sebebiniz'},
-  ];
-
-  const toggleQuestionSelection = question => {
-    if (selectedQuestions.includes(question)) {
-      setSelectedQuestions(selectedQuestions.filter(q => q !== question));
-    } else {
-      setSelectedQuestions([...selectedQuestions, question]);
+  useEffect(() => {
+    if (route.params?.selectedQuestions) {
+      setSelectedQuestions(route.params.selectedQuestions);
     }
-  };
-
-  const handleDeleteQuestion = (index, isCustom) => {
-    if (isCustom) {
-      const updatedCustomQuestions = [...customQuestions];
-      updatedCustomQuestions.splice(index, 1);
-      setCustomQuestions(updatedCustomQuestions);
-    } else {
-      const updatedSelectedQuestions = [...selectedQuestions];
-      updatedSelectedQuestions.splice(index, 1);
-      setSelectedQuestions(updatedSelectedQuestions);
+    if (route.params?.customQuestions) {
+      setCustomQuestions(route.params.customQuestions);
     }
-  };
+  }, [route.params]);
 
   const pickImage = async setImage => {
     const result = await launchImageLibrary({mediaType: 'photo'});
@@ -87,6 +69,18 @@ const AdminCreateCommunityScreen = () => {
         return;
       }
 
+      if (!userId) {
+        console.error('User ID is missing');
+        Alert.alert(
+          'Hata',
+          'Kullanıcı ID’si eksik, lütfen tekrar giriş yapın.',
+        );
+        return;
+      }
+
+      console.log('Gönderilecek Header Image:', headerImage);
+      console.log('Gönderilecek Profile Image:', profileImage);
+
       const allQuestions = [...selectedQuestions, ...customQuestions];
 
       const communityData = {
@@ -94,15 +88,16 @@ const AdminCreateCommunityScreen = () => {
         description: description.trim(),
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
         isPrivate,
-        joinQuestions: isPrivate ? allQuestions : [],
-        headerImage,
-        profileImage,
-        link,
-        organizer: userId,
+        questions: isPrivate ? allQuestions : [],
+        headerImage: headerImage || null,
+        profileImage: profileImage || null,
+        userId,
       };
 
+      console.log('Gönderilen communityData:', communityData);
+
       const response = await axios.post(
-        'https://biletixai.onrender.com/communities',
+        'http://10.0.2.2:8000/communities',
         communityData,
         {
           headers: {
@@ -113,7 +108,7 @@ const AdminCreateCommunityScreen = () => {
 
       if (response.status === 201) {
         Alert.alert('Başarılı', 'Topluluk başarıyla oluşturuldu!');
-        navigation.navigate('CommunityList');
+        navigation.navigate('AdminDashboard');
       } else {
         Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
       }
@@ -122,21 +117,9 @@ const AdminCreateCommunityScreen = () => {
         'Topluluk oluşturma hatası:',
         error.response?.data || error.message,
       );
-      Alert.alert(
-        'Hata',
-        error.response?.data?.message ||
-          'Topluluk oluşturulamadı. Tekrar deneyin.',
-      );
+      Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
     }
   };
-
-  const renderRightActions = (index, isCustom) => (
-    <TouchableOpacity
-      style={styles.deleteButton}
-      onPress={() => handleDeleteQuestion(index, isCustom)}>
-      <Text style={{color: 'white', fontWeight: 'bold'}}>Sil</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
@@ -147,11 +130,11 @@ const AdminCreateCommunityScreen = () => {
             alignItems: 'center',
             marginBottom: 20,
           }}>
-          <Ionicons
-            name="arrow-back"
-            size={28}
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
-          />
+            style={styles.backButton}>
+            <Ionicons name="arrow-back" size={28} color="black" />
+          </TouchableOpacity>
           <Text style={{fontSize: 28, fontWeight: 'bold', marginLeft: 10}}>
             Create Community
           </Text>
@@ -260,12 +243,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
   },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 70,
-    borderRadius: 5,
+  backButton: {
+    marginRight: 10,
   },
 });
 

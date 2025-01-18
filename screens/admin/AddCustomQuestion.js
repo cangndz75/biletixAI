@@ -57,7 +57,6 @@ const AddCustomQuestion = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      {/* Geri Butonu ve Başlık */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -67,7 +66,6 @@ const AddCustomQuestion = ({navigation}) => {
         <Text style={styles.title}>Topluluk Katılım Soruları</Text>
       </View>
 
-      {/* FlatList, ScrollView içinde değil */}
       <FlatList
         data={predefinedQuestions}
         keyExtractor={item => item.id}
@@ -94,7 +92,6 @@ const AddCustomQuestion = ({navigation}) => {
         )}
       />
 
-      {/* Özel Soru Ekle Butonu */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() =>
@@ -107,12 +104,10 @@ const AddCustomQuestion = ({navigation}) => {
         <Text style={styles.buttonText}>Özel Soru Ekle</Text>
       </TouchableOpacity>
 
-      {/* Kaydet Butonu */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Kaydet ve Devam Et</Text>
       </TouchableOpacity>
 
-      {/* Eklenen Özel Sorular */}
       {customQuestions.length > 0 && (
         <View style={styles.customQuestionsContainer}>
           <Text style={styles.subtitle}>Özel Sorular:</Text>

@@ -378,22 +378,22 @@ app.get('/venues', async (req, res) => {
 });
 
 app.post('/generate', async (req, res) => {
-  const { eventName, location } = req.body;
+  const {eventName, location} = req.body;
 
   if (!eventName || !location) {
     return res
       .status(400)
-      .json({ message: 'Event name and location are required' });
+      .json({message: 'Event name and location are required'});
   }
 
   const prompt = `Generate a detailed description for the event: ${eventName} happening at ${location}.`;
 
   try {
     const response = await generateText(prompt);
-    res.status(200).json({ response });
+    res.status(200).json({response});
   } catch (error) {
     console.error('Error generating content:', error.message);
-    res.status(500).json({ message: 'Failed to generate content' });
+    res.status(500).json({message: 'Failed to generate content'});
   }
 });
 
@@ -1308,14 +1308,14 @@ app.put('/user/:userId/about', async (req, res) => {
 });
 
 app.post('/user/followRequest', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const followingUser = await User.findById(fromUserId);
 
     if (!targetUser || !followingUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     if (targetUser.isPrivate) {
@@ -1334,7 +1334,9 @@ app.post('/user/followRequest', async (req, res) => {
       targetUser.notifications.push(notification);
 
       await targetUser.save();
-      return res.status(200).json({ message: 'Follow request sent successfully' });
+      return res
+        .status(200)
+        .json({message: 'Follow request sent successfully'});
     } else {
       if (!targetUser.followers.includes(fromUserId)) {
         targetUser.followers.push(fromUserId);
@@ -1345,23 +1347,25 @@ app.post('/user/followRequest', async (req, res) => {
 
       await targetUser.save();
       await followingUser.save();
-      return res.status(200).json({ message: 'User followed successfully' });
+      return res.status(200).json({message: 'User followed successfully'});
     }
   } catch (error) {
     console.error('Error handling follow request:', error);
-    res.status(500).json({ message: 'Failed to handle follow request', error: error.message });
+    res
+      .status(500)
+      .json({message: 'Failed to handle follow request', error: error.message});
   }
 });
 
 app.post('/user/follow', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const followingUser = await User.findById(fromUserId);
 
     if (!targetUser || !followingUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     if (!targetUser.followers.includes(fromUserId)) {
@@ -1373,44 +1377,68 @@ app.post('/user/follow', async (req, res) => {
 
     await targetUser.save();
     await followingUser.save();
-    res.status(200).json({ message: 'User followed successfully' });
+    res.status(200).json({message: 'User followed successfully'});
   } catch (error) {
     console.error('Error following user:', error);
-    res.status(500).json({ message: 'Failed to follow user', error: error.message });
+    res
+      .status(500)
+      .json({message: 'Failed to follow user', error: error.message});
   }
 });
 
 app.post('/user/unfollow', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const followingUser = await User.findById(fromUserId);
 
     if (!targetUser || !followingUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
-    targetUser.followers = targetUser.followers.filter(id => id.toString() !== fromUserId);
-    followingUser.following = followingUser.following.filter(id => id.toString() !== toUserId);
+    targetUser.followers = targetUser.followers.filter(
+      id => id.toString() !== fromUserId,
+    );
+    followingUser.following = followingUser.following.filter(
+      id => id.toString() !== toUserId,
+    );
 
     await targetUser.save();
     await followingUser.save();
-    res.status(200).json({ message: 'User unfollowed successfully' });
+    res.status(200).json({message: 'User unfollowed successfully'});
   } catch (error) {
     console.error('Error unfollowing user:', error);
-    res.status(500).json({ message: 'Failed to unfollow user', error: error.message });
+    res
+      .status(500)
+      .json({message: 'Failed to unfollow user', error: error.message});
   }
 });
 
 app.post('/communities', async (req, res) => {
-  const { name, description, tags, isPrivate, headerImage, profileImage, links } = req.body;
+  const { 
+    name, 
+    description, 
+    tags, 
+    isPrivate, 
+    headerImage, 
+    profileImage, 
+    links, 
+    userId 
+  } = req.body;
+
+  if (!userId) {
+    console.error('Hata: userId eksik!', req.body);
+    return res.status(401).json({ message: 'Unauthorized: userId is required' });
+  }
 
   if (!name || !description) {
     return res.status(400).json({ message: 'Name and description are required.' });
   }
 
   try {
+    console.log('Yeni topluluk oluşturuluyor:', { name, userId, headerImage, profileImage });
+
     const newCommunity = new Community({
       name,
       description,
@@ -1419,18 +1447,16 @@ app.post('/communities', async (req, res) => {
       headerImage: headerImage || null,
       profileImage: profileImage || null,
       links: links || [],
-      organizer: req.user?.userId || null,
+      organizer: userId,
     });
 
     const savedCommunity = await newCommunity.save();
 
-    if (req.user?.userId) {
-      await User.findByIdAndUpdate(
-        req.user.userId,
-        { $push: { communities: savedCommunity._id } },
-        { new: true }
-      );
-    }
+    console.log('✅ Topluluk başarıyla oluşturuldu:', savedCommunity);
+
+    await User.findByIdAndUpdate(userId, {
+      $push: { communities: savedCommunity._id },
+    });
 
     res.status(201).json(savedCommunity);
   } catch (error) {
@@ -1438,7 +1464,6 @@ app.post('/communities', async (req, res) => {
     res.status(500).json({ message: 'Failed to create community.' });
   }
 });
-
 
 app.get('/communities', async (req, res) => {
   try {
@@ -1452,9 +1477,36 @@ app.get('/communities', async (req, res) => {
   }
 });
 
+app.post('/communities/:id/join', async (req, res) => {
+  const {id} = req.params;
+  const {userId, answers} = req.body;
+
+  try {
+    const community = await Community.findById(id);
+
+    if (!community) {
+      return res.status(404).json({message: 'Community not found'});
+    }
+
+    if (!community.isPrivate) {
+      if (!community.members.includes(userId)) {
+        community.members.push(userId);
+        await community.save();
+      }
+      return res.status(200).json({message: 'Successfully joined community'});
+    }
+
+    community.joinRequests.push({userId, answers, status: 'pending'});
+    await community.save();
+    return res.status(200).json({message: 'Join request sent'});
+  } catch (error) {
+    res.status(500).json({message: 'Internal server error'});
+  }
+});
+
 app.post('/communities/:communityId/join', async (req, res) => {
   const {communityId} = req.params;
-  const {answers, userId} = req.body;
+  const {userId, answers} = req.body;
 
   try {
     const community = await Community.findById(communityId);
@@ -1467,8 +1519,13 @@ app.post('/communities/:communityId/join', async (req, res) => {
       if (!community.members.includes(userId)) {
         community.members.push(userId);
         await community.save();
+        return res.status(200).json({message: 'Successfully joined community'});
       }
-      return res.status(200).json({message: 'Joined community'});
+      return res.status(400).json({message: 'User is already a member'});
+    }
+
+    if (community.joinRequests.some(req => req.userId.toString() === userId)) {
+      return res.status(400).json({message: 'Join request already exists'});
     }
 
     community.joinRequests.push({userId, answers, status: 'pending'});
@@ -1481,91 +1538,89 @@ app.post('/communities/:communityId/join', async (req, res) => {
 });
 
 app.get('/communities/:communityId/requests', async (req, res) => {
-  const { communityId } = req.params;
+  const {communityId} = req.params;
 
   try {
     const community = await Community.findById(communityId).populate(
       'joinRequests.userId',
-      'firstName lastName image'
+      'firstName lastName image',
     );
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     const pendingRequests = community.joinRequests.filter(
-      request => request.status === 'pending'
+      req => req.status === 'pending',
     );
-
     res.status(200).json(pendingRequests);
   } catch (error) {
     console.error('Error fetching join requests:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
 app.post('/communities/:communityId/accept-request', async (req, res) => {
-  const { communityId } = req.params;
-  const { requestId } = req.body;
+  const {communityId} = req.params;
+  const {requestId} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     const request = community.joinRequests.id(requestId);
-
     if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
+      return res.status(404).json({message: 'Request not found'});
     }
 
-    request.status = 'approved';
     community.members.push(request.userId);
+    community.joinRequests = community.joinRequests.filter(
+      req => req._id.toString() !== requestId,
+    );
     await community.save();
 
-    res.status(200).json({ message: 'Request approved successfully' });
+    res
+      .status(200)
+      .json({message: 'Request approved and user added to community'});
   } catch (error) {
     console.error('Error approving request:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
 app.post('/communities/:communityId/reject-request', async (req, res) => {
-  const { communityId } = req.params;
-  const { requestId } = req.body;
+  const {communityId} = req.params;
+  const {requestId} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
-    const request = community.joinRequests.id(requestId);
-
-    if (!request) {
-      return res.status(404).json({ message: 'Request not found' });
-    }
-
-    request.status = 'rejected';
+    community.joinRequests = community.joinRequests.filter(
+      req => req._id.toString() !== requestId,
+    );
     await community.save();
 
-    res.status(200).json({ message: 'Request rejected successfully' });
+    res.status(200).json({message: 'Request rejected successfully'});
   } catch (error) {
     console.error('Error rejecting request:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
-
 
 app.get('/communities/:communityId', async (req, res) => {
   const {communityId} = req.params;
   try {
     const community = await Community.findById(communityId)
       .populate('members', 'firstName lastName image')
-      .populate('joinRequests.userId', 'firstName lastName');
+      .populate('organizer', 'firstName lastName')
+      .populate('questions');
 
     if (!community) {
       return res.status(404).json({message: 'Community not found'});
@@ -1634,31 +1689,31 @@ app.put(
 );
 
 app.post('/communities/:communityId/send-request', async (req, res) => {
-  const { communityId } = req.params;
-  const { answers, userId } = req.body;
+  const {communityId} = req.params;
+  const {answers, userId} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     const existingRequest = community.joinRequests.find(
-      request => request.userId.toString() === userId
+      request => request.userId.toString() === userId,
     );
 
     if (existingRequest) {
-      return res.status(400).json({ message: 'Join request already exists' });
+      return res.status(400).json({message: 'Join request already exists'});
     }
 
-    community.joinRequests.push({ userId, answers, status: 'pending' });
+    community.joinRequests.push({userId, answers, status: 'pending'});
     await community.save();
 
-    res.status(200).json({ message: 'Join request sent successfully' });
+    res.status(200).json({message: 'Join request sent successfully'});
   } catch (error) {
     console.error('Error sending join request:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
@@ -1798,7 +1853,9 @@ app.post('/beorganizator', async (req, res) => {
   const {email, firstName, lastName, reason} = req.body;
 
   if (!email || !firstName || !lastName || !reason) {
-    return res.status(400).json({message: 'Please fill out all required fields.'});
+    return res
+      .status(400)
+      .json({message: 'Please fill out all required fields.'});
   }
 
   try {
@@ -1809,85 +1866,86 @@ app.post('/beorganizator', async (req, res) => {
     }
 
     user.role = 'organizer';
-    user.aboutMe = reason; 
+    user.aboutMe = reason;
     await user.save();
 
     return res.status(200).json({message: 'You are now an organizer!'});
   } catch (error) {
     console.error('Error updating user role:', error);
-    return res.status(500).json({message: 'An unexpected error occurred. Please try again later.'});
+    return res
+      .status(500)
+      .json({message: 'An unexpected error occurred. Please try again later.'});
   }
 });
 
-
 app.post('/communities/:communityId/add-questions', async (req, res) => {
-  const { communityId } = req.params;
-  const { questions } = req.body;
+  const {communityId} = req.params;
+  const {questions} = req.body;
 
   try {
     const community = await Community.findById(communityId);
 
     if (!community) {
-      return res.status(404).json({ message: 'Community not found' });
+      return res.status(404).json({message: 'Community not found'});
     }
 
     community.joinQuestions = questions;
     await community.save();
 
-    res.status(200).json({ message: 'Questions added successfully', questions });
+    res.status(200).json({message: 'Questions added successfully', questions});
   } catch (error) {
     console.error('Error adding questions:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
 app.post('/user/acceptFriendRequest', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
     const fromUser = await User.findById(fromUserId);
 
     if (!targetUser || !fromUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     targetUser.followers.push(fromUserId);
     fromUser.following.push(toUserId);
 
     targetUser.friendRequests = targetUser.friendRequests.filter(
-      (req) => req.from.toString() !== fromUserId
+      req => req.from.toString() !== fromUserId,
     );
 
     await targetUser.save();
     await fromUser.save();
 
-    res.status(200).json({ message: 'Friend request accepted' });
+    res.status(200).json({message: 'Friend request accepted'});
   } catch (error) {
     console.error('Error accepting friend request:', error);
-    res.status(500).json({ message: 'Error accepting friend request' });
+    res.status(500).json({message: 'Error accepting friend request'});
   }
 });
 
 app.post('/user/rejectFriendRequest', async (req, res) => {
-  const { fromUserId, toUserId } = req.body;
+  const {fromUserId, toUserId} = req.body;
 
   try {
     const targetUser = await User.findById(toUserId);
 
     if (!targetUser) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     targetUser.friendRequests = targetUser.friendRequests.filter(
-      (req) => req.from.toString() !== fromUserId
+      req => req.from.toString() !== fromUserId,
     );
 
     await targetUser.save();
 
-    res.status(200).json({ message: 'Friend request rejected' });
+    res.status(200).json({message: 'Friend request rejected'});
   } catch (error) {
     console.error('Error rejecting friend request:', error);
-    res.status(500).json({ message: 'Error rejecting friend request' });
+    res.status(500).json({message: 'Error rejecting friend request'});
   }
 });

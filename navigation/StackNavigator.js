@@ -318,6 +318,11 @@ const MainStack = () => (
       component={CreateCustomQuestion}
       options={{headerShown: false}}
     />
+    <Stack.Screen
+      name="AdminDashboard"
+      component={AdminDashboard}
+      options={{headerShown: false}}
+    />
   </Stack.Navigator>
 );
 
