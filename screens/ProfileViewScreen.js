@@ -19,9 +19,13 @@ const ProfileViewScreen = () => {
   const {userId: loggedInUserId} = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('About');
   const [isFollowing, setIsFollowing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('About');
   const navigation = useNavigation();
+
+  useEffect(() => {
+    fetchUserData();
+  }, [userId]);
 
   const fetchUserData = async () => {
     try {
@@ -30,58 +34,27 @@ const ProfileViewScreen = () => {
       );
       setUserData(response.data);
       setIsFollowing(response.data.followers.includes(loggedInUserId));
-      setLoading(false);
     } catch (error) {
+      Alert.alert('Error', 'Failed to fetch user data.');
+    } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-  }, [userId]);
-
   const handleFollowRequest = async () => {
-    if (!userData) {
-      Alert.alert('Error', 'User data not loaded yet.');
-      return;
-    }
-
-    if (userData.isPrivate) {
-      try {
-        const response = await axios.post(
-          `https://biletixai.onrender.com/user/followRequest`,
-          {
-            fromUserId: loggedInUserId,
-            toUserId: userId,
-          },
-        );
-
-        if (response.status === 200) {
-          Alert.alert('Request Sent', 'Follow request sent successfully!');
-        }
-      } catch (error) {
-        Alert.alert('Error', 'Failed to send follow request.');
+    try {
+      const response = await axios.post(
+        `https://biletixai.onrender.com/user/follow`,
+        {
+          fromUserId: loggedInUserId,
+          toUserId: userId,
+        },
+      );
+      if (response.status === 200) {
+        setIsFollowing(true);
       }
-    } else {
-      try {
-        const response = await axios.post(
-          `https://biletixai.onrender.com/user/follow`,
-          {
-            fromUserId: loggedInUserId,
-            toUserId: userId,
-          },
-        );
-
-        if (response.status === 200) {
-          setIsFollowing(true);
-          setUserData(prev => ({
-            ...prev,
-            followers: [...prev.followers, loggedInUserId],
-          }));
-        }
-      } catch (error) {
-        Alert.alert('Error', 'Failed to follow user.');
-      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to follow user.');
     }
   };
 
@@ -94,13 +67,8 @@ const ProfileViewScreen = () => {
           toUserId: userId,
         },
       );
-
       if (response.status === 200) {
         setIsFollowing(false);
-        setUserData(prev => ({
-          ...prev,
-          followers: prev.followers.filter(id => id !== loggedInUserId),
-        }));
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to unfollow user.');
@@ -125,73 +93,82 @@ const ProfileViewScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Image
-        source={{uri: userData.image || 'https://via.placeholder.com/100'}}
-        style={styles.profileImage}
-      />
-      <Text
-        style={
-          styles.name
-        }>{`${userData.firstName} ${userData.lastName}`}</Text>
-      <Text style={styles.username}>@{userData.username}</Text>
-
-      <View style={styles.stats}>
-        <Text style={styles.statText}>
-          {userData.following.length} Following
-        </Text>
-        <Text style={styles.statText}>
-          {userData.followers.length} Followers
-        </Text>
+      <View style={styles.coverContainer}>
+        <Image
+          source={{uri: userData.image || 'https://via.placeholder.com/100'}}
+          style={styles.profileImage}
+        />
       </View>
 
-      {userId !== loggedInUserId && (
-        <View style={styles.actions}>
+      <View style={styles.card}>
+        <Text
+          style={
+            styles.name
+          }>{`${userData.firstName} ${userData.lastName}`}</Text>
+        <Text style={styles.location}>
+          @{userData.username} • {userData.location || 'Unknown'}
+        </Text>
+
+        <View style={styles.stats}>
+          <Text style={styles.statText}>
+            {userData.following.length} Following
+          </Text>
+          <Text style={styles.statText}>
+            {userData.followers.length} Followers
+          </Text>
+        </View>
+
+        {userData.subscriptionType !== 'free' && userId !== loggedInUserId && (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={isFollowing ? styles.unfollowButton : styles.followButton}
+              onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
+              <Text style={styles.followButtonText}>
+                {isFollowing ? 'Unfollow' : 'Follow'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.messageButton}
+              onPress={() => navigation.navigate('ChatRoom', {userId})}>
+              <Text style={styles.messageButtonText}>Message</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Tabs (About - Event) */}
+        <View style={styles.tabs}>
           <TouchableOpacity
-            style={styles.followButton}
-            onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
-            <Text style={styles.followButtonText}>
-              {isFollowing ? 'Unfollow' : '+ Follow'}
-            </Text>
+            style={selectedTab === 'About' ? styles.activeTab : styles.tab}
+            onPress={() => setSelectedTab('About')}>
+            <Text style={styles.tabText}>About</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.messageButton}
-            onPress={() => navigation.navigate('ChatRoom', {userId})}>
-            <Text style={styles.messageButtonText}>Messages</Text>
+            style={selectedTab === 'Event' ? styles.activeTab : styles.tab}
+            onPress={() => setSelectedTab('Event')}>
+            <Text style={styles.tabText}>Event</Text>
           </TouchableOpacity>
         </View>
-      )}
 
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={selectedTab === 'About' ? styles.activeTab : styles.tab}
-          onPress={() => setSelectedTab('About')}>
-          <Text style={styles.tabText}>About</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={selectedTab === 'Event' ? styles.activeTab : styles.tab}
-          onPress={() => setSelectedTab('Event')}>
-          <Text style={styles.tabText}>Event</Text>
-        </TouchableOpacity>
+        {/* About & Events Content */}
+        {selectedTab === 'About' ? (
+          <View style={styles.aboutSection}>
+            <Text>{userData.aboutMe || 'No information provided'}</Text>
+          </View>
+        ) : (
+          <View style={styles.eventSection}>
+            {userData.events.length > 0 ? (
+              userData.events.map(event => (
+                <View key={event._id} style={styles.eventItem}>
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <Text style={styles.eventDate}>{event.date}</Text>
+                </View>
+              ))
+            ) : (
+              <Text>No events to display.</Text>
+            )}
+          </View>
+        )}
       </View>
-
-      {selectedTab === 'About' ? (
-        <View style={styles.aboutSection}>
-          <Text>{userData.aboutMe || 'No information provided'}</Text>
-        </View>
-      ) : (
-        <View style={styles.eventSection}>
-          {userData.events.length > 0 ? (
-            userData.events.map(event => (
-              <View key={event._id} style={styles.eventItem}>
-                <Text style={styles.eventTitle}>{event.title}</Text>
-                <Text style={styles.eventDate}>{event.date}</Text>
-              </View>
-            ))
-          ) : (
-            <Text>No events to display.</Text>
-          )}
-        </View>
-      )}
     </ScrollView>
   );
 };
@@ -200,85 +177,93 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  coverContainer: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#e3e3e3',
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: 'white',
+    width: '90%',
+    padding: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+    marginTop: -50,
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 10,
+    borderWidth: 3,
+    borderColor: 'white',
   },
   name: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginTop: 10,
   },
-  username: {
-    fontSize: 16,
-    color: '#888',
-    marginBottom: 20,
+  location: {
+    fontSize: 14,
+    color: '#777',
+    marginBottom: 10,
   },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   statText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    marginBottom: 20,
-  },
-  followButton: {
-    backgroundColor: '#4C9EEB',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  followButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  messageButton: {
-    borderColor: '#4C9EEB',
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  messageButtonText: {
-    color: '#4C9EEB',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   tabs: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 20,
+    justifyContent: 'space-around',
+    marginVertical: 15,
   },
   tab: {
-    fontSize: 16,
-    color: '#888',
+    paddingBottom: 5,
   },
   activeTab: {
-    color: '#4C9EEB',
     borderBottomWidth: 2,
     borderBottomColor: '#4C9EEB',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   aboutSection: {
     width: '100%',
     paddingHorizontal: 20,
+    marginBottom: 10,
   },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  eventSection: {
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  eventItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  eventDate: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

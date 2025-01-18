@@ -139,23 +139,22 @@ app.listen(port, () => {
 
 app.get('/user/:userId', async (req, res) => {
   try {
-    const {userId} = req.params;
+    const { userId } = req.params;
 
     const user = await User.findById(userId)
       .populate('events')
       .populate('followers', 'firstName lastName username image')
-      .populate('following', 'firstName lastName username image');
+      .populate('following', 'firstName lastName username image')
+      .select('firstName lastName username image subscriptionType aboutMe events followers following');
 
     if (!user) {
-      return res.status(404).json({message: 'User not found'});
+      return res.status(404).json({ message: 'User not found' });
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error('Error fetching user data:', error);
-    res
-      .status(500)
-      .json({message: 'Error fetching user data', error: error.message});
+    res.status(500).json({ message: 'Error fetching user data', error: error.message });
   }
 });
 
