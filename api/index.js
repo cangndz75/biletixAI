@@ -1232,12 +1232,12 @@ app.post(
       .withMessage('User ID is required.')
       .isMongoId()
       .withMessage('Invalid User ID format.'),
-
     body('comment')
       .notEmpty()
       .withMessage('Comment is required.')
       .isString()
       .withMessage('Comment must be a string.'),
+    body('rating').isNumeric().withMessage('Rating must be a number.'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -1247,14 +1247,24 @@ app.post(
 
     try {
       const {eventId} = req.params;
-      const {userId, comment} = req.body;
+      const {userId, comment, rating} = req.body;
 
       const event = await Event.findById(eventId);
       if (!event) {
         return res.status(404).json({message: 'Event not found.'});
       }
 
-      const newReview = {userId, review: comment, date: new Date()};
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({message: 'User not found.'});
+      }
+
+      const newReview = {
+        review: comment,
+        rating,
+        createdAt: new Date(),
+        user: user._id,
+      };
       event.reviews.push(newReview);
       await event.save();
 
@@ -1262,7 +1272,6 @@ app.post(
         .status(201)
         .json({message: 'Review added successfully', review: newReview});
     } catch (error) {
-      console.error('Error adding review:', error.message);
       res
         .status(500)
         .json({message: 'Failed to add review.', error: error.message});
@@ -1272,18 +1281,26 @@ app.post(
 
 app.get('/events/:eventId/reviews', async (req, res) => {
   try {
-    const eventId = mongoose.Types.ObjectId(req.params.eventId);
-
-    // event'i reviews alanıyla beraber çekiyoruz
-    const event = await Event.findById(eventId);
+    const eventId = req.params.eventId;
+    const event = await Event.findById(eventId).populate(
+      'reviews.user',
+      'name profileImage',
+    );
 
     if (!event) {
       return res.status(404).json({message: 'Event not found'});
     }
 
-    res.json(event.reviews);
+    const formattedReviews = event.reviews.map(r => ({
+      review: r.review,
+      rating: r.rating,
+      createdAt: r.createdAt,
+      userName: r.user.name,
+      userImage: r.user.profileImage,
+    }));
+
+    res.json(formattedReviews);
   } catch (error) {
-    console.error('Error fetching event reviews:', error);
     res.status(500).json({message: 'Internal server error'});
   }
 });

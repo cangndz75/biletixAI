@@ -50,10 +50,10 @@ const eventSchema = new Schema(
     ],
     reviews: [
       {
-        eventId: {type: mongoose.Schema.Types.ObjectId, ref: 'Event'},
         review: String,
-        rating: {type: Number, min: 1, max: 5},
+        rating: Number,
         createdAt: {type: Date, default: Date.now},
+        user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
       },
     ],
   },

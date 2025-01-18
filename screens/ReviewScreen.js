@@ -8,6 +8,7 @@ import {
   Image,
   StyleSheet,
   Alert,
+  ToastAndroid,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -15,8 +16,8 @@ import axios from 'axios';
 const ReviewScreen = ({route, navigation}) => {
   const eventId = route?.params?.eventId;
   const [reviews, setReviews] = useState([]);
-  const [filteredReviews, setFilteredReviews] = useState([]);
   const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(5);
   const [averageScore, setAverageScore] = useState(0.0);
   const [selectedFilter, setSelectedFilter] = useState('All time');
 
@@ -24,21 +25,22 @@ const ReviewScreen = ({route, navigation}) => {
     if (eventId) {
       fetchReviews();
     } else {
-      console.error('Event ID is missing.');
       Alert.alert('Error', 'No event ID provided.');
       navigation.goBack();
     }
   }, [eventId]);
 
   const fetchReviews = async () => {
+    try {
       const response = await axios.get(
         `https://biletixai.onrender.com/events/${eventId}/reviews`,
       );
-      const reviewsData = response.data || [];
-      setReviews(reviewsData);
-      setFilteredReviews(reviewsData);
-      calculateAverageScore(reviewsData);
+      setReviews(response.data || []);
+      calculateAverageScore(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch reviews.');
     }
+  };
 
   const submitReview = async () => {
     if (!comment.trim()) {
@@ -49,21 +51,22 @@ const ReviewScreen = ({route, navigation}) => {
     try {
       const response = await axios.post(
         `https://biletixai.onrender.com/events/${eventId}/reviews`,
-        {review: comment},
+        {
+          userId,
+          comment,
+          rating,
+        },
       );
 
       if (response.status === 201) {
-        setReviews(prev => [...prev, {review: comment}]);
+        setReviews(prev => [...prev, response.data.review]);
         setComment('');
         ToastAndroid.show('Review added!', ToastAndroid.SHORT);
       } else {
         throw new Error('Failed to add review');
       }
     } catch (error) {
-      console.error('Error submitting review:', error);
-      const errorMessage =
-        error.response?.data?.message || 'Failed to submit review.';
-      Alert.alert('Error', errorMessage);
+      Alert.alert('Error', 'Failed to submit review.');
     }
   };
 
@@ -72,7 +75,10 @@ const ReviewScreen = ({route, navigation}) => {
       setAverageScore(0.0);
       return;
     }
-    const totalScore = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalScore = reviews.reduce(
+      (sum, review) => sum + (review.rating || 0),
+      0,
+    );
     setAverageScore(totalScore / reviews.length);
   };
 
@@ -84,23 +90,26 @@ const ReviewScreen = ({route, navigation}) => {
       />
       <View style={{flex: 1}}>
         <Text style={styles.userName}>{item.userName}</Text>
-        <View style={{flexDirection: 'row', marginVertical: 5}}>
+        <View style={styles.starsContainer}>
           {Array(5)
             .fill()
             .map((_, index) => (
               <Ionicons
                 key={index}
-                name={index < item.rating ? 'star' : 'star-outline'}
+                name={index < (item.rating || 0) ? 'star' : 'star-outline'}
                 size={16}
                 color="#ffa500"
               />
             ))}
         </View>
         <Text>{item.review}</Text>
-        <Text style={styles.reviewDate}>{item.date}</Text>
+        <Text style={styles.reviewDate}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
       </View>
     </View>
   );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -111,12 +120,7 @@ const ReviewScreen = ({route, navigation}) => {
         />
         <Text style={styles.headerTitle}>Reviews</Text>
       </View>
-      <FlatList
-        data={reviews}
-        keyExtractor={(_, index) => index.toString()}
-        renderItem={renderReviewItem}
-        style={styles.reviewList}
-      />
+
       <View style={styles.averageScoreContainer}>
         <Text style={styles.averageScore}>{averageScore.toFixed(1)}</Text>
         <View style={styles.starsContainer}>
@@ -143,7 +147,7 @@ const ReviewScreen = ({route, navigation}) => {
               styles.filterButton,
               selectedFilter === filter && styles.activeFilterButton,
             ]}
-            onPress={() => applyFilter(filter)}>
+            onPress={() => setSelectedFilter(filter)}>
             <Text
               style={[
                 styles.filterText,
@@ -155,6 +159,12 @@ const ReviewScreen = ({route, navigation}) => {
         ))}
       </View>
 
+      <FlatList
+        data={reviews}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={renderReviewItem}
+        style={styles.reviewList}
+      />
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -163,7 +173,7 @@ const ReviewScreen = ({route, navigation}) => {
           onChangeText={setComment}
           style={styles.textInput}
         />
-        <TouchableOpacity onPress={() => console.log('Add Review')}>
+        <TouchableOpacity onPress={submitReview}>
           <Ionicons name="send" size={24} color="blue" />
         </TouchableOpacity>
       </View>
@@ -172,33 +182,23 @@ const ReviewScreen = ({route, navigation}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
+  container: {flex: 1, backgroundColor: 'white', padding: 10},
+  header: {flexDirection: 'row', alignItems: 'center', padding: 15},
+  headerTitle: {fontSize: 18, fontWeight: 'bold', marginLeft: 10},
+  averageScoreContainer: {alignItems: 'center', marginVertical: 10},
+  averageScore: {fontSize: 48, fontWeight: 'bold'},
+  starsContainer: {flexDirection: 'row', marginTop: 5},
+  reviewList: {flex: 1, marginVertical: 10},
+  reviewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  averageScoreContainer: {
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  averageScore: {
-    fontSize: 48,
-    fontWeight: 'bold',
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    marginTop: 5,
-  },
+  userImage: {width: 50, height: 50, borderRadius: 25, marginRight: 10},
+  userName: {fontWeight: 'bold'},
+  reviewDate: {fontSize: 12, color: '#888', marginTop: 5},
   filterContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -210,47 +210,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#eee',
   },
-  activeFilterButton: {
-    backgroundColor: '#ffa500',
-  },
-  filterText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  activeFilterText: {
-    color: 'white',
-  },
-  reviewList: {
-    flex: 1,
-    marginVertical: 10,
-  },
-  noReviewsText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#888',
-    marginVertical: 20,
-  },
-  reviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  userImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-  },
-  userName: {
-    fontWeight: 'bold',
-  },
-  reviewDate: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 5,
-  },
+  activeFilterButton: {backgroundColor: '#ffa500'},
+  filterText: {fontSize: 14, color: '#333'},
+  activeFilterText: {color: 'white'},
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',

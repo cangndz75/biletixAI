@@ -45,6 +45,7 @@ import OrganizerSubscribe from '../screens/OrganizerSubscribe';
 import UserSubscribe from '../screens/UserSubscribe';
 import CreateCustomQuestion from '../screens/admin/CreateCustomQuestion';
 import JoinCommunityScreen from '../screens/JoinCommunityScreen';
+import ReviewScreen from '../screens/ReviewScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -327,6 +328,11 @@ const MainStack = () => (
     <Stack.Screen
       name="JoinCommunityScreen"
       component={JoinCommunityScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="ReviewScreen"
+      component={ReviewScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
