@@ -1237,7 +1237,11 @@ app.post(
       .withMessage('Comment is required.')
       .isString()
       .withMessage('Comment must be a string.'),
-    body('rating').isNumeric().withMessage('Rating must be a number.'),
+    body('rating')
+      .optional()
+      .isNumeric()
+      .withMessage('Rating must be a number.')
+      .default(5),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -1254,16 +1258,11 @@ app.post(
         return res.status(404).json({message: 'Event not found.'});
       }
 
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({message: 'User not found.'});
-      }
-
       const newReview = {
         review: comment,
-        rating,
+        rating: rating || 5,
         createdAt: new Date(),
-        user: user._id,
+        user: userId,
       };
       event.reviews.push(newReview);
       await event.save();
@@ -1282,25 +1281,30 @@ app.post(
 app.get('/events/:eventId/reviews', async (req, res) => {
   try {
     const eventId = req.params.eventId;
-    const event = await Event.findById(eventId).populate(
-      'reviews.user',
-      'name profileImage',
-    );
+    const event = await Event.findById(eventId).populate({
+      path: 'reviews.user',
+      select: 'firstName lastName image',
+    });
 
     if (!event) {
       return res.status(404).json({message: 'Event not found'});
     }
 
+    console.log('Raw Event Data:', event);
+
     const formattedReviews = event.reviews.map(r => ({
       review: r.review,
       rating: r.rating,
       createdAt: r.createdAt,
-      userName: r.user.name,
-      userImage: r.user.profileImage,
+      userName: r.user
+        ? `${r.user.firstName} ${r.user.lastName || ''}`.trim()
+        : 'Unknown User',
+      userImage: r.user ? r.user.image : '',
     }));
 
     res.json(formattedReviews);
   } catch (error) {
+    console.error('Error fetching event reviews:', error);
     res.status(500).json({message: 'Internal server error'});
   }
 });

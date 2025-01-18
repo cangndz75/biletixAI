@@ -41,6 +41,7 @@ const EventSetUpScreen = () => {
   const eventId = item?._id;
   const [isFavorited, setIsFavorited] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [rating, setRating] = useState(5);
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -125,23 +126,37 @@ const EventSetUpScreen = () => {
       return;
     }
 
+    if (!rating || rating < 1 || rating > 5) {
+      Alert.alert('Error', 'Please select a rating (1-5).');
+      return;
+    }
+
     try {
+      console.log('Gönderilen Veri:', {userId, comment, rating});
+
       const response = await axios.post(
         `https://biletixai.onrender.com/events/${eventId}/reviews`,
-        {userId, comment},
+        {userId, comment, rating},
+        {headers: {'Content-Type': 'application/json'}},
       );
 
       if (response.status === 201) {
-        setComment(''); // Yorum alanını temizle
+        setReviews(prev => [...prev, response.data.review]);
+        setComment('');
+        setRating(5);
         ToastAndroid.show('Review added!', ToastAndroid.SHORT);
       } else {
         throw new Error('Failed to add review');
       }
     } catch (error) {
-      console.error('Error submitting review:', error);
-      const errorMessage =
-        error.response?.data?.message || 'Failed to submit review.';
-      Alert.alert('Error', errorMessage);
+      console.error(
+        'Error submitting review:',
+        error.response?.data || error.message,
+      );
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to submit review.',
+      );
     }
   };
 
@@ -213,6 +228,23 @@ const EventSetUpScreen = () => {
     }
   };
 
+  const renderRatingStars = () => (
+    <View style={styles.ratingContainer}>
+      {Array(5)
+        .fill()
+        .map((_, index) => (
+          <TouchableOpacity key={index} onPress={() => setRating(index + 1)}>
+            <Ionicons
+              name={index < rating ? 'star' : 'star-outline'}
+              size={24}
+              color="#ffa500"
+              style={{marginRight: 5}}
+            />
+          </TouchableOpacity>
+        ))}
+    </View>
+  );
+
   const leaveEvent = async () => {
     try {
       await axios.post(
@@ -259,6 +291,9 @@ const EventSetUpScreen = () => {
         </Text>
       </TouchableOpacity>
       <Text style={{fontWeight: 'bold', fontSize: 18}}>Reviews</Text>
+
+      {renderRatingStars()}
+
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Send your review"
@@ -605,5 +640,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     paddingHorizontal: 10,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginVertical: 10,
   },
 });

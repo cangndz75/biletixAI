@@ -2,13 +2,11 @@ import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
-  TextInput,
   FlatList,
   TouchableOpacity,
   Image,
   StyleSheet,
   Alert,
-  ToastAndroid,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -16,8 +14,6 @@ import axios from 'axios';
 const ReviewScreen = ({route, navigation}) => {
   const eventId = route?.params?.eventId;
   const [reviews, setReviews] = useState([]);
-  const [comment, setComment] = useState('');
-  const [rating, setRating] = useState(5);
   const [averageScore, setAverageScore] = useState(0.0);
   const [selectedFilter, setSelectedFilter] = useState('All time');
 
@@ -39,34 +35,6 @@ const ReviewScreen = ({route, navigation}) => {
       calculateAverageScore(response.data);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch reviews.');
-    }
-  };
-
-  const submitReview = async () => {
-    if (!comment.trim()) {
-      Alert.alert('Error', 'Comment cannot be empty.');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        `https://biletixai.onrender.com/events/${eventId}/reviews`,
-        {
-          userId,
-          comment,
-          rating,
-        },
-      );
-
-      if (response.status === 201) {
-        setReviews(prev => [...prev, response.data.review]);
-        setComment('');
-        ToastAndroid.show('Review added!', ToastAndroid.SHORT);
-      } else {
-        throw new Error('Failed to add review');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit review.');
     }
   };
 
@@ -165,18 +133,6 @@ const ReviewScreen = ({route, navigation}) => {
         renderItem={renderReviewItem}
         style={styles.reviewList}
       />
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Send your review"
-          value={comment}
-          onChangeText={setComment}
-          style={styles.textInput}
-        />
-        <TouchableOpacity onPress={submitReview}>
-          <Ionicons name="send" size={24} color="blue" />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -213,21 +169,6 @@ const styles = StyleSheet.create({
   activeFilterButton: {backgroundColor: '#ffa500'},
   filterText: {fontSize: 14, color: '#333'},
   activeFilterText: {color: 'white'},
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  textInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginRight: 10,
-  },
 });
 
 export default ReviewScreen;
