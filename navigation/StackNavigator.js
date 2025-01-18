@@ -43,6 +43,7 @@ import ManageStaffScreen from '../screens/super-admin/ManageStaffScreen';
 import StaffDetailsScreen from '../screens/super-admin/StaffDetailsScreen';
 import OrganizerSubscribe from '../screens/OrganizerSubscribe';
 import UserSubscribe from '../screens/UserSubscribe';
+import CreateCustomQuestion from '../screens/admin/CreateCustomQuestion';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -310,6 +311,11 @@ const MainStack = () => (
     <Stack.Screen
       name="UserSubscribe"
       component={UserSubscribe}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="CreateCustomQuestion"
+      component={CreateCustomQuestion}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

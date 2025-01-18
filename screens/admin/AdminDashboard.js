@@ -29,7 +29,7 @@ const AdminDashboard = () => {
       route: 'AdminCommunityScreen',
     },
     {
-      title: 'My Communities',
+      title: 'Create Community',
       icon: 'people-outline',
       route: 'AdminCreateCommunity',
     },

@@ -21,8 +21,7 @@ import {AuthContext} from '../../AuthContext';
 
 const AdminCreateCommunityScreen = () => {
   const navigation = useNavigation();
-  const {userId} = useContext(AuthContext); // Moved here to the main body
-
+  const {userId} = useContext(AuthContext);
   const [communityName, setCommunityName] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -71,6 +70,16 @@ const AdminCreateCommunityScreen = () => {
     }
   };
 
+  const handlePrivateToggle = value => {
+    setIsPrivate(value);
+    if (value) {
+      navigation.navigate('AddCustomQuestion', {
+        selectedQuestions,
+        setSelectedQuestions,
+      });
+    }
+  };
+
   const handleCreateCommunity = async () => {
     try {
       if (!communityName || !description) {
@@ -89,7 +98,7 @@ const AdminCreateCommunityScreen = () => {
         headerImage,
         profileImage,
         link,
-        organizer: userId, // Using userId directly from the context
+        organizer: userId,
       };
 
       const response = await axios.post(
@@ -196,10 +205,7 @@ const AdminCreateCommunityScreen = () => {
           <Text style={{fontSize: 16}}>Make Community Private</Text>
           <Switch
             value={isPrivate}
-            onValueChange={value => {
-              setIsPrivate(value);
-              if (value) setModalVisible(true);
-            }}
+            onValueChange={handlePrivateToggle}
             style={{marginLeft: 10}}
           />
         </View>
