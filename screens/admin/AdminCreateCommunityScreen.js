@@ -16,6 +16,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import {AuthContext} from '../../AuthContext';
+import {QUESTIONS} from '../../shared/questions.js';
 
 const AdminCreateCommunityScreen = () => {
   const navigation = useNavigation();
@@ -28,7 +29,6 @@ const AdminCreateCommunityScreen = () => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [headerImage, setHeaderImage] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
-  const [link, setLink] = useState('');
   const [selectedQuestions, setSelectedQuestions] = useState(
     route.params?.selectedQuestions || [],
   );
@@ -63,46 +63,30 @@ const AdminCreateCommunityScreen = () => {
   };
 
   const handleCreateCommunity = async () => {
+    const formattedQuestions = [...selectedQuestions, ...customQuestions];
+
+    const communityData = {
+      name: communityName.trim(),
+      description: description.trim(),
+      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+      isPrivate,
+      questions: isPrivate ? formattedQuestions : [],
+      headerImage: headerImage || null,
+      profileImage: profileImage || null,
+      userId,
+    };
+
+    console.log(
+      '📤 Gönderilen communityData:',
+      JSON.stringify(communityData, null, 2),
+    );
+
     try {
-      if (!communityName || !description) {
-        Alert.alert('Hata', 'Topluluk adı ve açıklama gereklidir.');
-        return;
-      }
-
-      if (!userId) {
-        console.error('User ID is missing');
-        Alert.alert(
-          'Hata',
-          'Kullanıcı ID’si eksik, lütfen tekrar giriş yapın.',
-        );
-        return;
-      }
-
-      console.log('Gönderilecek Header Image:', headerImage);
-      console.log('Gönderilecek Profile Image:', profileImage);
-
-      const allQuestions = [...selectedQuestions, ...customQuestions];
-
-      const communityData = {
-        name: communityName.trim(),
-        description: description.trim(),
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        isPrivate,
-        questions: isPrivate ? allQuestions : [],
-        headerImage: headerImage || null,
-        profileImage: profileImage || null,
-        userId,
-      };
-
-      console.log('Gönderilen communityData:', communityData);
-
       const response = await axios.post(
         'http://10.0.2.2:8000/communities',
         communityData,
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: {'Content-Type': 'application/json'},
         },
       );
 
@@ -177,12 +161,6 @@ const AdminCreateCommunityScreen = () => {
           onChangeText={setTags}
           style={styles.input}
         />
-        <TextInput
-          placeholder="Link"
-          value={link}
-          onChangeText={setLink}
-          style={styles.input}
-        />
 
         <View style={styles.switchContainer}>
           <Text style={{fontSize: 16}}>Make Community Private</Text>
@@ -192,6 +170,20 @@ const AdminCreateCommunityScreen = () => {
             style={{marginLeft: 10}}
           />
         </View>
+
+        {isPrivate && selectedQuestions.length > 0 && (
+          <View style={styles.questionContainer}>
+            <Text style={styles.questionHeader}>Seçilen Sorular:</Text>
+            {selectedQuestions.map((q, index) => {
+              const question = QUESTIONS.find(question => question.id === q.id);
+              return question ? (
+                <Text key={index} style={styles.questionText}>
+                  - {question.text}
+                </Text>
+              ) : null;
+            })}
+          </View>
+        )}
 
         <TouchableOpacity
           onPress={handleCreateCommunity}
@@ -218,34 +210,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  imageButtonText: {
-    color: '#4a4a4a',
-    fontSize: 16,
-  },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginTop: 10,
-    borderRadius: 10,
-  },
+  imageButtonText: {color: '#4a4a4a', fontSize: 16},
+  imagePreview: {width: 100, height: 100, marginTop: 10, borderRadius: 10},
   switchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
   },
+  questionContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  questionHeader: {fontSize: 18, fontWeight: 'bold', marginBottom: 10},
+  questionText: {fontSize: 16, marginBottom: 5},
   createButton: {
     backgroundColor: '#07bc0c',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  backButton: {
-    marginRight: 10,
-  },
+  buttonText: {color: 'white', fontSize: 16},
+  backButton: {marginRight: 10},
 });
 
 export default AdminCreateCommunityScreen;

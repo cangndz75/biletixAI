@@ -44,6 +44,7 @@ import StaffDetailsScreen from '../screens/super-admin/StaffDetailsScreen';
 import OrganizerSubscribe from '../screens/OrganizerSubscribe';
 import UserSubscribe from '../screens/UserSubscribe';
 import CreateCustomQuestion from '../screens/admin/CreateCustomQuestion';
+import JoinCommunityScreen from '../screens/JoinCommunityScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -321,6 +322,11 @@ const MainStack = () => (
     <Stack.Screen
       name="AdminDashboard"
       component={AdminDashboard}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="JoinCommunityScreen"
+      component={JoinCommunityScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

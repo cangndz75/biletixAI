@@ -11,6 +11,8 @@ const Message = require('./models/message');
 const Venue = require('./models/venue');
 const Community = require('./models/community');
 const Post = require('./models/post');
+const { QUESTIONS } = require('../shared/questions'); 
+const Question = require('./models/question');
 const moment = require('moment');
 const app = express();
 const port = process.env.PORT || 8000;
@@ -1416,19 +1418,9 @@ app.post('/user/unfollow', async (req, res) => {
 });
 
 app.post('/communities', async (req, res) => {
-  const { 
-    name, 
-    description, 
-    tags, 
-    isPrivate, 
-    headerImage, 
-    profileImage, 
-    links, 
-    userId 
-  } = req.body;
+  const { name, description, tags, isPrivate, headerImage, profileImage, links, userId, questions } = req.body;
 
   if (!userId) {
-    console.error('Hata: userId eksik!', req.body);
     return res.status(401).json({ message: 'Unauthorized: userId is required' });
   }
 
@@ -1437,7 +1429,23 @@ app.post('/communities', async (req, res) => {
   }
 
   try {
-    console.log('Yeni topluluk oluşturuluyor:', { name, userId, headerImage, profileImage });
+    console.log('📩 Gelen Questions:', questions);
+
+    let questionIds = [];
+
+    if (questions && questions.length > 0) {
+      for (const question of questions) {
+        let existingQuestion = await Question.findOne({ text: question.text });
+
+        if (!existingQuestion) {
+          existingQuestion = await new Question(question).save();
+        }
+
+        questionIds.push(existingQuestion._id);
+      }
+    }
+
+    console.log('✅ İşlenen Question IDs:', questionIds);
 
     const newCommunity = new Community({
       name,
@@ -1448,16 +1456,10 @@ app.post('/communities', async (req, res) => {
       profileImage: profileImage || null,
       links: links || [],
       organizer: userId,
+      questions: isPrivate ? questionIds : [],
     });
 
     const savedCommunity = await newCommunity.save();
-
-    console.log('✅ Topluluk başarıyla oluşturuldu:', savedCommunity);
-
-    await User.findByIdAndUpdate(userId, {
-      $push: { communities: savedCommunity._id },
-    });
-
     res.status(201).json(savedCommunity);
   } catch (error) {
     console.error('Error creating community:', error);
@@ -1620,11 +1622,16 @@ app.get('/communities/:communityId', async (req, res) => {
     const community = await Community.findById(communityId)
       .populate('members', 'firstName lastName image')
       .populate('organizer', 'firstName lastName')
-      .populate('questions');
+      .populate({
+        path: 'questions',
+        select: 'text type options',
+      });
 
+    console.log('Sorular:', community.questions);
     if (!community) {
       return res.status(404).json({message: 'Community not found'});
     }
+
     res.json(community);
   } catch (error) {
     console.error('Error fetching community:', error);

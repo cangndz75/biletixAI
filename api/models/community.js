@@ -10,7 +10,7 @@ const communitySchema = new Schema(
     tags: {type: [String], default: []},
     isPrivate: {type: Boolean, default: false},
     links: {type: [String], default: []},
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    members: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     joinRequests: [
       {
         userId: {type: Schema.Types.ObjectId, ref: 'User'},
@@ -33,13 +33,7 @@ const communitySchema = new Schema(
         createdAt: {type: Date, default: Date.now},
       },
     ],
-    questions: [
-      {
-        text: {type: String, required: true},
-        type: {type: String, enum: ['text', 'multiple-choice'], required: true},
-        options: {type: [String], default: []},
-      },
-    ],
+    questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
   },
   {timestamps: true},
 );

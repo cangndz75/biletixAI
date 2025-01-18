@@ -9,34 +9,17 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
+import {QUESTIONS} from  '../../shared/questions';
 
 const AddCustomQuestion = ({navigation}) => {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [customQuestions, setCustomQuestions] = useState([]);
 
-  const predefinedQuestions = [
-    {id: '1', text: 'Ad Soyad', type: 'text'},
-    {id: '2', text: 'E-mail', type: 'text'},
-    {id: '3', text: 'Telefon Numarası', type: 'text'},
-    {
-      id: '4',
-      text: 'Yaş Aralığı',
-      type: 'multiple_choice',
-      options: ['0-18', '19-25', '26-35', '36+'],
-    },
-    {
-      id: '5',
-      text: 'Eğitim Durumu',
-      type: 'multiple_choice',
-      options: ['Lise', 'Önlisans', 'Lisans', 'Yüksek Lisans', 'Doktora'],
-    },
-  ];
+  const predefinedQuestions = QUESTIONS;
 
   const toggleQuestionSelection = question => {
-    if (selectedQuestions.some(q => q.text === question.text)) {
-      setSelectedQuestions(
-        selectedQuestions.filter(q => q.text !== question.text),
-      );
+    if (selectedQuestions.some(q => q.id === question.id)) {
+      setSelectedQuestions(selectedQuestions.filter(q => q.id !== question.id));
     } else {
       setSelectedQuestions([...selectedQuestions, question]);
     }
@@ -47,12 +30,10 @@ const AddCustomQuestion = ({navigation}) => {
   };
 
   const handleSave = () => {
-    Alert.alert('Başarılı', 'Sorular başarıyla kaydedildi.', [
-      {
-        text: 'Tamam',
-        onPress: () => navigation.goBack(),
-      },
-    ]);
+    navigation.navigate('AdminCreateCommunity', {
+      selectedQuestions,
+      customQuestions,
+    });
   };
 
   return (
@@ -73,12 +54,11 @@ const AddCustomQuestion = ({navigation}) => {
           <TouchableOpacity
             style={[
               styles.questionItem,
-              selectedQuestions.some(q => q.text === item.text) &&
-                styles.selected,
+              selectedQuestions.some(q => q.id === item.id) && styles.selected,
             ]}
             onPress={() => toggleQuestionSelection(item)}>
             <Text style={styles.questionText}>{item.text}</Text>
-            {selectedQuestions.some(q => q.text === item.text) ? (
+            {selectedQuestions.some(q => q.id === item.id) ? (
               <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
             ) : (
               <Ionicons name="add-circle-outline" size={24} color="#888" />

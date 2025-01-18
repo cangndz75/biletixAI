@@ -13,6 +13,7 @@ import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {BottomModal, SlideAnimation, ModalContent} from 'react-native-modals';
 import {AuthContext} from '../AuthContext';
+import {QUESTIONS} from '../shared/questions.js';
 
 const CommunityDetailScreen = () => {
   const [community, setCommunityDetail] = useState(null);
@@ -34,26 +35,14 @@ const CommunityDetailScreen = () => {
 
     const fetchCommunityDetails = async () => {
       try {
-        const response = await axios.get(
-          `https://biletixai.onrender.com/communities/${communityId}`,
-        );
+        const response = await axios.get(`http://10.0.2.2:8000/communities/${communityId}`);
         const communityData = response.data;
         setCommunityDetail(communityData);
-
-        const isMember = communityData.members.some(
-          member => member._id === userId,
-        );
-        setIsJoined(isMember);
-
-        if (communityData.joinQuestions) {
-          setQuestions(communityData.joinQuestions);
-          setAnswers(
-            communityData.joinQuestions.reduce((acc, question) => {
-              acc[question] = '';
-              return acc;
-            }, {}),
-          );
-        }
+    
+        const parsedQuestions = communityData.questions.map(qId => QUESTIONS.find(q => q.id === qId)).filter(q => q);
+        
+        setQuestions(parsedQuestions);
+        setAnswers(parsedQuestions.reduce((acc, question) => ({ ...acc, [question.text]: '' }), {}));
       } catch (error) {
         console.error('Error fetching community details:', error);
         Alert.alert('Hata', 'Topluluk detayları bulunamadı.');
@@ -108,7 +97,7 @@ const CommunityDetailScreen = () => {
           <View style={styles.profileDetails}>
             <Text style={styles.name}>{community.name}</Text>
             <Text style={styles.members}>
-              {community.membersCount} Katılımcı
+              {community.members.length} Katılımcı
             </Text>
           </View>
         </View>
@@ -119,22 +108,17 @@ const CommunityDetailScreen = () => {
             isJoined
               ? null
               : community.isPrivate
-              ? () => setModalVisible(true)
+              ? () => navigation.navigate('JoinCommunityScreen', {communityId})
               : () => Alert.alert('Topluluğa katılım başarıyla sağlandı.')
           }
           disabled={isJoined}>
           <Text style={styles.joinButtonText}>
-            {isJoined
-              ? 'Katıldı'
-              : community.isPrivate
-              ? 'Soruları Cevapla ve Katıl'
-              : 'Topluluğa Katıl'}
+            {isJoined ? 'Katıldı' : 'Soruları Cevapla ve Katıl'}
           </Text>
         </TouchableOpacity>
 
         <Text style={styles.description}>{community.description}</Text>
 
-        {/* Modal for answering questions */}
         <BottomModal
           visible={modalVisible}
           onTouchOutside={() => setModalVisible(false)}
@@ -144,14 +128,14 @@ const CommunityDetailScreen = () => {
             <ScrollView style={styles.modalScroll}>
               {questions.map((question, index) => (
                 <View key={index} style={styles.questionContainer}>
-                  <Text style={styles.questionText}>{question}</Text>
+                  <Text style={styles.questionText}>{question.text}</Text>
                   <TextInput
                     placeholder="Cevabınızı yazın..."
                     style={styles.input}
                     multiline
-                    value={answers[question]}
+                    value={answers[question.text]}
                     onChangeText={text =>
-                      setAnswers(prev => ({...prev, [question]: text}))
+                      setAnswers(prev => ({...prev, [question.text]: text}))
                     }
                   />
                 </View>
