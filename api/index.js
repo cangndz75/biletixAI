@@ -11,7 +11,7 @@ const Message = require('./models/message');
 const Venue = require('./models/venue');
 const Community = require('./models/community');
 const Post = require('./models/post');
-const { QUESTIONS } = require('../shared/questions'); 
+const {QUESTIONS} = require('../shared/questions');
 const Question = require('./models/question');
 const moment = require('moment');
 const app = express();
@@ -1418,14 +1418,26 @@ app.post('/user/unfollow', async (req, res) => {
 });
 
 app.post('/communities', async (req, res) => {
-  const { name, description, tags, isPrivate, headerImage, profileImage, links, userId, questions } = req.body;
+  const {
+    name,
+    description,
+    tags,
+    isPrivate,
+    headerImage,
+    profileImage,
+    links,
+    userId,
+    questions,
+  } = req.body;
 
   if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized: userId is required' });
+    return res.status(401).json({message: 'Unauthorized: userId is required'});
   }
 
   if (!name || !description) {
-    return res.status(400).json({ message: 'Name and description are required.' });
+    return res
+      .status(400)
+      .json({message: 'Name and description are required.'});
   }
 
   try {
@@ -1435,7 +1447,7 @@ app.post('/communities', async (req, res) => {
 
     if (questions && questions.length > 0) {
       for (const question of questions) {
-        let existingQuestion = await Question.findOne({ text: question.text });
+        let existingQuestion = await Question.findOne({text: question.text});
 
         if (!existingQuestion) {
           existingQuestion = await new Question(question).save();
@@ -1463,7 +1475,7 @@ app.post('/communities', async (req, res) => {
     res.status(201).json(savedCommunity);
   } catch (error) {
     console.error('Error creating community:', error);
-    res.status(500).json({ message: 'Failed to create community.' });
+    res.status(500).json({message: 'Failed to create community.'});
   }
 });
 
@@ -1512,30 +1524,28 @@ app.post('/communities/:communityId/join', async (req, res) => {
 
   try {
     const community = await Community.findById(communityId);
-
     if (!community) {
       return res.status(404).json({message: 'Community not found'});
     }
 
-    if (!community.isPrivate) {
-      if (!community.members.includes(userId)) {
-        community.members.push(userId);
-        await community.save();
-        return res.status(200).json({message: 'Successfully joined community'});
-      }
-      return res.status(400).json({message: 'User is already a member'});
-    }
+    const formattedAnswers = new Map(
+      Object.entries(answers).map(([questionId, answer]) => [
+        questionId.toString(),
+        answer,
+      ]),
+    );
 
-    if (community.joinRequests.some(req => req.userId.toString() === userId)) {
-      return res.status(400).json({message: 'Join request already exists'});
-    }
+    community.joinRequests.push({
+      userId,
+      answers: formattedAnswers,
+      status: 'pending',
+    });
 
-    community.joinRequests.push({userId, answers, status: 'pending'});
     await community.save();
-    return res.status(200).json({message: 'Join request sent'});
+    res.status(201).json({message: 'Join request submitted successfully'});
   } catch (error) {
-    console.error('Error joining community:', error);
-    res.status(500).json({message: 'Internal server error'});
+    console.error('Error submitting join request:', error);
+    res.status(500).json({message: 'Failed to submit join request'});
   }
 });
 
@@ -1543,18 +1553,31 @@ app.get('/communities/:communityId/requests', async (req, res) => {
   const {communityId} = req.params;
 
   try {
-    const community = await Community.findById(communityId).populate(
-      'joinRequests.userId',
-      'firstName lastName image',
-    );
+    const community = await Community.findById(communityId)
+      .populate('joinRequests.userId', 'firstName lastName image')
+      .populate('questions');
 
     if (!community) {
       return res.status(404).json({message: 'Community not found'});
     }
 
-    const pendingRequests = community.joinRequests.filter(
-      req => req.status === 'pending',
-    );
+    const pendingRequests = community.joinRequests
+      .filter(req => req.status === 'pending')
+      .map(request => {
+        const answersObject = request.answers || {};
+        return {
+          _id: request._id,
+          userId: request.userId,
+          status: request.status,
+          requestedAt: request.requestedAt,
+          answers: community.questions.map(q => ({
+            questionId: q._id.toString(),
+            questionText: q.text,
+            answer: answersObject[q.text] || 'Cevap verilmedi',
+          })),
+        };
+      });
+
     res.status(200).json(pendingRequests);
   } catch (error) {
     console.error('Error fetching join requests:', error);
