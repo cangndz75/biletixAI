@@ -2009,3 +2009,38 @@ app.get('/organizers', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+app.post('/addStaff', async (req, res) => {
+  try {
+    const { firstName, email } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    const newStaff = new User({
+      firstName,
+      email,
+      role: 'staff',
+    });
+
+    await newStaff.save();
+    res.status(201).json({ message: 'Staff added successfully', staff: newStaff });
+
+  } catch (error) {
+    console.error('Error adding staff:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+app.get('/staffs', async (req, res) => {
+  try {
+    const staffList = await User.find({ role: 'staff' }).sort({ createdAt: -1 });
+
+    res.status(200).json(staffList || []);
+  } catch (error) {
+    console.error('Error fetching staff list:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});

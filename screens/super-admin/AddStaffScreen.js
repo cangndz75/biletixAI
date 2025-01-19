@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,24 +6,73 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
+  FlatList,
+  Modal,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
 
 const AddStaffScreen = ({navigation}) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('');
+  const [staffList, setStaffList] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddStaff = () => {
-    if (!name || !email || !role) {
+  useEffect(() => {
+    fetchStaffs();
+  }, []);
+
+  const fetchStaffs = async () => {
+    try {
+      const response = await axios.get(
+        'https://biletixai.onrender.com/users/staffs',
+      );
+      setStaffList(response.data);
+    } catch (error) {
+      console.error('Error fetching staff list:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!name || !email) {
       Alert.alert('Error', 'All fields are required!');
       return;
     }
 
-    Alert.alert('Success', `${name} has been added as ${role}`);
-    setName('');
-    setEmail('');
-    setRole('');
+    try {
+      const response = await axios.post(
+        'https://biletixai.onrender.com/users/addStaff',
+        {firstName: name, email},
+      );
+      Alert.alert('Success', `${name} has been added as Staff!`);
+      setName('');
+      setEmail('');
+      fetchStaffs();
+    } catch (error) {
+      console.error('Error adding staff:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to add staff.',
+      );
+    }
+  };
+
+  const handleRemoveStaff = async id => {
+    try {
+      await axios.delete('https://biletixai.onrender.com/users/removeStaff', {
+        data: {id},
+      });
+      Alert.alert('Removed', 'Staff has been removed.');
+      fetchStaffs();
+    } catch (error) {
+      console.error('Error removing staff:', error);
+      Alert.alert('Error', 'Failed to remove staff.');
+    }
   };
 
   return (
@@ -53,14 +102,6 @@ const AddStaffScreen = ({navigation}) => {
         keyboardType="email-address"
       />
 
-      <Text style={styles.label}>Role</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter role (e.g., Staff, Moderator)"
-        value={role}
-        onChangeText={setRole}
-      />
-
       <TouchableOpacity style={styles.addButton} onPress={handleAddStaff}>
         <Ionicons name="checkmark-circle" size={24} color="white" />
         <Text style={styles.buttonText}>Save Staff</Text>
@@ -68,10 +109,45 @@ const AddStaffScreen = ({navigation}) => {
 
       <TouchableOpacity
         style={styles.manageButton}
-        onPress={() => navigation.navigate('ManageStaffScreen')}>
+        onPress={() => setModalVisible(true)}>
         <Ionicons name="people" size={24} color="white" />
-        <Text style={styles.buttonText}>Manage Staff</Text>
+        <Text style={styles.buttonText}>Manage Staffs</Text>
       </TouchableOpacity>
+
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Manage Staffs</Text>
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#007AFF" />
+          ) : (
+            <FlatList
+              data={staffList}
+              keyExtractor={item => item._id}
+              renderItem={({item}) => (
+                <View style={styles.staffCard}>
+                  <Image
+                    source={{
+                      uri: item.image || 'https://via.placeholder.com/50',
+                    }}
+                    style={styles.avatar}
+                  />
+                  <Text style={styles.staffName}>{item.firstName}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveStaff(item._id)}>
+                    <Ionicons name="trash" size={24} color="red" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          )}
+
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setModalVisible(false)}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -128,6 +204,49 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  staffCard: {
+    flexDirection: 'row',
+    backgroundColor: '#f9f9f9',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  staffName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    flex: 1,
+    marginLeft: 10,
+  },
+  closeButton: {
+    backgroundColor: '#d32f2f',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
