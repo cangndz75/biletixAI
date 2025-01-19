@@ -2014,8 +2014,8 @@ app.post('/staffs/add', async (req, res) => {
   try {
     const { firstName, email } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+    if (!firstName || !email) {
+      return res.status(400).json({ message: 'Full Name and Email are required' });
     }
 
     let user = await User.findOne({ email });
@@ -2045,7 +2045,7 @@ app.get('/staffs', async (req, res) => {
   try {
     const staffs = await User.find({ role: 'staff' }).select('firstName email createdAt');
 
-    res.status(200).json(staffs.length > 0 ? staffs : []);
+    res.status(200).json(staffs);
   } catch (error) {
     console.error('Error fetching staff list:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -2063,6 +2063,10 @@ app.delete('/staffs/remove', async (req, res) => {
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'Staff not found' });
+    }
+
+    if (user.role !== 'staff') {
+      return res.status(400).json({ message: 'User is not a staff member' });
     }
 
     user.role = 'user';

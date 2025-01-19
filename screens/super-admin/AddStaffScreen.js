@@ -1,27 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
   TextInput,
-  TouchableOpacity,
-  Alert,
+  Pressable,
   StyleSheet,
-  FlatList,
   Modal,
-  ActivityIndicator,
   Image,
+  FlatList,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const API_URL = 'https://biletixai.onrender.com/users';
+const API_URL = 'https://biletixai.onrender.com/staffs';
 
-const AddStaffScreen = ({ navigation }) => {
-  const [name, setName] = useState('');
+const AddStaffScreen = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [image, setImage] = useState(null);
   const [staffList, setStaffList] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const images = [
+    {id: '1', uri: 'https://cdn-icons-png.flaticon.com/128/16683/16683469.png'},
+    {id: '2', uri: 'https://cdn-icons-png.flaticon.com/128/16683/16683439.png'},
+    {id: '3', uri: 'https://cdn-icons-png.flaticon.com/128/4202/4202835.png'},
+    {id: '4', uri: 'https://cdn-icons-png.flaticon.com/128/3079/3079652.png'},
+  ];
 
   useEffect(() => {
     fetchStaffs();
@@ -29,7 +40,7 @@ const AddStaffScreen = ({ navigation }) => {
 
   const fetchStaffs = async () => {
     try {
-      const response = await axios.get(`${API_URL}/staffs`);
+      const response = await axios.get(`${API_URL}`);
       setStaffList(response.data || []);
     } catch (error) {
       console.error('Error fetching staff list:', error);
@@ -40,26 +51,36 @@ const AddStaffScreen = ({ navigation }) => {
   };
 
   const handleAddStaff = async () => {
-    if (!name || !email) {
-      Alert.alert('Error', 'All fields are required!');
+    if (!email || !firstName) {
+      Alert.alert('Error', 'Please fill in all required fields.');
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/staffs/add`, { firstName: name, email });
-      Alert.alert('Success', `${name} has been added as Staff!`);
-      setName('');
+      await axios.post(`${API_URL}/add`, {
+        firstName,
+        email,
+        image,
+        role: 'staff',
+      });
+
+      Alert.alert('Success', `${firstName} has been added as Staff!`);
+      setFirstName('');
       setEmail('');
+      setImage(null);
       fetchStaffs();
     } catch (error) {
       console.error('Error adding staff:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add staff.');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to add staff.',
+      );
     }
   };
 
-  const handleRemoveStaff = async (id) => {
+  const handleRemoveStaff = async id => {
     try {
-      await axios.delete(`${API_URL}/staffs/remove`, { data: { id } });
+      await axios.delete(`${API_URL}/remove`, {data: {id}});
       Alert.alert('Removed', 'Staff role has been removed.');
       fetchStaffs();
     } catch (error) {
@@ -68,121 +89,156 @@ const AddStaffScreen = ({ navigation }) => {
     }
   };
 
+  const handleImageSelect = uri => {
+    setImage(uri);
+    setModalVisible(false);
+  };
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <SafeAreaView style={styles.container}>
+      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={28} color="#333" />
-      </TouchableOpacity>
+      </Pressable>
 
-      <Text style={styles.title}>Add New Staff</Text>
+      <Text style={styles.headerText}>Add New Staff</Text>
 
-      <Text style={styles.label}>Full Name</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter full name"
-        value={name}
-        onChangeText={setName}
-      />
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Full Name *</Text>
+        <TextInput
+          style={styles.input}
+          value={firstName}
+          onChangeText={setFirstName}
+          placeholder="Enter full name"
+        />
+      </View>
 
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Email *</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Enter email"
+          keyboardType="email-address"
+        />
+      </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddStaff}>
-        <Ionicons name="checkmark-circle" size={24} color="white" />
-        <Text style={styles.buttonText}>Save Staff</Text>
-      </TouchableOpacity>
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Profile Picture</Text>
+        <Pressable
+          style={styles.imageSelector}
+          onPress={() => setModalVisible(true)}>
+          <Text style={styles.imageSelectorText}>
+            {image ? 'Change Picture' : 'Add Picture'}
+          </Text>
+        </Pressable>
+        {image && <Image source={{uri: image}} style={styles.selectedImage} />}
+      </View>
 
-      <TouchableOpacity style={styles.manageButton} onPress={() => setModalVisible(true)}>
+      <Pressable style={styles.submitButton} onPress={handleAddStaff}>
+        <Text style={styles.submitButtonText}>Save Staff</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.manageButton}
+        onPress={() => navigation.navigate('ManageStaffScreen')}>
         <Ionicons name="people" size={24} color="white" />
-        <Text style={styles.buttonText}>Manage Staffs</Text>
-      </TouchableOpacity>
+        <Text style={styles.buttonText}>Manage Staff</Text>
+      </Pressable>
 
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Manage Staffs</Text>
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#007AFF" />
-          ) : staffList.length === 0 ? (
-            <Text style={styles.noStaffText}>No staff members found.</Text>
-          ) : (
+      <Modal
+        animationType="slide"
+        transparent
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalHeader}>Select Profile Picture</Text>
             <FlatList
-              data={staffList}
-              keyExtractor={(item) => item._id}
-              renderItem={({ item }) => (
-                <View style={styles.staffCard}>
-                  <Image
-                    source={{ uri: item.image || 'https://via.placeholder.com/50' }}
-                    style={styles.avatar}
-                  />
-                  <Text style={styles.staffName}>{item.firstName}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveStaff(item._id)}>
-                    <Ionicons name="trash" size={24} color="red" />
-                  </TouchableOpacity>
-                </View>
+              data={images}
+              keyExtractor={item => item.id}
+              horizontal
+              renderItem={({item}) => (
+                <Pressable onPress={() => handleImageSelect(item.uri)}>
+                  <Image source={{uri: item.uri}} style={styles.modalImage} />
+                </Pressable>
               )}
             />
-          )}
-
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+            <Pressable
+              style={styles.closeModalButton}
+              onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </Pressable>
+          </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
+
+export default AddStaffScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F6F9',
-    padding: 20,
+    backgroundColor: 'white',
+    paddingHorizontal: 20,
+    paddingTop: 40,
   },
   backButton: {
     marginBottom: 15,
   },
-  title: {
+  headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 20,
+  },
+  formGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
-    color: '#333',
   },
   input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
   },
-  addButton: {
-    flexDirection: 'row',
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 10,
-    justifyContent: 'center',
+  imageSelector: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
+  },
+  selectedImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+  submitButton: {
+    backgroundColor: 'green',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   manageButton: {
-    flexDirection: 'row',
     backgroundColor: '#FF6F00',
     padding: 15,
-    borderRadius: 10,
-    justifyContent: 'center',
+    borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
@@ -190,51 +246,31 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
     padding: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  staffCard: {
-    flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-    padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  staffName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    flex: 1,
-    marginLeft: 10,
-  },
-  closeButton: {
-    backgroundColor: '#d32f2f',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  closeButtonText: {
-    color: 'white',
+  modalHeader: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginHorizontal: 10,
+    borderWidth: 2,
+    borderColor: 'green',
   },
 });
-
-export default AddStaffScreen;
