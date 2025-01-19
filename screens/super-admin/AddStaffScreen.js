@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const AddStaffScreen = ({navigation}) => {
+const API_URL = 'https://biletixai.onrender.com/users';
+
+const AddStaffScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [staffList, setStaffList] = useState([]);
@@ -27,12 +29,11 @@ const AddStaffScreen = ({navigation}) => {
 
   const fetchStaffs = async () => {
     try {
-      const response = await axios.get(
-        'https://biletixai.onrender.com/users/staffs',
-      );
-      setStaffList(response.data);
+      const response = await axios.get(`${API_URL}/staffs`);
+      setStaffList(response.data || []);
     } catch (error) {
       console.error('Error fetching staff list:', error);
+      setStaffList([]);
     } finally {
       setLoading(false);
     }
@@ -45,29 +46,21 @@ const AddStaffScreen = ({navigation}) => {
     }
 
     try {
-      const response = await axios.post(
-        'https://biletixai.onrender.com/users/addStaff',
-        {firstName: name, email},
-      );
+      await axios.post(`${API_URL}/staffs/add`, { firstName: name, email });
       Alert.alert('Success', `${name} has been added as Staff!`);
       setName('');
       setEmail('');
       fetchStaffs();
     } catch (error) {
       console.error('Error adding staff:', error);
-      Alert.alert(
-        'Error',
-        error.response?.data?.message || 'Failed to add staff.',
-      );
+      Alert.alert('Error', error.response?.data?.message || 'Failed to add staff.');
     }
   };
 
-  const handleRemoveStaff = async id => {
+  const handleRemoveStaff = async (id) => {
     try {
-      await axios.delete('https://biletixai.onrender.com/users/removeStaff', {
-        data: {id},
-      });
-      Alert.alert('Removed', 'Staff has been removed.');
+      await axios.delete(`${API_URL}/staffs/remove`, { data: { id } });
+      Alert.alert('Removed', 'Staff role has been removed.');
       fetchStaffs();
     } catch (error) {
       console.error('Error removing staff:', error);
@@ -77,9 +70,7 @@ const AddStaffScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={28} color="#333" />
       </TouchableOpacity>
 
@@ -107,9 +98,7 @@ const AddStaffScreen = ({navigation}) => {
         <Text style={styles.buttonText}>Save Staff</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.manageButton}
-        onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.manageButton} onPress={() => setModalVisible(true)}>
         <Ionicons name="people" size={24} color="white" />
         <Text style={styles.buttonText}>Manage Staffs</Text>
       </TouchableOpacity>
@@ -120,16 +109,16 @@ const AddStaffScreen = ({navigation}) => {
 
           {loading ? (
             <ActivityIndicator size="large" color="#007AFF" />
+          ) : staffList.length === 0 ? (
+            <Text style={styles.noStaffText}>No staff members found.</Text>
           ) : (
             <FlatList
               data={staffList}
-              keyExtractor={item => item._id}
-              renderItem={({item}) => (
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
                 <View style={styles.staffCard}>
                   <Image
-                    source={{
-                      uri: item.image || 'https://via.placeholder.com/50',
-                    }}
+                    source={{ uri: item.image || 'https://via.placeholder.com/50' }}
                     style={styles.avatar}
                   />
                   <Text style={styles.staffName}>{item.firstName}</Text>
@@ -141,9 +130,7 @@ const AddStaffScreen = ({navigation}) => {
             />
           )}
 
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setModalVisible(false)}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>

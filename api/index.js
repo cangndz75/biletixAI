@@ -2010,24 +2010,31 @@ app.get('/organizers', async (req, res) => {
   }
 });
 
-app.post('/addStaff', async (req, res) => {
+app.post('/staffs/add', async (req, res) => {
   try {
     const { firstName, email } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
     }
 
-    const newStaff = new User({
-      firstName,
-      email,
-      role: 'staff',
-    });
+    let user = await User.findOne({ email });
 
-    await newStaff.save();
-    res.status(201).json({ message: 'Staff added successfully', staff: newStaff });
+    if (user) {
+      if (user.role === 'staff') {
+        return res.status(400).json({ message: 'User is already a staff member' });
+      }
+      user.role = 'staff';
+    } else {
+      user = new User({
+        firstName,
+        email,
+        role: 'staff',
+      });
+    }
 
+    await user.save();
+    res.status(201).json({ message: 'Staff added successfully', user });
   } catch (error) {
     console.error('Error adding staff:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -2036,11 +2043,34 @@ app.post('/addStaff', async (req, res) => {
 
 app.get('/staffs', async (req, res) => {
   try {
-    const staffList = await User.find({ role: 'staff' }).sort({ createdAt: -1 });
+    const staffs = await User.find({ role: 'staff' }).select('firstName email createdAt');
 
-    res.status(200).json(staffList || []);
+    res.status(200).json(staffs.length > 0 ? staffs : []);
   } catch (error) {
     console.error('Error fetching staff list:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+app.delete('/staffs/remove', async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Staff ID is required' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Staff not found' });
+    }
+
+    user.role = 'user';
+    await user.save();
+
+    res.status(200).json({ message: 'Staff role removed successfully' });
+  } catch (error) {
+    console.error('Error removing staff:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
