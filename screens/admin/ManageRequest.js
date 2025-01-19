@@ -24,7 +24,7 @@ const ManageRequests = () => {
   const fetchRequests = async () => {
     try {
       const response = await axios.get(
-        `http://10.0.2.2:8000/events/${eventId}/requests`,
+        `https://biletixai.onrender.com/events/${eventId}/requests`,
       );
       setRequests(response.data);
     } catch (error) {
@@ -35,7 +35,7 @@ const ManageRequests = () => {
   const fetchAttendees = async () => {
     try {
       const response = await axios.get(
-        `http://10.0.2.2:8000/event/${eventId}/attendees`,
+        `https://biletixai.onrender.com/event/${eventId}/attendees`,
       );
       setAttendees(response.data);
     } catch (error) {
@@ -45,15 +45,16 @@ const ManageRequests = () => {
 
   const acceptRequest = async (userId, requestId, eventId) => {
     try {
-      const response = await axios.post(`http://10.0.2.2:8000/accept`, {
+      const response = await axios.post(`https://biletixai.onrender.com/accept`, {
         userId,
         requestId,
         eventId,
       });
+
       if (response.status === 200) {
         Alert.alert('Success', 'Request accepted');
-        fetchRequests();
-        fetchAttendees();
+        fetchEventDetails();
+        checkRequestStatus();
       }
     } catch (error) {
       console.error('Failed to accept request:', error);
@@ -63,7 +64,7 @@ const ManageRequests = () => {
 
   const rejectRequest = async (requestId, eventId) => {
     try {
-      const response = await axios.post(`http://10.0.2.2:8000/reject`, {
+      const response = await axios.post(`https://biletixai.onrender.com/reject`, {
         requestId,
         eventId,
       });

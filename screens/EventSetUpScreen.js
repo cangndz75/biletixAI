@@ -45,9 +45,9 @@ const EventSetUpScreen = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchEventDetails();
-      checkRequestStatus();
-    }, []),
+      fetchEventDetails(); 
+      checkRequestStatus(); 
+    }, [eventId]), 
   );
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const EventSetUpScreen = () => {
       );
       console.log('Event data:', response.data);
 
-      if (response.data.members?.includes(userId)) {
+      if (response.data.attendees?.some(attendee => attendee._id === userId)) {
         setIsJoined(true);
       } else {
         setIsJoined(false);
@@ -97,7 +97,7 @@ const EventSetUpScreen = () => {
     setIsFavorited(prev => !prev);
 
     try {
-      const response = await axios.post('http://10.0.2.2:8000/favorites', {
+      const response = await axios.post('https://biletixai.onrender.com/favorites', {
         userId,
         eventId: item._id,
       });
@@ -202,7 +202,7 @@ const EventSetUpScreen = () => {
 
   const sendJoinRequest = async () => {
     try {
-      await axios.post(`http://10.0.2.2:8000/events/${eventId}/request`, {
+      await axios.post(`https://biletixai.onrender.com/events/${eventId}/request`, {
         userId,
         comment,
       });
@@ -219,7 +219,7 @@ const EventSetUpScreen = () => {
   const cancelJoinRequest = async () => {
     try {
       await axios.post(
-        `http://10.0.2.2:8000/events/${eventId}/cancel-request`,
+        `https://biletixai.onrender.com/events/${eventId}/cancel-request`,
         {userId},
       );
       setRequestStatus('none');
