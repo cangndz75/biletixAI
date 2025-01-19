@@ -97,10 +97,13 @@ const AdminCreateScreen = () => {
         );
       }
 
-      const response = await axios.post('https://biletixai.onrender.com/generate', {
-        eventName: event,
-        location: taggedVenue,
-      });
+      const response = await axios.post(
+        'https://biletixai.onrender.com/generate',
+        {
+          eventName: event,
+          location: taggedVenue,
+        },
+      );
 
       if (response.status === 200) {
         const generatedContent = response.data.response.trim();
@@ -126,29 +129,39 @@ const AdminCreateScreen = () => {
   console.log('Participants:', noOfParticipants);
 
   const createEvent = async () => {
+    if (
+      !event ||
+      !selectedType ||
+      !location ||
+      !date ||
+      !timeInterval ||
+      !noOfParticipants
+    ) {
+      Alert.alert('Error', 'All required fields must be filled.');
+      return;
+    }
+
     const eventData = {
-      eventName: event,
-      description,
-      tags,
+      title: event,
+      eventType: selectedType,
       location: taggedVenue || location,
       date,
       time: timeInterval,
-      noOfParticipants,
-      selectedType,
+      totalParticipants: parseInt(noOfParticipants, 10),
+      description,
+      tags: tags.split(',').map(tag => tag.trim()),
       images,
       isPaid,
       price: isPaid ? price : 0,
+      organizer: userId || '659ae6fbc65b3f001c8eae9e',
     };
 
     try {
       console.log('Event Data:', eventData);
 
-      const jsonData = JSON.stringify(eventData);
-      console.log('JSON Stringified Data:', jsonData);
-
       const response = await axios.post(
         'https://biletixai.onrender.com/createevent',
-        jsonData,
+        eventData,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -158,9 +171,15 @@ const AdminCreateScreen = () => {
 
       if (response.status === 201) {
         Alert.alert('Success', 'Event created successfully!');
+        navigation.goBack();
+      } else {
+        Alert.alert('Error', 'Failed to create event. Please try again.');
       }
     } catch (error) {
-      console.error('Event creation error:', error.message);
+      console.error(
+        'Event creation error:',
+        error.response?.data || error.message,
+      );
       Alert.alert('Error', 'Failed to create event. Please try again.');
     }
   };

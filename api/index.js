@@ -403,51 +403,58 @@ app.post('/generate', async (req, res) => {
 });
 
 app.post('/createevent', async (req, res) => {
-  console.log('Received event data:', req.body);
+  console.log('Received event data:', JSON.stringify(req.body, null, 2));
 
   const {
     title,
     description,
-    tags,
+    tags = [],
     location,
     date,
     time,
     eventType,
     totalParticipants,
     organizer,
-    images,
+    images = [],
     isPaid,
     price,
   } = req.body;
 
   if (!title || !location || !eventType || !totalParticipants || !organizer) {
-    console.log('Missing required fields');
-    return res
-      .status(400)
-      .json({message: 'All fields are required except date.'});
+    console.log('🚨 Missing required fields:', {
+      title,
+      location,
+      eventType,
+      totalParticipants,
+      organizer,
+    });
+
+    return res.status(400).json({
+      message: 'All fields are required except date and optional fields.',
+    });
   }
 
   try {
     const newEvent = new Event({
       title,
       description,
-      tags,
+      tags: Array.isArray(tags) ? tags : [],
       location,
       date,
       time,
       eventType,
-      totalParticipants,
+      totalParticipants: Number(totalParticipants),
       organizer,
-      images,
-      isPaid,
-      price: isPaid ? price : null,
+      images: Array.isArray(images) ? images : [],
+      isPaid: Boolean(isPaid), // Boolean'a çevir
+      price: isPaid ? Number(price) || 0 : 0, 
     });
 
     await newEvent.save();
-    console.log('Event created successfully:', newEvent);
-    res.status(200).json(newEvent);
+    console.log('✅ Event created successfully:', newEvent);
+    res.status(201).json(newEvent);
   } catch (error) {
-    console.error('Error creating event:', error.message);
+    console.error('🚨 Error creating event:', error.stack);
     res.status(500).json({message: 'Failed to create event.'});
   }
 });
@@ -932,7 +939,7 @@ app.delete('/messages/:messageId', async (req, res) => {
 app.get('/users', async (req, res) => {
   console.log('Fetching users...');
   try {
-    const { role } = req.query;
+    const {role} = req.query;
 
     let query = {};
     if (role) {

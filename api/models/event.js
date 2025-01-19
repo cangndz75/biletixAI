@@ -24,17 +24,6 @@ const eventSchema = new Schema(
       required: true,
     },
     priority_score: {type: Number, default: 0},
-    seat_map: [
-      {
-        row: {type: String},
-        number: {type: Number},
-        status: {
-          type: String,
-          enum: ['available', 'booked'],
-          default: 'available',
-        },
-      },
-    ],
     community: {type: mongoose.Schema.Types.ObjectId, ref: 'Community'},
     attendees: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     requests: [
