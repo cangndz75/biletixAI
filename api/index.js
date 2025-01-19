@@ -139,22 +139,26 @@ app.listen(port, () => {
 
 app.get('/user/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const {userId} = req.params;
 
     const user = await User.findById(userId)
       .populate('events')
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
-      .select('firstName lastName username image subscriptionType aboutMe events followers following');
+      .select(
+        'firstName lastName username image subscriptionType aboutMe events followers following',
+      );
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({message: 'User not found'});
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error('Error fetching user data:', error);
-    res.status(500).json({ message: 'Error fetching user data', error: error.message });
+    res
+      .status(500)
+      .json({message: 'Error fetching user data', error: error.message});
   }
 });
 
@@ -2002,79 +2006,107 @@ app.post('/user/rejectFriendRequest', async (req, res) => {
 
 app.get('/organizers', async (req, res) => {
   try {
-    const organizers = await User.find({ role: 'organizer' }).sort({ createdAt: -1 });
+    const organizers = await User.find({role: 'organizer'}).sort({
+      createdAt: -1,
+    });
     res.status(200).json(organizers);
   } catch (error) {
     console.error('Error fetching organizers:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 
 app.post('/staffs/add', async (req, res) => {
   try {
-    const { firstName, email } = req.body;
+    console.log('📌 POST /staffs/add request received:', req.body);
+
+    const {firstName, email} = req.body;
 
     if (!firstName || !email) {
-      return res.status(400).json({ message: 'Full Name and Email are required' });
+      console.log('❌ Missing required fields');
+      return res
+        .status(400)
+        .json({message: 'Full Name and Email are required'});
     }
 
-    let user = await User.findOne({ email });
+    let existingUser = await User.findOne({email});
 
-    if (user) {
-      if (user.role === 'staff') {
-        return res.status(400).json({ message: 'User is already a staff member' });
-      }
-      user.role = 'staff';
-    } else {
-      user = new User({
-        firstName,
-        email,
-        role: 'staff',
-      });
+    if (existingUser) {
+      console.log(`⚠️ User with email ${email} already exists`);
+      return res
+        .status(400)
+        .json({message: 'User with this email already exists'});
     }
 
-    await user.save();
-    res.status(201).json({ message: 'Staff added successfully', user });
+    console.log('🆕 Creating new staff user');
+    const newUser = new User({
+      firstName,
+      email,
+      role: 'staff',
+    });
+
+    await newUser.save();
+    console.log('✅ Staff added successfully:', newUser);
+
+    res.status(201).json({message: 'Staff added successfully', user: newUser});
   } catch (error) {
-    console.error('Error adding staff:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('❌ Error adding staff:', error);
+
+    res
+      .status(500)
+      .json({message: 'Internal Server Error', error: error.message});
   }
 });
 
 app.get('/staffs', async (req, res) => {
   try {
-    const staffs = await User.find({ role: 'staff' }).select('firstName email createdAt');
+    console.log('📌 GET /staffs request received');
 
+    const staffs = await User.find({role: 'staff'}).select(
+      'firstName email createdAt',
+    );
+
+    console.log(`✅ Staffs fetched: ${staffs.length} records`);
     res.status(200).json(staffs);
   } catch (error) {
-    console.error('Error fetching staff list:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('❌ Error fetching staff list:', error);
+    res
+      .status(500)
+      .json({message: 'Internal Server Error', error: error.message});
   }
 });
 
 app.delete('/staffs/remove', async (req, res) => {
   try {
-    const { id } = req.body;
+    console.log('📌 DELETE /staffs/remove request received:', req.body);
+
+    const {id} = req.body;
 
     if (!id) {
-      return res.status(400).json({ message: 'Staff ID is required' });
+      console.log('❌ Missing Staff ID');
+      return res.status(400).json({message: 'Staff ID is required'});
     }
 
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({ message: 'Staff not found' });
+      console.log('⚠️ Staff not found');
+      return res.status(404).json({message: 'Staff not found'});
     }
 
     if (user.role !== 'staff') {
-      return res.status(400).json({ message: 'User is not a staff member' });
+      console.log('⚠️ User is not a staff member');
+      return res.status(400).json({message: 'User is not a staff member'});
     }
 
     user.role = 'user';
     await user.save();
 
-    res.status(200).json({ message: 'Staff role removed successfully' });
+    console.log(`✅ Staff role removed: ${user._id}`);
+    res.status(200).json({message: 'Staff role removed successfully'});
   } catch (error) {
-    console.error('Error removing staff:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('❌ Error removing staff:', error);
+    res
+      .status(500)
+      .json({message: 'Internal Server Error', error: error.message});
   }
 });
