@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,27 +6,95 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
 
 const ManageOrganizersScreen = () => {
-  const [organizers, setOrganizers] = useState([
-    {id: '1', name: 'John Doe', status: 'pending'},
-    {id: '2', name: 'Jane Smith', status: 'approved'},
-    {id: '3', name: 'Alice Brown', status: 'pending'},
-  ]);
+  const [organizers, setOrganizers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleApprove = id => {
-    setOrganizers(prev =>
-      prev.map(org => (org.id === id ? {...org, status: 'approved'} : org)),
+  useEffect(() => {
+    fetchOrganizers();
+  }, []);
+
+  const fetchOrganizers = async () => {
+    try {
+      const response = await axios.get(
+        'https://biletixai.onrender.com/organizers',
+      );
+      setOrganizers(response.data);
+    } catch (error) {
+      console.error('Error fetching organizers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveOrganizer = async id => {
+    try {
+      await axios.post('https://biletixai.onrender.com/approveOrganizer', {
+        id,
+      });
+      setOrganizers(prev =>
+        prev.map(org => (org._id === id ? {...org, status: 'approved'} : org)),
+      );
+      Alert.alert('Success', 'Organizer approved successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to approve organizer.');
+    }
+  };
+
+  const handleRejectOrganizer = async id => {
+    try {
+      await axios.delete('https://biletixai.onrender.com/rejectOrganizer', {
+        data: {id},
+      });
+      setOrganizers(prev => prev.filter(org => org._id !== id));
+      Alert.alert('Removed', 'Organizer request rejected.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reject organizer.');
+    }
+  };
+
+  const renderItem = ({item}) => (
+    <View style={styles.card}>
+      <Image source={{uri: item.image}} style={styles.avatar} />
+      <Text style={styles.cardTitle}>{item.firstName}</Text>
+      <View style={styles.actions}>
+        {item.status === 'pending' ? (
+          <>
+            <TouchableOpacity
+              style={styles.approveButton}
+              onPress={() => handleApproveOrganizer(item._id)}>
+              <Ionicons name="checkmark-circle" size={20} color="white" />
+              <Text style={styles.buttonText}>Approve</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.rejectButton}
+              onPress={() => handleRejectOrganizer(item._id)}>
+              <Ionicons name="close-circle" size={20} color="white" />
+              <Text style={styles.buttonText}>Reject</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.approvedText}>✅ Approved</Text>
+        )}
+      </View>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text>Loading...</Text>
+      </View>
     );
-    Alert.alert('Success', 'Organizer approved successfully!');
-  };
-
-  const handleReject = id => {
-    setOrganizers(prev => prev.filter(org => org.id !== id));
-    Alert.alert('Removed', 'Organizer request rejected.');
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -34,33 +102,8 @@ const ManageOrganizersScreen = () => {
 
       <FlatList
         data={organizers}
-        keyExtractor={item => item.id}
-        renderItem={({item}) => (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
-            <View style={styles.actions}>
-              {item.status === 'pending' ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.approveButton}
-                    onPress={() => handleApprove(item.id)}>
-                    <Ionicons name="checkmark-circle" size={20} color="white" />
-                    <Text style={styles.buttonText}>Approve</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.rejectButton}
-                    onPress={() => handleReject(item.id)}>
-                    <Ionicons name="close-circle" size={20} color="white" />
-                    <Text style={styles.buttonText}>Reject</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text style={styles.approvedText}>✅ Approved</Text>
-              )}
-            </View>
-          </View>
-        )}
+        keyExtractor={item => item._id}
+        renderItem={renderItem}
       />
     </View>
   );
@@ -80,13 +123,18 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    padding: 20,
+    padding: 15,
     borderRadius: 15,
     marginBottom: 15,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     elevation: 3,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
   },
   cardTitle: {
     fontSize: 18,
@@ -95,32 +143,32 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    marginLeft: 'auto',
   },
   approveButton: {
-    flexDirection: 'row',
     backgroundColor: '#2E7D32',
     padding: 10,
     borderRadius: 8,
-    alignItems: 'center',
     marginRight: 10,
   },
   rejectButton: {
-    flexDirection: 'row',
     backgroundColor: '#D32F2F',
     padding: 10,
     borderRadius: 8,
-    alignItems: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5,
+    fontSize: 14,
   },
   approvedText: {
     color: '#2E7D32',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

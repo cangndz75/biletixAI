@@ -1999,3 +1999,13 @@ app.post('/user/rejectFriendRequest', async (req, res) => {
     res.status(500).json({message: 'Error rejecting friend request'});
   }
 });
+
+app.get('/organizers', async (req, res) => {
+  try {
+    const organizers = await User.find({ role: 'organizer' }).sort({ createdAt: -1 });
+    res.status(200).json(organizers);
+  } catch (error) {
+    console.error('Error fetching organizers:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});

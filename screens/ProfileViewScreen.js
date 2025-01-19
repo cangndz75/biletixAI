@@ -118,7 +118,7 @@ const ProfileViewScreen = () => {
           </Text>
         </View>
 
-        {userData.subscriptionType !== 'free' && userId !== loggedInUserId && (
+        {userData.subscriptionType == 'UserData' && userId !== loggedInUserId && (
           <View style={styles.actions}>
             <TouchableOpacity
               style={isFollowing ? styles.unfollowButton : styles.followButton}
@@ -135,7 +135,6 @@ const ProfileViewScreen = () => {
           </View>
         )}
 
-        {/* Tabs (About - Event) */}
         <View style={styles.tabs}>
           <TouchableOpacity
             style={selectedTab === 'About' ? styles.activeTab : styles.tab}
