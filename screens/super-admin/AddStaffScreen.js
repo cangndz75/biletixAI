@@ -16,7 +16,7 @@ import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 
-const API_URL = 'https://biletixai.onrender.com/staffs';
+const API_URL = 'https://biletixai.onrender.com/users';
 
 const AddStaffScreen = () => {
   const navigation = useNavigation();
@@ -40,7 +40,7 @@ const AddStaffScreen = () => {
 
   const fetchStaffs = async () => {
     try {
-      const response = await axios.get(`${API_URL}`);
+      const response = await axios.get(`${API_URL}?role=staff`);
       setStaffList(response.data || []);
     } catch (error) {
       console.error('Error fetching staff list:', error);
@@ -57,10 +57,11 @@ const AddStaffScreen = () => {
     }
 
     try {
-      await axios.post(`${API_URL}/add`, {
+      await axios.post(`${API_URL}/register`, {
         firstName,
         email,
-        image,
+        password: 'default123', // Zorunlu alan olduğu için varsayılan parola
+        image: image || 'https://via.placeholder.com/100',
         role: 'staff',
       });
 

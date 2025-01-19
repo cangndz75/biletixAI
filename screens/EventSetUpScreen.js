@@ -74,6 +74,10 @@ const EventSetUpScreen = () => {
         },
       );
       console.log('Event data:', response.data);
+
+      if (response.data.members?.includes(userId)) {
+        setIsJoined(true);
+      }
     } catch (error) {
       console.error('Error fetching event details:', error);
       Alert.alert('Error', 'Unable to fetch event details.');
@@ -311,12 +315,11 @@ const EventSetUpScreen = () => {
   const renderActionButton = () => {
     if (isJoined) {
       return (
-        <TouchableOpacity
-          onPress={leaveEvent}
+        <View
           style={{
-            backgroundColor: 'red',
             padding: 15,
             margin: 10,
+            backgroundColor: 'gray',
             borderRadius: 4,
           }}>
           <Text
@@ -326,9 +329,9 @@ const EventSetUpScreen = () => {
               fontSize: 15,
               fontWeight: '500',
             }}>
-            Leave Event
+            You participated in this event.
           </Text>
-        </TouchableOpacity>
+        </View>
       );
     }
 

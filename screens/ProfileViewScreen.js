@@ -33,7 +33,9 @@ const ProfileViewScreen = () => {
         `https://biletixai.onrender.com/user/${userId}`,
       );
       setUserData(response.data);
-      setIsFollowing(response.data.followers.includes(loggedInUserId));
+      setIsFollowing(
+        response.data.followers?.includes(loggedInUserId) || false,
+      );
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch user data.');
     } finally {
@@ -111,29 +113,33 @@ const ProfileViewScreen = () => {
 
         <View style={styles.stats}>
           <Text style={styles.statText}>
-            {userData.following.length} Following
+            {userData.following?.length || 0} Following
           </Text>
           <Text style={styles.statText}>
-            {userData.followers.length} Followers
+            {userData.followers?.length || 0} Followers
           </Text>
         </View>
 
-        {userData.subscriptionType == 'UserData' && userId !== loggedInUserId && (
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={isFollowing ? styles.unfollowButton : styles.followButton}
-              onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
-              <Text style={styles.followButtonText}>
-                {isFollowing ? 'Unfollow' : 'Follow'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.messageButton}
-              onPress={() => navigation.navigate('ChatRoom', {userId})}>
-              <Text style={styles.messageButtonText}>Message</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Kullanıcının Abonelik Tipini Kontrol Et */}
+        {userData.subscriptionType === 'UserPlus' &&
+          userId !== loggedInUserId && (
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={
+                  isFollowing ? styles.unfollowButton : styles.followButton
+                }
+                onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
+                <Text style={styles.followButtonText}>
+                  {isFollowing ? 'Unfollow' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.messageButton}
+                onPress={() => navigation.navigate('ChatRoom', {userId})}>
+                <Text style={styles.messageButtonText}>Message</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
         <View style={styles.tabs}>
           <TouchableOpacity
@@ -148,14 +154,13 @@ const ProfileViewScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* About & Events Content */}
         {selectedTab === 'About' ? (
           <View style={styles.aboutSection}>
             <Text>{userData.aboutMe || 'No information provided'}</Text>
           </View>
         ) : (
           <View style={styles.eventSection}>
-            {userData.events.length > 0 ? (
+            {userData.events?.length > 0 ? (
               userData.events.map(event => (
                 <View key={event._id} style={styles.eventItem}>
                   <Text style={styles.eventTitle}>{event.title}</Text>
@@ -178,21 +183,12 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
-  coverContainer: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#e3e3e3',
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   card: {
     backgroundColor: 'white',
     width: '90%',
     padding: 20,
     borderRadius: 15,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 5,
@@ -210,59 +206,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 10,
   },
-  location: {
-    fontSize: 14,
-    color: '#777',
-    marginBottom: 10,
-  },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
     marginBottom: 15,
   },
-  statText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  tabs: {
+  actions: {
     flexDirection: 'row',
+    justifyContent: 'space-evenly',
     width: '100%',
-    justifyContent: 'space-around',
-    marginVertical: 15,
+    marginTop: 10,
   },
-  tab: {
-    paddingBottom: 5,
+  followButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
   },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#4C9EEB',
+  unfollowButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
   },
-  tabText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  followButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '500',
   },
-  aboutSection: {
-    width: '100%',
-    paddingHorizontal: 20,
-    marginBottom: 10,
+  messageButton: {
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 5,
   },
-  eventSection: {
-    width: '100%',
-    paddingHorizontal: 20,
-  },
-  eventItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  eventDate: {
-    fontSize: 14,
-    color: '#666',
+  messageButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 

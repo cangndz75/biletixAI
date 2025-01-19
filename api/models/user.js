@@ -9,7 +9,7 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      // required: true,
     },
     firstName: {
       type: String,
@@ -20,7 +20,7 @@ const userSchema = mongoose.Schema(
     },
     image: {
       type: String,
-      required: true,
+      default: 'https://via.placeholder.com/150',
     },
     skill: {type: String},
     noOfEvents: {type: Number, default: 0},
