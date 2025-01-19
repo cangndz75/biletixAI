@@ -143,21 +143,21 @@ const AdminCreateScreen = () => {
 
     const eventData = {
       title: event,
-      eventType: selectedType,
+      eventType: selectedType.toLowerCase(),
       location: taggedVenue || location,
       date,
       time: timeInterval,
       totalParticipants: parseInt(noOfParticipants, 10),
       description,
-      tags: tags.split(',').map(tag => tag.trim()),
-      images,
+      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+      images: images.map(img => img.uri || img),
       isPaid,
-      price: isPaid ? price : 0,
-      organizer: userId || '659ae6fbc65b3f001c8eae9e',
+      price: isPaid ? Number(price) || 0 : 0,
+      organizer: userId || '659ae6fbc65b3f001c8eae9e', 
     };
 
     try {
-      console.log('Event Data:', eventData);
+      console.log('Sending Event Data:', JSON.stringify(eventData, null, 2));
 
       const response = await axios.post(
         'https://biletixai.onrender.com/createevent',
@@ -180,7 +180,10 @@ const AdminCreateScreen = () => {
         'Event creation error:',
         error.response?.data || error.message,
       );
-      Alert.alert('Error', 'Failed to create event. Please try again.');
+      Alert.alert(
+        'Error',
+        `Failed to create event. ${error.response?.data?.message || ''}`,
+      );
     }
   };
 

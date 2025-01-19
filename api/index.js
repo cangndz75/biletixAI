@@ -403,7 +403,7 @@ app.post('/generate', async (req, res) => {
 });
 
 app.post('/createevent', async (req, res) => {
-  console.log('Received event data:', JSON.stringify(req.body, null, 2));
+  console.log('📥 Received event data:', JSON.stringify(req.body, null, 2));
 
   const {
     title,
@@ -428,9 +428,8 @@ app.post('/createevent', async (req, res) => {
       totalParticipants,
       organizer,
     });
-
     return res.status(400).json({
-      message: 'All fields are required except date and optional fields.',
+      message: 'All required fields must be provided.',
     });
   }
 
@@ -446,16 +445,18 @@ app.post('/createevent', async (req, res) => {
       totalParticipants: Number(totalParticipants),
       organizer,
       images: Array.isArray(images) ? images : [],
-      isPaid: Boolean(isPaid), // Boolean'a çevir
-      price: isPaid ? Number(price) || 0 : 0, 
+      isPaid: Boolean(isPaid),
+      price: isPaid ? Number(price) || 0 : 0,
     });
 
     await newEvent.save();
     console.log('✅ Event created successfully:', newEvent);
     res.status(201).json(newEvent);
   } catch (error) {
-    console.error('🚨 Error creating event:', error.stack);
-    res.status(500).json({message: 'Failed to create event.'});
+    console.error('🚨 ERROR CREATING EVENT:', error.stack);
+    res
+      .status(500)
+      .json({message: 'Failed to create event.', error: error.message});
   }
 });
 

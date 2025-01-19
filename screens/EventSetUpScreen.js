@@ -20,7 +20,7 @@ import {AuthContext} from '../AuthContext';
 import {BottomModal, ModalContent, SlideAnimation} from 'react-native-modals';
 import axios from 'axios';
 import {StyleSheet} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useFocusEffect} from '@react-navigation/native';
 import {
   ALERT_TYPE,
   Dialog,
@@ -42,6 +42,13 @@ const EventSetUpScreen = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [rating, setRating] = useState(5);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchEventDetails();
+      checkRequestStatus();
+    }, []),
+  );
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -77,6 +84,8 @@ const EventSetUpScreen = () => {
 
       if (response.data.members?.includes(userId)) {
         setIsJoined(true);
+      } else {
+        setIsJoined(false);
       }
     } catch (error) {
       console.error('Error fetching event details:', error);
@@ -170,7 +179,11 @@ const EventSetUpScreen = () => {
         `https://biletixai.onrender.com/events/${eventId}/requests`,
       );
       const userRequest = response.data.find(req => req.userId === userId);
-      setRequestStatus(userRequest ? userRequest.status : 'none');
+      if (userRequest) {
+        setRequestStatus(userRequest.status);
+      } else {
+        setRequestStatus('none');
+      }
     } catch (error) {
       console.error(
         'Error fetching requests:',
@@ -335,15 +348,15 @@ const EventSetUpScreen = () => {
       );
     }
 
-    switch (requestStatus) {
-      case 'none':
-        return (
+    if (requestStatus === 'pending') {
+      return (
+        <View style={{flexDirection: 'row', margin: 10}}>
           <TouchableOpacity
-            onPress={() => setModalVisible(true)}
             style={{
-              backgroundColor: 'green',
+              backgroundColor: 'gray',
               padding: 15,
-              margin: 10,
+              flex: 1,
+              marginRight: 5,
               borderRadius: 4,
             }}>
             <Text
@@ -353,60 +366,16 @@ const EventSetUpScreen = () => {
                 fontSize: 15,
                 fontWeight: '500',
               }}>
-              Join Event
+              Pending
             </Text>
           </TouchableOpacity>
-        );
-      case 'pending':
-        return (
-          <View style={{flexDirection: 'row', margin: 10}}>
-            <TouchableOpacity
-              style={{
-                backgroundColor: 'gray',
-                padding: 15,
-                flex: 1,
-                marginRight: 5,
-                borderRadius: 4,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  textAlign: 'center',
-                  fontSize: 15,
-                  fontWeight: '500',
-                }}>
-                Pending
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={cancelJoinRequest}
-              style={{
-                backgroundColor: 'red',
-                padding: 15,
-                flex: 1,
-                marginLeft: 5,
-                borderRadius: 4,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  textAlign: 'center',
-                  fontSize: 15,
-                  fontWeight: '500',
-                }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </View>
-        );
-      case 'accepted':
-        return (
           <TouchableOpacity
-            onPress={() => navigation.navigate('ViewTicket', {eventId})}
+            onPress={cancelJoinRequest}
             style={{
-              backgroundColor: 'blue',
+              backgroundColor: 'red',
               padding: 15,
-              margin: 10,
+              flex: 1,
+              marginLeft: 5,
               borderRadius: 4,
             }}>
             <Text
@@ -416,13 +385,33 @@ const EventSetUpScreen = () => {
                 fontSize: 15,
                 fontWeight: '500',
               }}>
-              View Ticket
+              Cancel
             </Text>
           </TouchableOpacity>
-        );
-      default:
-        return null;
+        </View>
+      );
     }
+
+    return (
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        style={{
+          backgroundColor: 'green',
+          padding: 15,
+          margin: 10,
+          borderRadius: 4,
+        }}>
+        <Text
+          style={{
+            color: 'white',
+            textAlign: 'center',
+            fontSize: 15,
+            fontWeight: '500',
+          }}>
+          Join Event
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   if (loading) {
