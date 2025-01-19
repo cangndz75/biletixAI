@@ -16,7 +16,6 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BottomModal, ModalContent, SlideAnimation} from 'react-native-modals';
 import moment from 'moment';
 import {AuthContext} from '../../AuthContext';
@@ -98,7 +97,7 @@ const AdminCreateScreen = () => {
         );
       }
 
-      const response = await axios.post('http://10.0.2.2:8000/generate', {
+      const response = await axios.post('https://biletixai.onrender.com/generate', {
         eventName: event,
         location: taggedVenue,
       });

@@ -402,7 +402,7 @@ app.post('/generate', async (req, res) => {
   }
 });
 
-app.post('/createevent', authenticateToken, async (req, res) => {
+app.post('/createevent', async (req, res) => {
   console.log('Received event data:', req.body);
 
   const {
@@ -421,6 +421,7 @@ app.post('/createevent', authenticateToken, async (req, res) => {
   } = req.body;
 
   if (!title || !location || !eventType || !totalParticipants || !organizer) {
+    console.log('Missing required fields');
     return res
       .status(400)
       .json({message: 'All fields are required except date.'});
@@ -443,6 +444,7 @@ app.post('/createevent', authenticateToken, async (req, res) => {
     });
 
     await newEvent.save();
+    console.log('Event created successfully:', newEvent);
     res.status(200).json(newEvent);
   } catch (error) {
     console.error('Error creating event:', error.message);
