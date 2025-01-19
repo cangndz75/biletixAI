@@ -98,10 +98,10 @@ const AdminCreateScreen = () => {
         );
       }
 
-      const response = await axios.post(
-        'http://10.0.2.2:8000/generate',
-        {eventName: event, location: taggedVenue}
-      );
+      const response = await axios.post('http://10.0.2.2:8000/generate', {
+        eventName: event,
+        location: taggedVenue,
+      });
 
       if (response.status === 200) {
         const generatedContent = response.data.response.trim();
@@ -126,17 +126,35 @@ const AdminCreateScreen = () => {
   console.log('Type:', selectedType);
   console.log('Participants:', noOfParticipants);
 
-  
-  const createEvent = async (eventData) => {
+  const createEvent = async () => {
+    const eventData = {
+      eventName: event,
+      description,
+      tags,
+      location: taggedVenue || location,
+      date,
+      time: timeInterval,
+      noOfParticipants,
+      selectedType,
+      images,
+      isPaid,
+      price: isPaid ? price : 0,
+    };
+
     try {
+      console.log('Event Data:', eventData);
+
+      const jsonData = JSON.stringify(eventData);
+      console.log('JSON Stringified Data:', jsonData);
+
       const response = await axios.post(
         'https://biletixai.onrender.com/createevent',
-        eventData,
+        jsonData,
         {
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
       );
 
       if (response.status === 201) {
@@ -147,9 +165,7 @@ const AdminCreateScreen = () => {
       Alert.alert('Error', 'Failed to create event. Please try again.');
     }
   };
-  
-  
-  
+
   const selectDate = selectedDate => {
     const formattedDate = moment(selectedDate, 'Do MMMM').format('YYYY-MM-DD');
     setDate(formattedDate);
