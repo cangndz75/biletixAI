@@ -458,7 +458,6 @@ app.post('/createevent', async (req, res) => {
       .json({message: 'Failed to create event.', error: error.message});
   }
 });
-
 app.get('/events', async (req, res) => {
   const {organizerId, role} = req.query;
 
@@ -474,6 +473,25 @@ app.get('/events', async (req, res) => {
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({message: 'Failed to fetch events'});
+  }
+});
+
+app.get('/events/user/:userId', async (req, res) => {
+  const {userId} = req.params;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({message: 'User ID is required'});
+    }
+
+    const events = await Event.find({
+      attendees: mongoose.Types.ObjectId(userId),
+    }).populate('organizer');
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Error fetching user events:', error);
+    res.status(500).json({message: 'Failed to fetch user events'});
   }
 });
 

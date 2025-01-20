@@ -166,7 +166,7 @@ const ProfileDetailScreen = () => {
 
         <TouchableOpacity
           style={styles.optionContainer}
-          onPress={() => navigation.navigate('BookingsScreen')}>
+          onPress={() => navigation.navigate('MyBookings', {userId})}>
           <View style={styles.iconContainer}>
             <AntDesign name="calendar" size={24} color="green" />
           </View>
