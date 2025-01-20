@@ -466,9 +466,9 @@ app.get('/events', async (req, res) => {
     let filter = {};
 
     if (role === 'organizer' && organizerId) {
-      filter = {organizer: mongoose.Types.ObjectId(organizerId)};
+      filter = {organizer: new mongoose.Types.ObjectId(organizerId)};
     } else if (userId) {
-      filter = {attendees: mongoose.Types.ObjectId(userId)};
+      filter = {attendees: new mongoose.Types.ObjectId(userId)};
     }
 
     console.log('📌 Etkinlikler getiriliyor. Filtre:', filter);
