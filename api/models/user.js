@@ -52,6 +52,7 @@ const userSchema = mongoose.Schema(
     followers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     following: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     community: {type: mongoose.Schema.Types.ObjectId, ref: 'Community'},
+    likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
     notifications: [
       {
         type: {

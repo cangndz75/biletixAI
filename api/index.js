@@ -1184,7 +1184,7 @@ app.post('/venues/:venueId/comments', async (req, res) => {
     }
 
     if (!venue.comments) {
-      venue.comments = []; 
+      venue.comments = [];
     }
 
     const newComment = {text, rating, date: new Date()};
@@ -1831,7 +1831,7 @@ app.post('/posts/create', async (req, res) => {
   try {
     const newPost = new Post({
       description,
-      imageUrl: imageUrl || null,
+      imageUrl: imageUrl || 'https://via.placeholder.com/400',
       user: userId,
       community: communityId,
     });
@@ -1855,17 +1855,24 @@ app.post('/posts/:postId/like', async (req, res) => {
 
   try {
     const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({message: 'Post not found'});
+    const user = await User.findById(userId);
+
+    if (!post || !user)
+      return res.status(404).json({message: 'Post or User not found'});
 
     const isLiked = post.likes.some(like => like.user.toString() === userId);
 
     if (isLiked) {
       post.likes = post.likes.filter(like => like.user.toString() !== userId);
+      user.likedPosts = user.likedPosts.filter(id => id.toString() !== postId);
     } else {
       post.likes.push({user: userId});
+      user.likedPosts.push(postId);
     }
 
     await post.save();
+    await user.save();
+
     res.status(200).json({
       message: isLiked ? 'Post unliked' : 'Post liked',
       likes: post.likes.length,
@@ -1874,6 +1881,34 @@ app.post('/posts/:postId/like', async (req, res) => {
   } catch (error) {
     console.error('Error updating like status:', error);
     res.status(500).json({message: 'Failed to update like status'});
+  }
+});
+
+app.get('/users/:userId/liked-posts', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate('likedPosts');
+    if (!user) return res.status(404).json({message: 'User not found'});
+
+    res.status(200).json({likedPosts: user.likedPosts});
+  } catch (error) {
+    console.error('Error fetching liked posts:', error);
+    res.status(500).json({message: 'Failed to fetch liked posts'});
+  }
+});
+
+app.post('/posts/:postId/comment', async (req, res) => {
+  const {postId} = req.params;
+  const {userId, text} = req.body;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({message: 'Post not found'});
+
+    post.comments.push({user: userId, text, createdAt: new Date()});
+    await post.save();
+    res.status(200).json({message: 'Comment added', post});
+  } catch (error) {
+    res.status(500).json({message: 'Failed to add comment'});
   }
 });
 

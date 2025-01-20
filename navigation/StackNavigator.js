@@ -48,6 +48,8 @@ import JoinCommunityScreen from '../screens/JoinCommunityScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import PostScreen from '../screens/PostScreen';
 import VenueInfoScreen from '../screens/VenueInfoScreen';
+import CreatePost from '../screens/CreatePost';
+import LikeScreen from '../screens/LikeScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -345,6 +347,16 @@ const MainStack = () => (
     <Stack.Screen
       name="VenueInfo"
       component={VenueInfoScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="CreatePost"
+      component={CreatePost}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="LikeScreen"
+      component={LikeScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
