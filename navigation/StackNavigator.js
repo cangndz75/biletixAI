@@ -46,6 +46,7 @@ import UserSubscribe from '../screens/UserSubscribe';
 import CreateCustomQuestion from '../screens/admin/CreateCustomQuestion';
 import JoinCommunityScreen from '../screens/JoinCommunityScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import PostScreen from '../screens/PostScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -333,6 +334,11 @@ const MainStack = () => (
     <Stack.Screen
       name="ReviewScreen"
       component={ReviewScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="PostScreen"
+      component={PostScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

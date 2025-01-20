@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -16,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const JoinCommunityScreen = () => {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const route = useRoute();
   const {communityId} = route.params;
@@ -28,6 +30,7 @@ const JoinCommunityScreen = () => {
           `https://biletixai.onrender.com/communities/${communityId}`,
         );
         const communityData = response.data;
+
         if (communityData.questions) {
           setQuestions(communityData.questions);
           setAnswers(
@@ -40,6 +43,8 @@ const JoinCommunityScreen = () => {
       } catch (error) {
         console.error('Error fetching questions:', error);
         Alert.alert('Hata', 'Sorular yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -72,7 +77,12 @@ const JoinCommunityScreen = () => {
       </TouchableOpacity>
       <Text style={styles.title}>Topluluğa Katıl</Text>
 
-      {questions.length === 0 ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007bff" />
+          <Text style={styles.loadingText}>Yükleniyor...</Text>
+        </View>
+      ) : questions.length === 0 ? (
         <Text style={styles.noQuestions}>
           Bu topluluk için özel sorular bulunmuyor.
         </Text>
@@ -93,9 +103,11 @@ const JoinCommunityScreen = () => {
         ))
       )}
 
-      <TouchableOpacity style={styles.submitButton} onPress={submitAnswers}>
-        <Text style={styles.submitButtonText}>Gönder</Text>
-      </TouchableOpacity>
+      {!loading && questions.length > 0 && (
+        <TouchableOpacity style={styles.submitButton} onPress={submitAnswers}>
+          <Text style={styles.submitButtonText}>Gönder</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -104,6 +116,12 @@ const styles = StyleSheet.create({
   container: {flex: 1, padding: 20, backgroundColor: '#fff'},
   backButton: {marginBottom: 20},
   title: {fontSize: 24, fontWeight: 'bold', marginBottom: 20},
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  loadingText: {marginTop: 10, fontSize: 16, color: 'gray'},
   noQuestions: {
     fontSize: 16,
     color: 'gray',
