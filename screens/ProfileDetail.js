@@ -175,6 +175,15 @@ const ProfileDetailScreen = () => {
 
         <TouchableOpacity
           style={styles.optionContainer}
+          onPress={() => navigation.navigate('Faqs', {userId})}>
+          <View style={styles.iconContainer}>
+            <AntDesign name="calendar" size={24} color="green" />
+          </View>
+          <Text style={styles.optionText}>FAQs</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.optionContainer}
           onPress={clearAuthToken}>
           <View style={styles.iconContainer}>
             <Ionicons name="log-out-outline" size={24} color="red" />

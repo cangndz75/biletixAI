@@ -13,7 +13,6 @@ import {AuthContext} from '../AuthContext';
 import Animated from 'react-native-reanimated';
 import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const MyBookings = () => {
   const [selectedTab, setSelectedTab] = useState('Upcoming');
@@ -33,7 +32,6 @@ const MyBookings = () => {
         <Ionicons name="arrow-back" size={26} color="#000" />
       </TouchableOpacity>
 
-      {/* Sekmeler */}
       <View style={styles.tabContainer}>
         {['Upcoming', 'Completed', 'Cancelled'].map(tab => (
           <TouchableOpacity
@@ -71,28 +69,22 @@ const EventList = ({filterType, userId}) => {
     setLoading(true);
     try {
       console.log('📌 Kullanıcı ID ile API isteği yapılıyor:', userId);
-
       const response = await axios.get(
         `https://biletixai.onrender.com/events`,
         {params: {userId}},
       );
-
       console.log('📌 API Yanıtı:', response.data);
 
       if (!response.data || response.data.length === 0) {
-        console.warn('⚠️ API boş veri döndü.');
+        console.warn(`⚠️ API boş veri döndü. Tab: ${filterType}`);
       }
 
       const filteredEvents = (response.data || []).filter(event => {
         const eventDate = new Date(event.date);
         const now = new Date();
-        if (filterType === 'upcoming') {
-          return eventDate > now;
-        } else if (filterType === 'completed') {
-          return eventDate < now;
-        } else if (filterType === 'cancelled') {
-          return event.status === 'cancelled';
-        }
+        if (filterType === 'upcoming') return eventDate > now;
+        if (filterType === 'completed') return eventDate < now;
+        if (filterType === 'cancelled') return event.status === 'cancelled';
         return false;
       });
 
@@ -109,6 +101,18 @@ const EventList = ({filterType, userId}) => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cancelBooking = async eventId => {
+    try {
+      await axios.put(
+        `https://biletixai.onrender.com/events/${eventId}/cancel`,
+        {userId},
+      );
+      fetchEvents();
+    } catch (error) {
+      console.error('❌ Etkinlik iptal edilemedi:', error);
     }
   };
 
@@ -139,41 +143,12 @@ const EventList = ({filterType, userId}) => {
               <View style={styles.eventDetails}>
                 <Text style={styles.eventTitle}>{item.title}</Text>
                 <Text style={styles.eventDate}>
-                  <MaterialCommunityIcons
-                    name="calendar"
-                    size={16}
-                    color="#666"
-                  />{' '}
-                  {new Date(item.date).toLocaleDateString()} -{' '}
-                  {new Date(item.date).toLocaleTimeString()}
+                  {new Date(item.date).toLocaleString()}
                 </Text>
-                <Text style={styles.eventLocation}>
-                  <Ionicons name="location-outline" size={16} color="#666" />{' '}
-                  {item.location}
-                </Text>
+                <Text style={styles.eventLocation}>{item.location}</Text>
                 <Text style={styles.eventStatus}>
-                  {item.isPaid ? (
-                    <Text style={styles.paidEvent}>Paid</Text>
-                  ) : (
-                    <Text style={styles.freeEvent}>Free</Text>
-                  )}
+                  {item.isPaid ? 'Paid' : 'Free'}
                 </Text>
-                <View style={styles.buttonContainer}>
-                  {filterType === 'upcoming' && (
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => cancelBooking(item._id)}>
-                      <Text style={styles.buttonText}>Cancel Booking</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    style={styles.ticketButton}
-                    onPress={() =>
-                      navigation.navigate('ETicketScreen', {eventId: item._id})
-                    }>
-                    <Text style={styles.buttonText}>View E-Ticket</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             </Animated.View>
           )}
@@ -229,30 +204,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 15,
     marginBottom: 15,
-    padding: 15,
+    padding: 10,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  eventImage: {width: 100, height: 100, borderRadius: 15, marginRight: 15},
+  eventImage: {width: 90, height: 90, borderRadius: 10, marginRight: 10},
   eventDetails: {flex: 1},
-  eventTitle: {fontSize: 18, fontWeight: 'bold', color: '#333'},
+  eventTitle: {fontSize: 16, fontWeight: 'bold', color: '#333'},
   eventDate: {fontSize: 14, color: '#777', marginVertical: 4},
   eventLocation: {fontSize: 14, color: '#555'},
-  freeEvent: {color: '#007BFF', fontWeight: 'bold'},
-  paidEvent: {color: '#FF5733', fontWeight: 'bold'},
-  cancelButton: {backgroundColor: '#FF5A5F', padding: 8, borderRadius: 5},
-  ticketButton: {backgroundColor: '#6A5ACD', padding: 8, borderRadius: 5},
-  buttonContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-    justifyContent: 'space-between',
+  eventStatus: {
+    fontSize: 12,
+    color: '#6A5ACD',
+    fontWeight: 'bold',
+    alignSelf: 'flex-end',
   },
-  cancelButton: {backgroundColor: '#FF5A5F', padding: 8, borderRadius: 5},
-  ticketButton: {backgroundColor: '#6A5ACD', padding: 8, borderRadius: 5},
-  buttonText: {color: 'white', textAlign: 'center', fontWeight: 'bold'},
 });
 
 export default MyBookings;

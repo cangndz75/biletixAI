@@ -458,6 +458,7 @@ app.post('/createevent', async (req, res) => {
       .json({message: 'Failed to create event.', error: error.message});
   }
 });
+
 app.get('/events', async (req, res) => {
   const {organizerId, role, userId} = req.query;
 
@@ -475,7 +476,7 @@ app.get('/events', async (req, res) => {
     const events = await Event.find(filter).populate('organizer');
 
     if (!events || events.length === 0) {
-      console.warn('⚠️ Etkinlik bulunamadı. Filtre:', filter);
+      console.warn('⚠️ Etkinlik bulunamadı.');
       return res.status(404).json({message: 'No events found'});
     }
 

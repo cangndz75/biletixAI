@@ -52,6 +52,7 @@ import CreatePost from '../screens/CreatePost';
 import LikeScreen from '../screens/LikeScreen';
 import CommentScreen from '../screens/CommentScreen';
 import MyBookings from '../screens/MyBookings';
+import Faqs from '../screens/Faqs';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -369,6 +370,11 @@ const MainStack = () => (
     <Stack.Screen
       name="MyBookings"
       component={MyBookings}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="Faqs"
+      component={Faqs}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
