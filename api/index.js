@@ -1094,7 +1094,11 @@ app.get('/venues/:venueId/events', async (req, res) => {
   }
 
   try {
-    const venue = await Venue.findById(venueId).populate('eventsAvailable');
+    const venue = await Venue.findById(venueId).populate({
+      path: 'eventsAvailable',
+      select: 'title eventType price location date time image',
+    });
+
     if (!venue) return res.status(404).json({message: 'Venue not found'});
 
     const events = venue.eventsAvailable.map(event => ({
@@ -1105,12 +1109,13 @@ app.get('/venues/:venueId/events', async (req, res) => {
       location: event.location,
       date: event.date,
       time: event.time,
+      image: event.image || 'https://via.placeholder.com/150',
     }));
 
     res.status(200).json(events);
   } catch (error) {
     console.error('Error fetching events:', error.message);
-    res.status(500).json({message: 'Internal Server Error'});
+    res.status(500).json({message: `Error fetching events: ${error.message}`});
   }
 });
 
@@ -1173,8 +1178,13 @@ app.post('/venues/:venueId/comments', async (req, res) => {
 
   try {
     const venue = await Venue.findById(venueId);
+
     if (!venue) {
       return res.status(404).json({message: 'Venue not found'});
+    }
+
+    if (!venue.comments) {
+      venue.comments = []; 
     }
 
     const newComment = {text, rating, date: new Date()};

@@ -26,7 +26,7 @@ const VenueInfoScreen = () => {
   const [events, setEvents] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState('About');
+  const [selectedTab, setSelectedTab] = useState('Events');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
@@ -39,12 +39,12 @@ const VenueInfoScreen = () => {
         setVenue(venueResponse.data);
 
         const eventsResponse = await axios.get(
-          `http://10.0.2.2:8000/events?venueId=${venueId}`,
+          `http://10.0.2.2:8000/venues/${venueId}/events`,
         );
         setEvents(eventsResponse.data);
 
         const reviewsResponse = await axios.get(
-          `http://10.0.2.2:8000/reviews?venueId=${venueId}`,
+          `http://10.0.2.2:8000/venues/${venueId}/reviews`,
         );
         setReviews(reviewsResponse.data);
       } catch (error) {
@@ -57,11 +57,19 @@ const VenueInfoScreen = () => {
     fetchVenueAndEvents();
   }, [venueId]);
 
-  const handleReviewSubmit = () => {
-    const newReview = {rating, comment};
-    setReviews(prev => [...prev, newReview]);
-    setComment('');
-    setRating(0);
+  const handleReviewSubmit = async () => {
+    if (!comment.trim() || rating === 0) return;
+    try {
+      const response = await axios.post(
+        `http://10.0.2.2:8000/venues/${venueId}/comments`,
+        {text: comment, rating},
+      );
+      setReviews(prev => [...prev, response.data.comment]);
+      setComment('');
+      setRating(0);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+    }
   };
 
   if (loading) {
@@ -99,6 +107,59 @@ const VenueInfoScreen = () => {
     </View>
   );
 
+  const renderReviews = () => (
+    <View style={{marginVertical: 10}}>
+      {reviews.length ? (
+        reviews.map((review, index) => (
+          <View
+            key={index}
+            style={{
+              marginBottom: 10,
+              padding: 10,
+              backgroundColor: '#f1f1f1',
+              borderRadius: 8,
+            }}>
+            <StarRating
+              rating={review.rating}
+              onChange={() => {}}
+              starSize={20}
+              readonly
+            />
+            <Text>{review.comment}</Text>
+          </View>
+        ))
+      ) : (
+        <Text>No comments available.</Text>
+      )}
+      <View style={{marginTop: 10}}>
+        <StarRating rating={rating} onChange={setRating} starSize={30} />
+        <TextInput
+          value={comment}
+          onChangeText={setComment}
+          placeholder="Type your review..."
+          style={{
+            marginTop: 10,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: '#ddd',
+            borderRadius: 8,
+          }}
+        />
+        <Pressable
+          onPress={handleReviewSubmit}
+          style={{
+            backgroundColor: 'green',
+            padding: 15,
+            marginTop: 10,
+            borderRadius: 8,
+            alignItems: 'center',
+          }}>
+          <Text style={{color: 'white'}}>Submit Review</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   const renderHeader = () => (
     <>
       <Image
@@ -125,16 +186,17 @@ const VenueInfoScreen = () => {
             Organized by: {venue.organizer || 'Unknown'}
           </Text>
         </View>
+
         <View style={{flexDirection: 'row', marginTop: 10}}>
           <TouchableOpacity
             style={{
               flex: 1,
               alignItems: 'center',
               padding: 10,
-              borderBottomWidth: selectedTab === 'About' ? 2 : 0,
+              borderBottomWidth: selectedTab === 'Events' ? 2 : 0,
             }}
-            onPress={() => setSelectedTab('About')}>
-            <Text>About</Text>
+            onPress={() => setSelectedTab('Events')}>
+            <Text>Events</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -147,60 +209,6 @@ const VenueInfoScreen = () => {
             <Text>Reviews</Text>
           </TouchableOpacity>
         </View>
-        {selectedTab === 'About' ? (
-          <Text style={{marginVertical: 10}}>{venue.description}</Text>
-        ) : (
-          <View style={{marginVertical: 10}}>
-            {reviews.length ? (
-              reviews.map((review, index) => (
-                <View
-                  key={index}
-                  style={{
-                    marginBottom: 10,
-                    padding: 10,
-                    backgroundColor: '#f1f1f1',
-                    borderRadius: 8,
-                  }}>
-                  <StarRating
-                    rating={review.rating}
-                    onChange={() => {}}
-                    starSize={20}
-                    readonly
-                  />
-                  <Text>{review.comment}</Text>
-                </View>
-              ))
-            ) : (
-              <Text>No comments available.</Text>
-            )}
-            <View style={{marginTop: 10}}>
-              <StarRating rating={rating} onChange={setRating} starSize={30} />
-              <TextInput
-                value={comment}
-                onChangeText={setComment}
-                placeholder="Type your review..."
-                style={{
-                  marginTop: 10,
-                  padding: 10,
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  borderRadius: 8,
-                }}
-              />
-              <Pressable
-                onPress={handleReviewSubmit}
-                style={{
-                  backgroundColor: 'green',
-                  padding: 15,
-                  marginTop: 10,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                }}>
-                <Text style={{color: 'white'}}>Submit Review</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
       </View>
     </>
   );
@@ -209,27 +217,21 @@ const VenueInfoScreen = () => {
     <SafeAreaView style={{flex: 1, backgroundColor: '#f5f5f5'}}>
       <FlatList
         ListHeaderComponent={renderHeader}
-        data={events}
-        renderItem={renderEventItem}
+        data={selectedTab === 'Events' ? events : []}
+        renderItem={selectedTab === 'Events' ? renderEventItem : null}
         keyExtractor={item => item._id}
         numColumns={2}
         contentContainerStyle={{paddingHorizontal: 16}}
         ListEmptyComponent={
-          <Text style={{textAlign: 'center', marginVertical: 20}}>
-            No events available.
-          </Text>
+          selectedTab === 'Events' ? (
+            <Text style={{textAlign: 'center', marginVertical: 20}}>
+              No events available.
+            </Text>
+          ) : (
+            renderReviews()
+          )
         }
       />
-      <Pressable
-        style={{
-          backgroundColor: 'green',
-          padding: 15,
-          margin: 20,
-          borderRadius: 10,
-          alignItems: 'center',
-        }}>
-        <Text style={{color: 'white', fontWeight: 'bold'}}>Book Now</Text>
-      </Pressable>
     </SafeAreaView>
   );
 };
