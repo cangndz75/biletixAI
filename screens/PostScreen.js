@@ -16,6 +16,7 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import {AuthContext} from '../AuthContext';
 import {useRoute} from '@react-navigation/native';
 import Modal from 'react-native-modal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PostScreen = () => {
   const [posts, setPosts] = useState([]);
@@ -24,14 +25,36 @@ const PostScreen = () => {
   const [newPostImage, setNewPostImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
-  const {user} = useContext(AuthContext);
-  const userId = user?._id;
+
+  const {user, userId: contextUserId} = useContext(AuthContext);
+  const [userId, setUserId] = useState(contextUserId);
+
   const route = useRoute();
   const {communityId} = route.params;
 
   useEffect(() => {
     fetchCommunityPosts();
   }, [communityId]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (!userId) {
+        try {
+          const storedUser = await AsyncStorage.getItem('user');
+          if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+            setUserId(parsedUser._id);
+            console.log('🟢 AsyncStorage Kullanıcı ID:', parsedUser._id);
+          } else {
+            console.warn('❌ Kullanıcı bilgisi bulunamadı!');
+          }
+        } catch (error) {
+          console.error('❌ Kullanıcı ID yüklenirken hata:', error);
+        }
+      }
+    };
+    fetchUserId();
+  }, [user, userId]);
 
   const fetchCommunityPosts = async () => {
     setLoading(true);
@@ -68,14 +91,15 @@ const PostScreen = () => {
 
     if (!userId || !communityId) {
       Alert.alert('Error', 'User ID or Community ID is missing.');
-      console.error('Missing userId or communityId:', {userId, communityId});
+      console.error('❌ Eksik userId veya communityId:', {userId, communityId});
       return;
     }
 
-    console.log('Sending post data:', {
+    console.log('📤 Post Gönderiliyor:', {
       description: newPostDescription,
       userId,
       communityId,
+      image: newPostImage ? newPostImage.uri : null,
     });
 
     setPosting(true);
@@ -86,7 +110,7 @@ const PostScreen = () => {
 
     if (newPostImage) {
       formData.append('image', {
-        uri: newPostImage.uri,
+        uri: newPostImage.uri.replace('file://', ''),
         type: newPostImage.type || 'image/jpeg',
         name: newPostImage.fileName || `upload_${Date.now()}.jpg`,
       });
@@ -103,13 +127,14 @@ const PostScreen = () => {
         },
       );
 
+      console.log('✅ Post Başarıyla Oluşturuldu');
       setModalVisible(false);
       setNewPostDescription('');
       setNewPostImage(null);
       fetchCommunityPosts();
     } catch (error) {
       console.error(
-        'Error creating post:',
+        '❌ Post oluşturma hatası:',
         error.response?.data || error.message,
       );
       Alert.alert(
@@ -123,21 +148,6 @@ const PostScreen = () => {
     }
   };
 
-  const renderPost = ({item}) => (
-    <View style={styles.postContainer}>
-      <View style={styles.postHeader}>
-        <Image source={{uri: item.user.image}} style={styles.profileImage} />
-        <Text style={styles.username}>
-          {item.user.firstName} {item.user.lastName}
-        </Text>
-      </View>
-      {item.imageUrl && (
-        <Image source={{uri: item.imageUrl}} style={styles.postImage} />
-      )}
-      <Text style={styles.postDescription}>{item.description}</Text>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       {loading ? (
@@ -146,32 +156,35 @@ const PostScreen = () => {
           color="#007BFF"
           style={{marginTop: 20}}
         />
-      ) : posts.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="chatbubble-ellipses-outline" size={50} color="#ccc" />
-          <Text style={styles.emptyText}>No posts available</Text>
-          <Text style={styles.emptySubText}>
-            Be the first to share something in this community!
-          </Text>
-          <TouchableOpacity
-            style={styles.emptyCreatePostButton}
-            onPress={toggleModal}>
-            <Ionicons name="add" size={20} color="white" />
-            <Text style={styles.emptyCreatePostText}>Create a Post</Text>
-          </TouchableOpacity>
-        </View>
       ) : (
         <FlatList
           data={posts}
           keyExtractor={item => item._id}
-          renderItem={renderPost}
+          renderItem={({item}) => (
+            <View style={styles.postContainer}>
+              <View style={styles.postHeader}>
+                <Image
+                  source={{uri: item.user.image}}
+                  style={styles.profileImage}
+                />
+                <Text style={styles.username}>
+                  {item.user.firstName} {item.user.lastName}
+                </Text>
+              </View>
+              {item.imageUrl && (
+                <Image source={{uri: item.imageUrl}} style={styles.postImage} />
+              )}
+              <Text style={styles.postDescription}>{item.description}</Text>
+            </View>
+          )}
         />
       )}
+
       <TouchableOpacity style={styles.createPostButton} onPress={toggleModal}>
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
 
-      {/* MODERN CREATE POST MODAL */}
+      {/* ✅ MODERN MODAL EKLENDİ */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={toggleModal}
@@ -218,59 +231,56 @@ const PostScreen = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   postContainer: {padding: 10, borderBottomWidth: 1, borderColor: '#ddd'},
-  postHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 10},
   profileImage: {width: 40, height: 40, borderRadius: 20, marginRight: 10},
   username: {fontWeight: 'bold'},
   postImage: {width: '100%', height: 200, borderRadius: 10, marginVertical: 10},
   postDescription: {marginBottom: 10},
-
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  emptyText: {fontSize: 18, fontWeight: 'bold', marginTop: 10, color: '#555'},
-  emptySubText: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 5,
-  },
   createPostButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
     backgroundColor: '#007BFF',
-    padding: 15,
     borderRadius: 50,
+    padding: 15,
+    elevation: 5,
   },
   modal: {justifyContent: 'center', margin: 0},
   modalContent: {
     backgroundColor: 'white',
     padding: 20,
-    borderRadius: 20,
+    borderRadius: 10,
     alignItems: 'center',
   },
+  modalTitle: {fontSize: 18, fontWeight: 'bold', marginBottom: 10},
   textInput: {
     width: '100%',
-    borderBottomWidth: 1,
+    borderWidth: 1,
     borderColor: '#ddd',
+    borderRadius: 5,
     padding: 10,
-    marginVertical: 10,
+    marginBottom: 10,
   },
   previewImage: {
     width: '100%',
-    height: 150,
+    height: 200,
     borderRadius: 10,
-    marginVertical: 10,
+    marginBottom: 10,
   },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  imagePickerButtonText: {color: 'white', marginLeft: 5},
   submitButton: {
     backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
+    padding: 10,
+    borderRadius: 5,
     alignItems: 'center',
+    width: '100%',
   },
   submitButtonText: {color: 'white', fontWeight: 'bold'},
 });

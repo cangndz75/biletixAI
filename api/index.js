@@ -1807,12 +1807,15 @@ app.post('/communities/:communityId/send-request', async (req, res) => {
 });
 
 app.post('/posts/create', async (req, res) => {
+  console.log('🟢 Request received:', req.body);
+
   const {description, userId, communityId, imageUrl} = req.body;
 
   if (!description || !userId || !communityId) {
-    return res
-      .status(400)
-      .json({message: 'Description, user ID, and community ID are required.'});
+    console.log('❌ Missing fields:', {description, userId, communityId});
+    return res.status(400).json({
+      message: '❗ Description, user ID, and community ID are required.',
+    });
   }
 
   try {
@@ -1828,9 +1831,10 @@ app.post('/posts/create', async (req, res) => {
       $push: {posts: newPost._id},
     });
 
+    console.log('✅ Post created:', newPost);
     res.status(201).json({message: 'Post created successfully', post: newPost});
   } catch (error) {
-    console.error('Error creating post:', error);
+    console.error('❌ Error creating post:', error);
     res.status(500).json({message: 'Failed to create post.'});
   }
 });
