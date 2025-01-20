@@ -60,7 +60,7 @@ const AddStaffScreen = () => {
       await axios.post(`${API_URL}/register`, {
         firstName,
         email,
-        password: 'default123', // Zorunlu alan olduğu için varsayılan parola
+        password: 'default123',
         image: image || 'https://via.placeholder.com/100',
         role: 'staff',
       });

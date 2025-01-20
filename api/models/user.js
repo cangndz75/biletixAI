@@ -51,17 +51,6 @@ const userSchema = mongoose.Schema(
     isPrivate: {type: Boolean, default: false},
     followers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     following: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
-    friendRequests: [
-      {
-        from: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-        status: {
-          type: String,
-          enum: ['pending', 'accepted', 'rejected'],
-          default: 'pending',
-        },
-        requestedAt: {type: Date, default: Date.now},
-      },
-    ],
     community: {type: mongoose.Schema.Types.ObjectId, ref: 'Community'},
     notifications: [
       {

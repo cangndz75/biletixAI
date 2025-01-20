@@ -142,7 +142,6 @@ app.get('/user/:userId', async (req, res) => {
     const {userId} = req.params;
 
     const user = await User.findById(userId)
-      .populate('events')
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
@@ -2122,3 +2121,55 @@ app.delete('/staffs/remove', async (req, res) => {
       .json({message: 'Internal Server Error', error: error.message});
   }
 });
+
+app.get('/chats/:userId', async (req, res) => {
+  try {
+    const {userId} = req.params;
+
+    const messages = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            {senderId: new mongoose.Types.ObjectId(userId)},
+            {receiverId: new mongoose.Types.ObjectId(userId)},
+          ],
+        },
+      },
+      {$sort: {timeStamp: -1}},
+      {
+        $group: {
+          _id: {
+            user1: {
+              $cond: [
+                {$eq: ['$senderId', new mongoose.Types.ObjectId(userId)]},
+                '$receiverId',
+                '$senderId',
+              ],
+            },
+          },
+          lastMessage: {$first: '$message'},
+          timeStamp: {$first: '$timeStamp'},
+          senderId: {$first: '$senderId'},
+          receiverId: {$first: '$receiverId'},
+        },
+      },
+    ]);
+
+    const populatedChats = await Promise.all(
+      messages.map(async chat => {
+        const user = await User.findById(chat._id.user1).select(
+          'firstName lastName image',
+        );
+        if (!user) return null;
+        return {...chat, user};
+      }),
+    );
+
+    res.status(200).json(populatedChats.filter(Boolean));
+  } catch (error) {
+    console.error('Error fetching chats:', error);
+    res.status(500).json({message: 'Server error'});
+  }
+});
+
+module.exports = router;
