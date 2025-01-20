@@ -25,6 +25,7 @@ const PostScreen = () => {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const {user} = useContext(AuthContext);
+  const userId = user?._id;
   const route = useRoute();
   const {communityId} = route.params;
 
@@ -65,29 +66,58 @@ const PostScreen = () => {
       return;
     }
 
+    if (!userId || !communityId) {
+      Alert.alert('Error', 'User ID or Community ID is missing.');
+      console.error('Missing userId or communityId:', {userId, communityId});
+      return;
+    }
+
+    console.log('Sending post data:', {
+      description: newPostDescription,
+      userId,
+      communityId,
+    });
+
     setPosting(true);
     const formData = new FormData();
     formData.append('description', newPostDescription);
-    formData.append('userId', user._id);
-    formData.append('community', communityId);
+    formData.append('userId', userId);
+    formData.append('communityId', communityId);
 
     if (newPostImage) {
       formData.append('image', {
         uri: newPostImage.uri,
-        type: newPostImage.type,
-        name: newPostImage.fileName || 'post.jpg',
+        type: newPostImage.type || 'image/jpeg',
+        name: newPostImage.fileName || `upload_${Date.now()}.jpg`,
       });
     }
 
     try {
-      await axios.post('https://biletixai.onrender.com/posts/create', formData);
+      await axios.post(
+        'https://biletixai.onrender.com/posts/create',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+
       setModalVisible(false);
       setNewPostDescription('');
       setNewPostImage(null);
       fetchCommunityPosts();
     } catch (error) {
-      console.error('Error creating post:', error);
-      Alert.alert('Error', 'Unable to create post.');
+      console.error(
+        'Error creating post:',
+        error.response?.data || error.message,
+      );
+      Alert.alert(
+        'Error',
+        `Failed to create post: ${
+          error.response?.data?.message || error.message
+        }`,
+      );
     } finally {
       setPosting(false);
     }
@@ -194,7 +224,6 @@ const styles = StyleSheet.create({
   postImage: {width: '100%', height: 200, borderRadius: 10, marginVertical: 10},
   postDescription: {marginBottom: 10},
 
-  // Empty State Styles
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -208,7 +237,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 5,
   },
-
   createPostButton: {
     position: 'absolute',
     bottom: 20,
@@ -217,7 +245,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 50,
   },
-
   modal: {justifyContent: 'center', margin: 0},
   modalContent: {
     backgroundColor: 'white',

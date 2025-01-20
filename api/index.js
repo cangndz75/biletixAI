@@ -1863,29 +1863,35 @@ app.post('/posts/:postId/like', async (req, res) => {
   }
 });
 
-app.post('/posts/:postId/comment', async (req, res) => {
-  const {postId} = req.params;
-  const {userId, text} = req.body;
+app.post('/posts/create', async (req, res) => {
+  console.log('Request received:', req.body);
 
-  if (!text || !text.trim()) {
-    return res.status(400).json({message: 'Comment text cannot be empty.'});
+  const {description, userId, communityId, imageUrl} = req.body;
+
+  if (!description || !userId || !communityId) {
+    console.log('Missing fields:', {description, userId, communityId});
+    return res.status(400).json({
+      message: 'Description, user ID, and community ID are required.',
+    });
   }
 
   try {
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({message: 'Post not found'});
-
-    post.comments.push({user: userId, text});
-    await post.save();
-
-    res.status(200).json({
-      message: 'Comment added successfully',
-      comments: post.comments,
-      post,
+    const newPost = new Post({
+      description,
+      imageUrl: imageUrl || null,
+      user: userId,
+      community: communityId,
     });
+
+    await newPost.save();
+    await Community.findByIdAndUpdate(communityId, {
+      $push: {posts: newPost._id},
+    });
+
+    res.status(201).json({message: 'Post created successfully', post: newPost});
   } catch (error) {
-    console.error('Error adding comment:', error);
-    res.status(500).json({message: 'Failed to add comment'});
+    console.error('Error creating post:', error);
+    res.status(500).json({message: 'Failed to create post.'});
   }
 });
 
