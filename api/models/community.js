@@ -25,15 +25,8 @@ const communitySchema = new Schema(
     ],
     organizer: {type: Schema.Types.ObjectId, ref: 'User', required: true},
     events: [{type: Schema.Types.ObjectId, ref: 'Event', default: []}],
-    posts: [
-      {
-        author: {type: Schema.Types.ObjectId, ref: 'User'},
-        content: String,
-        image: String,
-        createdAt: {type: Date, default: Date.now},
-      },
-    ],
-    questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
+    posts: [{type: mongoose.Schema.Types.ObjectId, ref: 'Post'}],
+    questions: [{type: mongoose.Schema.Types.ObjectId, ref: 'Question'}],
   },
   {timestamps: true},
 );

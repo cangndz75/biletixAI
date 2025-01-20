@@ -8,11 +8,13 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {AuthContext} from '../AuthContext';
+import {useRoute} from '@react-navigation/native';
 import Modal from 'react-native-modal';
 
 const PostScreen = () => {
@@ -20,22 +22,28 @@ const PostScreen = () => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [newPostDescription, setNewPostDescription] = useState('');
   const [newPostImage, setNewPostImage] = useState(null);
-  const [commentText, setCommentText] = useState('');
-  const {user, token} = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const {user} = useContext(AuthContext);
+  const route = useRoute();
+  const {communityId} = route.params;
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    fetchCommunityPosts();
+  }, [communityId]);
 
-  const fetchPosts = async () => {
+  const fetchCommunityPosts = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get('https://biletixai.onrender.com/posts', {
-        headers: {Authorization: `Bearer ${token}`},
-      });
+      const response = await axios.get(
+        `https://biletixai.onrender.com/communities/${communityId}/posts`,
+      );
       setPosts(response.data.posts || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      Alert.alert('Error', 'Unable to fetch posts.');
+      setPosts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,13 +53,8 @@ const PostScreen = () => {
 
   const handlePickImage = () => {
     launchImageLibrary({mediaType: 'photo', quality: 1}, response => {
-      if (response.didCancel) {
-        console.log('Image selection canceled');
-      } else if (response.errorMessage) {
-        console.error('Error picking image:', response.errorMessage);
-      } else {
-        const image = response.assets[0];
-        setNewPostImage(image);
+      if (!response.didCancel && !response.errorMessage) {
+        setNewPostImage(response.assets[0]);
       }
     });
   };
@@ -62,9 +65,11 @@ const PostScreen = () => {
       return;
     }
 
+    setPosting(true);
     const formData = new FormData();
     formData.append('description', newPostDescription);
     formData.append('userId', user._id);
+    formData.append('community', communityId);
 
     if (newPostImage) {
       formData.append('image', {
@@ -75,57 +80,16 @@ const PostScreen = () => {
     }
 
     try {
-      await axios.post(
-        'https://biletixai.onrender.com/posts/create',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      );
+      await axios.post('https://biletixai.onrender.com/posts/create', formData);
       setModalVisible(false);
       setNewPostDescription('');
       setNewPostImage(null);
-      fetchPosts();
+      fetchCommunityPosts();
     } catch (error) {
       console.error('Error creating post:', error);
       Alert.alert('Error', 'Unable to create post.');
-    }
-  };
-
-  const handleLike = async postId => {
-    try {
-      await axios.post(
-        `https://biletixai.onrender.com/posts/${postId}/like`,
-        {userId: user._id},
-        {headers: {Authorization: `Bearer ${token}`}},
-      );
-      fetchPosts();
-    } catch (error) {
-      console.error('Error liking post:', error);
-      Alert.alert('Error', 'Unable to like post.');
-    }
-  };
-
-  const handleComment = async postId => {
-    if (!commentText.trim()) {
-      Alert.alert('Error', 'Comment cannot be empty.');
-      return;
-    }
-
-    try {
-      await axios.post(
-        `https://biletixai.onrender.com/posts/${postId}/comment`,
-        {userId: user._id, text: commentText},
-        {headers: {Authorization: `Bearer ${token}`}},
-      );
-      setCommentText('');
-      fetchPosts();
-    } catch (error) {
-      console.error('Error commenting on post:', error);
-      Alert.alert('Error', 'Unable to add comment.');
+    } finally {
+      setPosting(false);
     }
   };
 
@@ -133,81 +97,51 @@ const PostScreen = () => {
     <View style={styles.postContainer}>
       <View style={styles.postHeader}>
         <Image source={{uri: item.user.image}} style={styles.profileImage} />
-        <View style={styles.postUserDetails}>
-          <Text style={styles.username}>
-            {item.user.firstName} {item.user.lastName}
-          </Text>
-        </View>
-        <Ionicons name="ellipsis-horizontal" size={20} color="gray" />
+        <Text style={styles.username}>
+          {item.user.firstName} {item.user.lastName}
+        </Text>
       </View>
       {item.imageUrl && (
         <Image source={{uri: item.imageUrl}} style={styles.postImage} />
       )}
-      <View style={styles.postActions}>
-        <TouchableOpacity onPress={() => handleLike(item._id)}>
-          <Ionicons
-            name={
-              item.likes.some(like => like.user === user._id)
-                ? 'heart'
-                : 'heart-outline'
-            }
-            size={24}
-            color={
-              item.likes.some(like => like.user === user._id) ? 'red' : 'black'
-            }
-          />
-        </TouchableOpacity>
-        <Text style={styles.likesText}>{item.likes.length} likes</Text>
-      </View>
-      <Text style={styles.postDescription}>
-        <Text style={styles.username}>
-          {item.user.firstName} {item.user.lastName}{' '}
-        </Text>
-        {item.description}
-      </Text>
-      <View style={styles.commentSection}>
-        {item.comments.map(comment => (
-          <View key={comment._id} style={styles.commentContainer}>
-            <Text style={styles.commentText}>
-              <Text style={styles.username}>
-                {comment.user.firstName} {comment.user.lastName}:{' '}
-              </Text>
-              {comment.text}
-            </Text>
-          </View>
-        ))}
-        <View style={styles.commentInputContainer}>
-          <TextInput
-            placeholder="Add a comment..."
-            value={commentText}
-            onChangeText={setCommentText}
-            style={styles.commentInput}
-          />
-          <TouchableOpacity onPress={() => handleComment(item._id)}>
-            <Ionicons name="send" size={24} color="#007BFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Text style={styles.postDescription}>{item.description}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {posts.length > 0 ? (
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#007BFF"
+          style={{marginTop: 20}}
+        />
+      ) : posts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="chatbubble-ellipses-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>No posts available</Text>
+          <Text style={styles.emptySubText}>
+            Be the first to share something in this community!
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyCreatePostButton}
+            onPress={toggleModal}>
+            <Ionicons name="add" size={20} color="white" />
+            <Text style={styles.emptyCreatePostText}>Create a Post</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
         <FlatList
           data={posts}
           keyExtractor={item => item._id}
           renderItem={renderPost}
         />
-      ) : (
-        <Text style={styles.noPostText}>
-          There are no posts in this community yet.
-        </Text>
       )}
       <TouchableOpacity style={styles.createPostButton} onPress={toggleModal}>
-        <Ionicons name="add" size={30} color="black" />
+        <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
 
+      {/* MODERN CREATE POST MODAL */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={toggleModal}
@@ -219,14 +153,8 @@ const PostScreen = () => {
             style={styles.textInput}
             value={newPostDescription}
             onChangeText={setNewPostDescription}
+            placeholderTextColor="#888"
           />
-          <TouchableOpacity
-            style={styles.imagePickerButton}
-            onPress={handlePickImage}>
-            <Text style={styles.imagePickerButtonText}>
-              {newPostImage ? 'Change Image' : 'Pick an Image'}
-            </Text>
-          </TouchableOpacity>
           {newPostImage && (
             <Image
               source={{uri: newPostImage.uri}}
@@ -234,12 +162,22 @@ const PostScreen = () => {
             />
           )}
           <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleCreatePost}>
-            <Text style={styles.submitButtonText}>Post</Text>
+            style={styles.imagePickerButton}
+            onPress={handlePickImage}>
+            <Ionicons name="image-outline" size={20} color="white" />
+            <Text style={styles.imagePickerButtonText}>
+              {newPostImage ? 'Change Image' : 'Pick an Image'}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={toggleModal}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+          <TouchableOpacity
+            style={[styles.submitButton, posting && {opacity: 0.7}]}
+            onPress={handleCreatePost}
+            disabled={posting}>
+            {posting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Post</Text>
+            )}
           </TouchableOpacity>
         </View>
       </Modal>
@@ -248,145 +186,66 @@ const PostScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  container: {flex: 1, backgroundColor: '#fff'},
+  postContainer: {padding: 10, borderBottomWidth: 1, borderColor: '#ddd'},
+  postHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 10},
+  profileImage: {width: 40, height: 40, borderRadius: 20, marginRight: 10},
+  username: {fontWeight: 'bold'},
+  postImage: {width: '100%', height: 200, borderRadius: 10, marginVertical: 10},
+  postDescription: {marginBottom: 10},
+
+  // Empty State Styles
+  emptyContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  postContainer: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-  },
-  postHeader: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    paddingHorizontal: 20,
   },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  postUserDetails: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  username: {
-    fontWeight: 'bold',
-  },
-  postImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10,
-    marginVertical: 10,
-  },
-  postActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  likesText: {
-    marginLeft: 10,
-    fontWeight: 'bold',
-  },
-  postDescription: {
-    marginBottom: 10,
-  },
-  commentSection: {
-    marginTop: 10,
-  },
-  commentContainer: {
-    flexDirection: 'row',
-    marginBottom: 5,
-  },
-  commentText: {
+  emptyText: {fontSize: 18, fontWeight: 'bold', marginTop: 10, color: '#555'},
+  emptySubText: {
     fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 5,
   },
-  commentInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  commentInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginRight: 10,
-  },
+
   createPostButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: '#eee',
-    padding: 10,
+    backgroundColor: '#007BFF',
+    padding: 15,
     borderRadius: 50,
   },
-  modal: {
-    justifyContent: 'flex-end',
-    margin: 0,
-  },
+
+  modal: {justifyContent: 'center', margin: 0},
   modalContent: {
     backgroundColor: 'white',
-    padding: 22,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    padding: 20,
+    borderRadius: 20,
     alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
   },
   textInput: {
     width: '100%',
-    padding: 10,
-    borderWidth: 1,
+    borderBottomWidth: 1,
     borderColor: '#ddd',
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  imagePickerButton: {
-    backgroundColor: '#007BFF',
     padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  imagePickerButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    marginVertical: 10,
   },
   previewImage: {
     width: '100%',
     height: 150,
-    resizeMode: 'cover',
-    borderRadius: 5,
-    marginBottom: 10,
+    borderRadius: 10,
+    marginVertical: 10,
   },
   submitButton: {
     backgroundColor: '#007BFF',
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 10,
     width: '100%',
     alignItems: 'center',
   },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  cancelButtonText: {
-    color: 'red',
-    marginTop: 10,
-  },
-  noPostText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 18,
-    color: 'gray',
-  },
+  submitButtonText: {color: 'white', fontWeight: 'bold'},
 });
 
 export default PostScreen;

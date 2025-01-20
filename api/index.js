@@ -1806,13 +1806,13 @@ app.post('/communities/:communityId/send-request', async (req, res) => {
   }
 });
 
-app.post('/posts/create', authenticateToken, async (req, res) => {
-  const {description, userId, imageUrl} = req.body;
+app.post('/posts/create', async (req, res) => {
+  const {description, userId, communityId, imageUrl} = req.body;
 
-  if (!description || !userId) {
+  if (!description || !userId || !communityId) {
     return res
       .status(400)
-      .json({message: 'Description and user ID are required.'});
+      .json({message: 'Description, user ID, and community ID are required.'});
   }
 
   try {
@@ -1820,9 +1820,14 @@ app.post('/posts/create', authenticateToken, async (req, res) => {
       description,
       imageUrl: imageUrl || null,
       user: userId,
+      community: communityId,
     });
 
     await newPost.save();
+    await Community.findByIdAndUpdate(communityId, {
+      $push: {posts: newPost._id},
+    });
+
     res.status(201).json({message: 'Post created successfully', post: newPost});
   } catch (error) {
     console.error('Error creating post:', error);
@@ -1830,7 +1835,7 @@ app.post('/posts/create', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/posts/:postId/like', authenticateToken, async (req, res) => {
+app.post('/posts/:postId/like', async (req, res) => {
   const {postId} = req.params;
   const {userId} = req.body;
 
@@ -1858,7 +1863,7 @@ app.post('/posts/:postId/like', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/posts/:postId/comment', authenticateToken, async (req, res) => {
+app.post('/posts/:postId/comment', async (req, res) => {
   const {postId} = req.params;
   const {userId, text} = req.body;
 
@@ -2188,5 +2193,19 @@ app.get('/chats/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching chats:', error);
     res.status(500).json({message: 'Server error'});
+  }
+});
+
+app.get('/communities/:communityId/posts', async (req, res) => {
+  try {
+    const {communityId} = req.params;
+    const posts = await Post.find({community: communityId})
+      .populate('user', 'firstName lastName image')
+      .populate('comments.user', 'firstName lastName image');
+
+    res.status(200).json({posts});
+  } catch (error) {
+    console.error('Error fetching community posts:', error);
+    res.status(500).json({message: 'Failed to fetch community posts'});
   }
 });
