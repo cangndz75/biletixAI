@@ -50,6 +50,7 @@ import PostScreen from '../screens/PostScreen';
 import VenueInfoScreen from '../screens/VenueInfoScreen';
 import CreatePost from '../screens/CreatePost';
 import LikeScreen from '../screens/LikeScreen';
+import CommentScreen from '../screens/CommentScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -357,6 +358,11 @@ const MainStack = () => (
     <Stack.Screen
       name="LikeScreen"
       component={LikeScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="CommentScreen"
+      component={CommentScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
