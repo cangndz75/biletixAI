@@ -41,7 +41,10 @@ const ChatsScreen = () => {
       <Pressable
         style={styles.chatItem}
         onPress={() =>
-          navigation.navigate('ChatScreen', {userId: item.user._id})
+          navigation.navigate('ChatRoom', {
+            userId: item.user._id,
+            receiverId: item.user._id, 
+          })
         }>
         <Image
           source={{uri: item.user.image || 'https://via.placeholder.com/50'}}

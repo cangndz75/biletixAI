@@ -863,26 +863,28 @@ app.post('/sendMessage', async (req, res) => {
   try {
     const {senderId, receiverId, message} = req.body;
 
+    if (!senderId || !receiverId || !message) {
+      return res
+        .status(400)
+        .json({message: 'senderId, receiverId ve message gerekli!'});
+    }
+
     const newMessage = new Message({
-      senderId,
-      receiverId,
+      senderId: new mongoose.Types.ObjectId(senderId),
+      receiverId: new mongoose.Types.ObjectId(receiverId),
       message,
     });
 
     await newMessage.save();
 
-    const receiverSocketId = userSocketMap[receiverId];
+    const populatedMessage = await Message.findById(newMessage._id)
+      .populate('senderId', '_id firstName lastName image')
+      .populate('receiverId', '_id firstName lastName image');
 
-    if (receiverSocketId) {
-      console.log('emitting receiveMessage event to the receiver', receiverId);
-      io.to(receiverSocketId).emit('newMessage', newMessage);
-    } else {
-      console.log('Receiver socket ID not found');
-    }
-
-    res.status(201).json(newMessage);
+    res.status(201).json(populatedMessage);
   } catch (error) {
-    console.log('ERROR', error);
+    console.error('Error sending message:', error);
+    res.status(500).json({message: 'Error sending message'});
   }
 });
 
@@ -890,16 +892,33 @@ app.get('/messages', async (req, res) => {
   try {
     const {senderId, receiverId} = req.query;
 
+    if (!senderId || !receiverId) {
+      return res.status(400).json({message: 'senderId ve receiverId gerekli!'});
+    }
+
+    console.log('Messages requested for:', {senderId, receiverId});
+
     const messages = await Message.find({
       $or: [
-        {senderId: senderId, receiverId: receiverId},
-        {senderId: receiverId, receiverId: senderId},
+        {
+          senderId: new mongoose.Types.ObjectId(senderId),
+          receiverId: new mongoose.Types.ObjectId(receiverId),
+        },
+        {
+          senderId: new mongoose.Types.ObjectId(receiverId),
+          receiverId: new mongoose.Types.ObjectId(senderId),
+        },
       ],
-    }).populate('senderId', '_id name');
+    })
+      .populate('senderId', '_id firstName lastName image')
+      .populate('receiverId', '_id firstName lastName image')
+      .sort({timeStamp: 1});
 
+    console.log('Messages fetched from DB:', messages);
     res.status(200).json(messages);
   } catch (error) {
-    console.log('Error', error);
+    console.error('Error fetching messages:', error);
+    res.status(500).json({message: 'Error fetching messages'});
   }
 });
 
@@ -2171,5 +2190,3 @@ app.get('/chats/:userId', async (req, res) => {
     res.status(500).json({message: 'Server error'});
   }
 });
-
-module.exports = router;

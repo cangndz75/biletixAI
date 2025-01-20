@@ -30,7 +30,12 @@ const ChatRoom = () => {
       headerTitle: '',
       headerLeft: () => (
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color="black"
+            onPress={() => navigation.goBack()}
+          />
           <View>
             <Text>{route?.params?.name}</Text>
           </View>
@@ -47,34 +52,50 @@ const ChatRoom = () => {
     return () => socket.off('newMessage');
   }, [socket]);
 
-  const sendMessage = async (senderId, receiverId) => {
+  const sendMessage = async () => {
     try {
-      await axios.post('https://biletixai.onrender.com/sendMessage', {
-        senderId,
-        receiverId,
+      console.log('Gönderilen Mesaj:', {
+        senderId: userId,
+        receiverId: route?.params?.receiverId,
         message,
       });
-      socket.emit('sendMessage', {senderId, receiverId, message});
+
+      await axios.post('https://biletixai.onrender.com/sendMessage', {
+        senderId: userId,
+        receiverId: route?.params?.receiverId,
+        message,
+      });
+
+      socket.emit('sendMessage', {
+        senderId: userId,
+        receiverId: route?.params?.receiverId,
+        message,
+      });
       setMessage('');
       fetchMessages();
     } catch (error) {
-      console.error(error);
+      console.error('Mesaj Gönderme Hatası:', error);
     }
   };
 
   const fetchMessages = async () => {
     try {
-      const senderId = userId;
-      const receiverId = route?.params?.receiverId;
+      console.log('Fetching messages for:', {
+        senderId: userId,
+        receiverId: route?.params?.receiverId,
+      });
+
       const response = await axios.get(
         'https://biletixai.onrender.com/messages',
         {
-          params: {senderId, receiverId},
+          params: {senderId: userId, receiverId: route?.params?.receiverId},
         },
       );
+
+      console.log('Messages received:', response.data);
       setMessages(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching messages:', error);
     }
   };
 
@@ -101,99 +122,43 @@ const ChatRoom = () => {
   return (
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: 'white'}}>
       <ScrollView>
-        {messages.map((item, index) => (
-          <Pressable
-            key={index}
-            style={[
-              item?.senderId?._id === userId
-                ? {
-                    alignSelf: 'flex-end',
-                    backgroundColor: '#DCF8C6',
-                    padding: 8,
-                    maxWidth: '60%',
-                    borderRadius: 7,
-                    margin: 10,
-                  }
-                : {
-                    alignSelf: 'flex-start',
-                    backgroundColor: 'white',
-                    padding: 8,
-                    margin: 10,
-                    borderRadius: 7,
-                    maxWidth: '60%',
-                  },
-            ]}>
-            <Text style={{fontSize: 13, textAlign: 'left'}}>
-              {item?.message}
-            </Text>
-            <Text
-              style={{
-                textAlign: 'right',
-                fontSize: 9,
-                color: 'gray',
-                marginTop: 4,
-              }}>
-              {formatTime(item?.timeStamp)}
-            </Text>
-            {item?.senderId?._id === userId && (
-              <Pressable
-                onPress={() => deleteMessage(item?._id)}
-                style={{
-                  position: 'absolute',
-                  top: -8,
-                  right: -8,
-                }}>
-                <AntDesign name="delete" size={16} color="red" />
-              </Pressable>
-            )}
-          </Pressable>
-        ))}
+        {messages.map((item, index) => {
+          // senderId'nin doğrudan ObjectId veya nesne olma durumuna göre kontrol
+          const isMyMessage = item.senderId?._id
+            ? item.senderId._id === userId
+            : item.senderId === userId;
+
+          return (
+            <Pressable
+              key={index}
+              style={[isMyMessage ? styles.myMessage : styles.receivedMessage]}>
+              <Text style={styles.messageText}>{item?.message}</Text>
+              <Text style={styles.timeText}>{formatTime(item?.timeStamp)}</Text>
+              {isMyMessage && (
+                <Pressable
+                  onPress={() => deleteMessage(item?._id)}
+                  style={styles.deleteIcon}>
+                  <AntDesign name="delete" size={16} color="red" />
+                </Pressable>
+              )}
+            </Pressable>
+          );
+        })}
       </ScrollView>
-      <View
-        style={{
-          backgroundColor: 'white',
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 10,
-          paddingVertical: 10,
-          borderTopWidth: 1,
-          borderTopColor: '#dddddd',
-          marginBottom: 20,
-        }}>
+      <View style={styles.inputContainer}>
         <Entypo name="emoji-happy" size={24} color="gray" />
         <TextInput
-          placeholder="type your message..."
+          placeholder="Type your message..."
           value={message}
           onChangeText={setMessage}
-          style={{
-            flex: 1,
-            height: 40,
-            borderWidth: 1,
-            borderColor: '#ddddd',
-            borderRadius: 20,
-            paddingHorizontal: 10,
-            marginLeft: 10,
-          }}
+          style={styles.textInput}
         />
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginHorizontal: 8,
-          }}>
+        <View style={styles.iconContainer}>
           <Entypo name="camera" size={24} color="gray" />
           <Feather name="mic" size={24} color="gray" />
         </View>
-        <Pressable
-          onPress={() => sendMessage(userId, route?.params?.receiverId)}
-          style={{
-            backgroundColor: '#0066b2',
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 20,
-          }}>
-          <Text style={{textAlign: 'center', color: 'white'}}>Send</Text>
+        <Pressable onPress={sendMessage} style={styles.sendButton}>
+          <Text style={styles.sendButtonText}>Send</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -202,4 +167,71 @@ const ChatRoom = () => {
 
 export default ChatRoom;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#DCF8C6',
+    padding: 8,
+    maxWidth: '60%',
+    borderRadius: 7,
+    margin: 10,
+  },
+  receivedMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F0F0F0',
+    padding: 8,
+    maxWidth: '60%',
+    borderRadius: 7,
+    margin: 10,
+  },
+  messageText: {
+    fontSize: 13,
+    textAlign: 'left',
+  },
+  timeText: {
+    textAlign: 'right',
+    fontSize: 9,
+    color: 'gray',
+    marginTop: 4,
+  },
+  deleteIcon: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+  },
+  inputContainer: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#dddddd',
+    marginBottom: 20,
+  },
+  textInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#dddddd',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    marginLeft: 10,
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 8,
+  },
+  sendButton: {
+    backgroundColor: '#0066b2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  sendButtonText: {
+    textAlign: 'center',
+    color: 'white',
+  },
+});
