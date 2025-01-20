@@ -9,54 +9,57 @@ import Animated, {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 
+// 📌 EventMate FAQ List
 const faqs = [
   {
-    question: 'What is your return policy?',
+    question: 'How does EventMate work?',
     answer:
-      'You can return any item within 30 days of purchase for a full refund. Items must be in their original condition with all tags attached. Refunds will be processed within 5-7 business days after we receive the returned items.',
+      'EventMate helps users discover events, buy tickets, and join events with friends. Organizers can also create and manage their events.',
   },
   {
-    question: 'Do you offer international shipping?',
+    question: 'How can I create an event?',
     answer:
-      'Yes, we ship worldwide. Shipping costs and delivery times vary based on your location.',
+      'Tap the "Create Event" button, fill in the required details, and publish your event. With Organizer Plus, you get access to more features.',
   },
   {
-    question: 'How can I track my order?',
+    question: 'What should I do after buying a ticket?',
     answer:
-      'Once your order is shipped, you will receive a tracking number via email.',
+      'Your purchased tickets will be listed under the "My Bookings" section. Use your QR code for event check-in.',
   },
   {
-    question: 'What payment methods do you accept?',
-    answer: 'We accept credit/debit cards, PayPal, and Apple Pay.',
-  },
-  {
-    question: 'How do I change or cancel my order?',
+    question: 'How do I join an event?',
     answer:
-      'Contact our customer service within 24 hours of placing your order to request changes or cancellations.',
+      'You can join an event by clicking the "Join Event" button on the event page or by purchasing a ticket.',
   },
   {
-    question: 'Do you offer gift wrapping?',
+    question: 'How do I join a community?',
     answer:
-      'Yes, we offer gift wrapping for a small additional fee during checkout.',
+      'Go to the Community section, choose a community, and tap "Join Community." Some communities may require approval.',
   },
   {
-    question: 'What is your privacy policy?',
+    question: 'Can I cancel my ticket?',
     answer:
-      'We value your privacy and ensure your data is protected. Read our full privacy policy on our website.',
+      'Ticket cancellations depend on the event organizer’s policies. You can request a cancellation in the "My Bookings" section.',
   },
   {
-    question: 'Can I buy a gift card?',
-    answer: 'Yes, you can purchase digital gift cards from our store.',
-  },
-  {
-    question: 'How do I contact customer service?',
+    question: 'Is EventMate free?',
     answer:
-      'You can reach us via email at support@ourstore.com or through our contact form on the website.',
+      'EventMate is free to use, but premium features (Organizer Plus, User Plus) offer additional benefits.',
   },
   {
-    question: 'What is your warranty policy?',
+    question: 'Can I add friends?',
     answer:
-      'All our products come with a 1-year warranty covering manufacturing defects.',
+      'Yes! You can visit user profiles to send friend requests and attend events together.',
+  },
+  {
+    question: 'What are the benefits for event organizers?',
+    answer:
+      'Organizer Plus subscribers can add unlimited events, promote their events on the homepage, and boost ticket sales.',
+  },
+  {
+    question: 'How can I contact customer support?',
+    answer:
+      'You can reach us through the "Help & Support" section or by emailing support@eventmate.com.',
   },
 ];
 
@@ -68,7 +71,7 @@ const AccordionItem = ({item}) => {
     setExpanded(!expanded);
     heightValue.value = expanded
       ? withTiming(0, {duration: 300, easing: Easing.ease})
-      : withTiming(100, {duration: 300, easing: Easing.ease});
+      : withTiming(120, {duration: 300, easing: Easing.ease});
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -80,7 +83,11 @@ const AccordionItem = ({item}) => {
     <View style={styles.accordionContainer}>
       <TouchableOpacity onPress={toggleExpand} style={styles.accordionHeader}>
         <Text style={styles.questionText}>{item.question}</Text>
-        <Ionicons name={expanded ? 'close' : 'add'} size={20} color="#fff" />
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={20}
+          color="#fff"
+        />
       </TouchableOpacity>
       <Animated.View style={[styles.answerContainer, animatedStyle]}>
         <Text style={styles.answerText}>{item.answer}</Text>
@@ -90,11 +97,11 @@ const AccordionItem = ({item}) => {
 };
 
 const Faqs = () => {
-  const navigation = useNavigation(); // 📌 Navigasyonu ekledik
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      {/* 🔙 Geri Butonu */}
+      {/* 🔙 Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}>
@@ -103,9 +110,10 @@ const Faqs = () => {
 
       <Text style={styles.title}>Frequently Asked Questions</Text>
       <Text style={styles.subtitle}>
-        Don't hesitate to reach out to us and we are happy to help you and
-        assist you
+        Find answers to your questions about EventMate. If you need further
+        assistance, feel free to contact us.
       </Text>
+
       <FlatList
         data={faqs}
         keyExtractor={(item, index) => index.toString()}
@@ -137,7 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 5,
-    marginTop: 60, // 📌 Geri butonu için boşluk bırakıldı
+    marginTop: 60,
   },
   subtitle: {
     fontSize: 14,

@@ -232,6 +232,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     alignSelf: 'flex-end',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    backgroundColor: '#FF5A5F',
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+  },
+  ticketButton: {
+    backgroundColor: '#6A5ACD',
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+  },
+  buttonText: {color: 'white', textAlign: 'center', fontWeight: 'bold'},
 });
 
 export default MyBookings;
