@@ -25,7 +25,6 @@ const MyBookings = () => {
 
   return (
     <View style={styles.container}>
-      {/* Geri Butonu */}
       <TouchableOpacity
         onPress={() => navigation.goBack()}
         style={styles.backButton}>
@@ -69,22 +68,28 @@ const EventList = ({filterType, userId}) => {
     setLoading(true);
     try {
       console.log('📌 Kullanıcı ID ile API isteği yapılıyor:', userId);
+
       const response = await axios.get(
         `https://biletixai.onrender.com/events`,
         {params: {userId}},
       );
+
       console.log('📌 API Yanıtı:', response.data);
 
       if (!response.data || response.data.length === 0) {
-        console.warn(`⚠️ API boş veri döndü. Tab: ${filterType}`);
+        console.warn('⚠️ API boş veri döndü.');
       }
 
       const filteredEvents = (response.data || []).filter(event => {
         const eventDate = new Date(event.date);
         const now = new Date();
-        if (filterType === 'upcoming') return eventDate > now;
-        if (filterType === 'completed') return eventDate < now;
-        if (filterType === 'cancelled') return event.status === 'cancelled';
+        if (filterType === 'upcoming') {
+          return eventDate > now;
+        } else if (filterType === 'completed') {
+          return eventDate < now;
+        } else if (filterType === 'cancelled') {
+          return event.status === 'cancelled';
+        }
         return false;
       });
 
@@ -101,18 +106,6 @@ const EventList = ({filterType, userId}) => {
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const cancelBooking = async eventId => {
-    try {
-      await axios.put(
-        `https://biletixai.onrender.com/events/${eventId}/cancel`,
-        {userId},
-      );
-      fetchEvents();
-    } catch (error) {
-      console.error('❌ Etkinlik iptal edilemedi:', error);
     }
   };
 
@@ -143,12 +136,29 @@ const EventList = ({filterType, userId}) => {
               <View style={styles.eventDetails}>
                 <Text style={styles.eventTitle}>{item.title}</Text>
                 <Text style={styles.eventDate}>
-                  {new Date(item.date).toLocaleString()}
+                  {new Date(item.date).toLocaleDateString()} -{' '}
+                  {new Date(item.date).toLocaleTimeString()}
                 </Text>
                 <Text style={styles.eventLocation}>{item.location}</Text>
                 <Text style={styles.eventStatus}>
                   {item.isPaid ? 'Paid' : 'Free'}
                 </Text>
+                <View style={styles.buttonContainer}>
+                  {filterType === 'upcoming' && (
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => cancelBooking(item._id)}>
+                      <Text style={styles.buttonText}>Cancel Booking</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.ticketButton}
+                    onPress={() =>
+                      navigation.navigate('ETicketScreen', {eventId: item._id})
+                    }>
+                    <Text style={styles.buttonText}>View E-Ticket</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </Animated.View>
           )}

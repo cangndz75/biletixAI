@@ -476,7 +476,7 @@ app.get('/events', async (req, res) => {
     const events = await Event.find(filter).populate('organizer');
 
     if (!events || events.length === 0) {
-      console.warn('⚠️ Etkinlik bulunamadı.');
+      console.warn('⚠️ Etkinlik bulunamadı. Filtre:', filter);
       return res.status(404).json({message: 'No events found'});
     }
 
