@@ -7,15 +7,18 @@ import {
   Image,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import Animated, {FadeInUp, FadeOutDown} from 'react-native-reanimated';
 
 const ReviewScreen = ({route, navigation}) => {
   const eventId = route?.params?.eventId;
   const [reviews, setReviews] = useState([]);
-  const [averageScore, setAverageScore] = useState(0.0);
+  const [averageScore, setAverageScore] = useState(null); // Başlangıçta null yapıldı
   const [selectedFilter, setSelectedFilter] = useState('All time');
+  const [loading, setLoading] = useState(true); // Loading durumu eklendi
 
   useEffect(() => {
     if (eventId) {
@@ -35,6 +38,8 @@ const ReviewScreen = ({route, navigation}) => {
       calculateAverageScore(response.data);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch reviews.');
+    } finally {
+      setLoading(false); // Yükleme tamamlandıktan sonra loading kapanacak
     }
   };
 
@@ -51,35 +56,43 @@ const ReviewScreen = ({route, navigation}) => {
   };
 
   const renderReviewItem = ({item}) => (
-    <View style={styles.reviewItem}>
-      <Image
-        source={{uri: item.userImage || 'https://via.placeholder.com/50'}}
-        style={styles.userImage}
-      />
-      <View style={{flex: 1}}>
-        <Text style={styles.userName}>{item.userName}</Text>
-        <View style={styles.starsContainer}>
-          {Array(5)
-            .fill()
-            .map((_, index) => (
-              <Ionicons
-                key={index}
-                name={index < (item.rating || 0) ? 'star' : 'star-outline'}
-                size={16}
-                color="#ffa500"
-              />
-            ))}
+    <Animated.View
+      entering={FadeInUp}
+      exiting={FadeOutDown}
+      style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <Image
+          source={{uri: item.userImage || 'https://via.placeholder.com/50'}}
+          style={styles.userImage}
+        />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.userName}</Text>
+          <Text style={styles.reviewDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
         </View>
-        <Text>{item.review}</Text>
-        <Text style={styles.reviewDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
       </View>
-    </View>
+
+      <View style={styles.ratingContainer}>
+        {Array(5)
+          .fill()
+          .map((_, index) => (
+            <Ionicons
+              key={index}
+              name={index < (item.rating || 0) ? 'star' : 'star-outline'}
+              size={18}
+              color="#2ECC71"
+            />
+          ))}
+      </View>
+
+      <Text style={styles.reviewText}>{item.review}</Text>
+    </Animated.View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Ionicons
           name="arrow-back"
@@ -89,50 +102,67 @@ const ReviewScreen = ({route, navigation}) => {
         <Text style={styles.headerTitle}>Reviews</Text>
       </View>
 
-      <View style={styles.averageScoreContainer}>
-        <Text style={styles.averageScore}>{averageScore.toFixed(1)}</Text>
-        <View style={styles.starsContainer}>
-          {Array(5)
-            .fill()
-            .map((_, index) => (
-              <Ionicons
-                key={index}
-                name={
-                  index < Math.floor(averageScore) ? 'star' : 'star-outline'
-                }
-                size={20}
-                color="#ffa500"
-              />
-            ))}
+      {/* Eğer loading true ise, yükleniyor göstergesi */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Loading reviews...</Text>
         </View>
-      </View>
+      ) : (
+        <>
+          {/* Ortalama Puan */}
+          <View style={styles.averageScoreContainer}>
+            <Animated.Text entering={FadeInUp} style={styles.averageScore}>
+              {averageScore !== null ? averageScore.toFixed(1) : '...'}
+            </Animated.Text>
+            <View style={styles.starsContainer}>
+              {Array(5)
+                .fill()
+                .map((_, index) => (
+                  <Ionicons
+                    key={index}
+                    name={
+                      index < Math.floor(averageScore) ? 'star' : 'star-outline'
+                    }
+                    size={20}
+                    color="#ffa500"
+                  />
+                ))}
+            </View>
+          </View>
 
-      <View style={styles.filterContainer}>
-        {['All time', 'This month', 'This year', 'This week'].map(filter => (
-          <TouchableOpacity
-            key={filter}
-            style={[
-              styles.filterButton,
-              selectedFilter === filter && styles.activeFilterButton,
-            ]}
-            onPress={() => setSelectedFilter(filter)}>
-            <Text
-              style={[
-                styles.filterText,
-                selectedFilter === filter && styles.activeFilterText,
-              ]}>
-              {filter}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          {/* Filtreleme Seçenekleri */}
+          <View style={styles.filterContainer}>
+            {['All time', 'This month', 'This year', 'This week'].map(
+              filter => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[
+                    styles.filterButton,
+                    selectedFilter === filter && styles.activeFilterButton,
+                  ]}
+                  onPress={() => setSelectedFilter(filter)}>
+                  <Text
+                    style={[
+                      styles.filterText,
+                      selectedFilter === filter && styles.activeFilterText,
+                    ]}>
+                    {filter}
+                  </Text>
+                </TouchableOpacity>
+              ),
+            )}
+          </View>
 
-      <FlatList
-        data={reviews}
-        keyExtractor={(_, index) => index.toString()}
-        renderItem={renderReviewItem}
-        style={styles.reviewList}
-      />
+          {/* Yorum Listesi */}
+          <FlatList
+            data={reviews}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={renderReviewItem}
+            style={styles.reviewList}
+          />
+        </>
+      )}
     </View>
   );
 };
@@ -141,20 +171,14 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: 'white', padding: 10},
   header: {flexDirection: 'row', alignItems: 'center', padding: 15},
   headerTitle: {fontSize: 18, fontWeight: 'bold', marginLeft: 10},
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   averageScoreContainer: {alignItems: 'center', marginVertical: 10},
   averageScore: {fontSize: 48, fontWeight: 'bold'},
   starsContainer: {flexDirection: 'row', marginTop: 5},
-  reviewList: {flex: 1, marginVertical: 10},
-  reviewItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  userImage: {width: 50, height: 50, borderRadius: 25, marginRight: 10},
-  userName: {fontWeight: 'bold'},
-  reviewDate: {fontSize: 12, color: '#888', marginTop: 5},
   filterContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -169,6 +193,24 @@ const styles = StyleSheet.create({
   activeFilterButton: {backgroundColor: '#ffa500'},
   filterText: {fontSize: 14, color: '#333'},
   activeFilterText: {color: 'white'},
+  reviewList: {flex: 1, marginVertical: 10},
+  reviewCard: {
+    backgroundColor: '#D4F6E5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  userImage: {width: 40, height: 40, borderRadius: 20, marginRight: 10},
+  userInfo: {flex: 1},
+  userName: {fontWeight: 'bold', fontSize: 16},
+  reviewDate: {fontSize: 12, color: '#888'},
+  ratingContainer: {flexDirection: 'row', marginBottom: 5},
+  reviewText: {fontSize: 14, color: '#333'},
 });
 
 export default ReviewScreen;

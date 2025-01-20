@@ -26,6 +26,7 @@ import {
   Dialog,
   AlertNotificationRoot,
 } from 'react-native-alert-notification';
+import Animated, {FadeInUp, FadeOutDown} from 'react-native-reanimated';
 
 const EventSetUpScreen = () => {
   const navigation = useNavigation();
@@ -42,13 +43,17 @@ const EventSetUpScreen = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [rating, setRating] = useState(5);
-
+  const [expanded, setExpanded] = useState(false);
   useFocusEffect(
     React.useCallback(() => {
-      fetchEventDetails(); 
-      checkRequestStatus(); 
-    }, [eventId]), 
+      fetchEventDetails();
+      checkRequestStatus();
+    }, [eventId]),
   );
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -97,10 +102,13 @@ const EventSetUpScreen = () => {
     setIsFavorited(prev => !prev);
 
     try {
-      const response = await axios.post('https://biletixai.onrender.com/favorites', {
-        userId,
-        eventId: item._id,
-      });
+      const response = await axios.post(
+        'https://biletixai.onrender.com/favorites',
+        {
+          userId,
+          eventId: item._id,
+        },
+      );
 
       setIsFavorited(response.data.isFavorited);
 
@@ -127,10 +135,14 @@ const EventSetUpScreen = () => {
   };
 
   const fetchReviews = async () => {
-    const response = await axios.get(
-      `https://biletixai.onrender.com/events/${eventId}/reviews`,
-    );
-    setReviews(response.data || []);
+    try {
+      const response = await axios.get(
+        `https://biletixai.onrender.com/events/${eventId}/reviews`,
+      );
+      setReviews(response.data || []);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch reviews.');
+    }
   };
 
   const submitReview = async () => {
@@ -202,10 +214,13 @@ const EventSetUpScreen = () => {
 
   const sendJoinRequest = async () => {
     try {
-      await axios.post(`https://biletixai.onrender.com/events/${eventId}/request`, {
-        userId,
-        comment,
-      });
+      await axios.post(
+        `https://biletixai.onrender.com/events/${eventId}/request`,
+        {
+          userId,
+          comment,
+        },
+      );
       setRequestStatus('pending');
       setModalVisible(false);
       Alert.alert('Request Sent', 'Your join request is pending approval.');
@@ -262,6 +277,41 @@ const EventSetUpScreen = () => {
     </View>
   );
 
+  const renderReviewItem = ({item}) => (
+    <Animated.View
+      entering={FadeInUp}
+      exiting={FadeOutDown}
+      style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <Image
+          source={{uri: item.userImage || 'https://via.placeholder.com/50'}}
+          style={styles.userImage}
+        />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{item.userName}</Text>
+          <Text style={styles.reviewDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.ratingContainer}>
+        {Array(5)
+          .fill()
+          .map((_, index) => (
+            <Ionicons
+              key={index}
+              name={index < (item.rating || 0) ? 'star' : 'star-outline'}
+              size={18}
+              color="#2ECC71"
+            />
+          ))}
+      </View>
+
+      <Text style={styles.reviewText}>{item.review}</Text>
+    </Animated.View>
+  );
+
   const leaveEvent = async () => {
     try {
       await axios.post(
@@ -301,19 +351,27 @@ const EventSetUpScreen = () => {
 
   const renderReviewSection = () => (
     <View style={{marginVertical: 10}}>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('ReviewScreen', {eventId})}>
-        <Text style={{justifyContent: 'space-between', textAlign: 'right'}}>
-          See All
-        </Text>
-      </TouchableOpacity>
+      <Animated.View entering={FadeInUp} exiting={FadeOutDown}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ReviewScreen', {eventId})}
+          style={{
+            alignSelf: 'flex-end',
+            paddingVertical: 5,
+            paddingHorizontal: 10,
+            borderRadius: 5,
+            backgroundColor: '#f0f0f0',
+          }}>
+          <Text style={{color: '#1E90FF', fontWeight: '600'}}>See All</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
       <Text style={{fontWeight: 'bold', fontSize: 18}}>Reviews</Text>
 
       {renderRatingStars()}
 
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Send your review"
+          placeholder="Write your review"
           value={comment}
           onChangeText={setComment}
           style={styles.textInput}
@@ -322,6 +380,18 @@ const EventSetUpScreen = () => {
           <Ionicons name="send" size={24} color="blue" />
         </TouchableOpacity>
       </View>
+
+      <View style={{height: 1, backgroundColor: '#ddd', marginVertical: 10}} />
+      <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 5}}>
+        User Reviews
+      </Text>
+
+      <FlatList
+        data={reviews.slice(0, 2)}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={renderReviewItem}
+        style={styles.reviewList}
+      />
     </View>
   );
 
@@ -422,7 +492,9 @@ const EventSetUpScreen = () => {
       </View>
     );
   }
-
+  const MAX_DESCRIPTION_LENGTH = 150;
+  const eventDescription =
+    item?.description || 'No description available for this event.';
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
       <ScrollView>
@@ -514,9 +586,23 @@ const EventSetUpScreen = () => {
           </View>
 
           {selectedTab === 'About' ? (
-            <Text style={{marginVertical: 10}}>
-              {item?.description || 'Event Description'}
-            </Text>
+            <View style={{padding: 10}}>
+              <Text style={styles.eventDescription}>
+                {expanded || eventDescription.length <= MAX_DESCRIPTION_LENGTH
+                  ? eventDescription
+                  : `${eventDescription.substring(
+                      0,
+                      MAX_DESCRIPTION_LENGTH,
+                    )}...`}
+              </Text>
+              {eventDescription.length > MAX_DESCRIPTION_LENGTH && (
+                <TouchableOpacity onPress={() => setExpanded(!expanded)}>
+                  <Text style={styles.seeMoreText}>
+                    {expanded ? 'See Less' : 'See More'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           ) : (
             renderReviewSection()
           )}
@@ -619,6 +705,45 @@ const EventSetUpScreen = () => {
 export default EventSetUpScreen;
 
 const styles = StyleSheet.create({
+  header: {flexDirection: 'row', alignItems: 'center', padding: 15},
+  headerTitle: {fontSize: 18, fontWeight: 'bold', marginLeft: 10},
+  tabContainer: {flexDirection: 'row', marginVertical: 10},
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {borderBottomColor: '#000'},
+  tabText: {fontSize: 16, fontWeight: 'bold'},
+  eventDescription: {padding: 10, fontSize: 14, color: '#555'},
+  reviewHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  reviewSectionTitle: {fontWeight: 'bold', fontSize: 18},
+  seeAllButton: {fontSize: 14, color: '#1E90FF', fontWeight: '600'},
+  reviewList: {flex: 1, marginVertical: 10},
+  reviewCard: {
+    backgroundColor: '#D4F6E5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  reviewHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 5},
+  userImage: {width: 40, height: 40, borderRadius: 20, marginRight: 10},
+  userInfo: {flex: 1},
+  userName: {fontWeight: 'bold', fontSize: 16},
+  reviewDate: {fontSize: 12, color: '#888'},
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
+  reviewText: {fontSize: 14, color: '#333'},
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -628,14 +753,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginTop: 10,
   },
-  textInput: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: 10,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
+  textInput: {flex: 1, height: 40, paddingHorizontal: 10},
 });
