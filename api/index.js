@@ -459,38 +459,56 @@ app.post('/createevent', async (req, res) => {
   }
 });
 app.get('/events', async (req, res) => {
-  const {organizerId, role} = req.query;
+  const {organizerId, role, userId} = req.query;
 
   try {
     let filter = {};
 
     if (role === 'organizer' && organizerId) {
       filter = {organizer: mongoose.Types.ObjectId(organizerId)};
+    } else if (userId) {
+      filter = {attendees: mongoose.Types.ObjectId(userId)};
     }
 
+    console.log('📌 Etkinlikler getiriliyor. Filtre:', filter);
+
     const events = await Event.find(filter).populate('organizer');
+
+    if (!events || events.length === 0) {
+      console.warn('⚠️ Etkinlik bulunamadı. Filtre:', filter);
+      return res.status(404).json({message: 'No events found'});
+    }
+
+    console.log('✅ Etkinlikler başarıyla getirildi:', events.length);
     res.status(200).json(events);
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error('❌ Error fetching events:', error);
     res.status(500).json({message: 'Failed to fetch events'});
   }
 });
 
 app.get('/events/user/:userId', async (req, res) => {
-  const {userId} = req.params;
-
   try {
-    if (!userId) {
-      return res.status(400).json({message: 'User ID is required'});
+    const {userId} = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error('❌ Geçersiz User ID:', userId);
+      return res.status(400).json({message: 'Invalid User ID'});
     }
 
-    const events = await Event.find({
-      attendees: mongoose.Types.ObjectId(userId),
-    }).populate('organizer');
+    console.log('📌 Kullanıcı ID ile etkinlikler getiriliyor:', userId);
 
+    const events = await Event.find({attendees: userId}).populate('organizer');
+
+    if (!events || events.length === 0) {
+      console.warn('⚠️ Kullanıcı için etkinlik bulunamadı:', userId);
+      return res.status(404).json({message: 'No events found for this user'});
+    }
+
+    console.log('✅ Kullanıcının etkinlikleri bulundu:', events.length);
     res.status(200).json(events);
   } catch (error) {
-    console.error('Error fetching user events:', error);
+    console.error('❌ Kullanıcı etkinliklerini çekerken hata:', error.message);
     res.status(500).json({message: 'Failed to fetch user events'});
   }
 });

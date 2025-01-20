@@ -10,48 +10,30 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated from 'react-native-reanimated';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const MyBookings = () => {
   const [selectedTab, setSelectedTab] = useState('Upcoming');
-  const route = useRoute();
   const navigation = useNavigation();
-  const [userId, setUserId] = useState(route.params?.userId || null);
-  const [userEvents, setUserEvents] = useState([]);
+  const {userId} = useContext(AuthContext);
 
   useEffect(() => {
-    const fetchUserId = async () => {
-      if (!userId) {
-        try {
-          const storedUser = await AsyncStorage.getItem('user');
-          const parsedUser = JSON.parse(storedUser);
-          if (parsedUser?._id) {
-            console.log('✅ Kullanıcı ID (AsyncStorage):', parsedUser._id);
-            setUserId(parsedUser._id);
-            setUserEvents(parsedUser.events || []);
-          } else {
-            console.error('❌ Kullanıcı ID bulunamadı.');
-          }
-        } catch (error) {
-          console.error('❌ AsyncStorage kullanıcı ID çekme hatası:', error);
-        }
-      }
-    };
-
-    fetchUserId();
+    console.log('📌 Kullanıcı ID (AuthContext):', userId);
   }, [userId]);
 
   return (
     <View style={styles.container}>
+      {/* Geri Butonu */}
       <TouchableOpacity
         onPress={() => navigation.goBack()}
         style={styles.backButton}>
         <Ionicons name="arrow-back" size={26} color="#000" />
       </TouchableOpacity>
 
+      {/* Sekmeler */}
       <View style={styles.tabContainer}>
         {['Upcoming', 'Completed', 'Cancelled'].map(tab => (
           <TouchableOpacity
@@ -69,25 +51,21 @@ const MyBookings = () => {
         ))}
       </View>
 
-      <EventList
-        filterType={selectedTab.toLowerCase()}
-        userId={userId}
-        userEvents={userEvents}
-      />
+      <EventList filterType={selectedTab.toLowerCase()} userId={userId} />
     </View>
   );
 };
 
-const EventList = ({filterType, userId, userEvents}) => {
+const EventList = ({filterType, userId}) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (userId && userEvents.length > 0) {
+    if (userId) {
       fetchEvents();
     }
-  }, [filterType, userId, userEvents]);
+  }, [filterType, userId]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -95,13 +73,17 @@ const EventList = ({filterType, userId, userEvents}) => {
       console.log('📌 Kullanıcı ID ile API isteği yapılıyor:', userId);
 
       const response = await axios.get(
-        `https://biletixai.onrender.com/events/user/${userId}`,
+        `https://biletixai.onrender.com/events`,
+        {params: {userId}},
       );
 
-      const allEvents = response.data || [];
-      console.log('📌 API Yanıtı:', allEvents); 
+      console.log('📌 API Yanıtı:', response.data);
 
-      const filteredEvents = allEvents.filter(event => {
+      if (!response.data || response.data.length === 0) {
+        console.warn('⚠️ API boş veri döndü.');
+      }
+
+      const filteredEvents = (response.data || []).filter(event => {
         const eventDate = new Date(event.date);
         const now = new Date();
         if (filterType === 'upcoming') {
@@ -114,23 +96,19 @@ const EventList = ({filterType, userId, userEvents}) => {
         return false;
       });
 
+      console.log(
+        `✅ ${filterType.toUpperCase()} tabında ${
+          filteredEvents.length
+        } etkinlik bulundu.`,
+      );
       setEvents(filteredEvents);
     } catch (error) {
-      console.error('❌ Etkinlikleri çekerken hata:', error);
+      console.error(
+        '❌ Etkinlikleri çekerken hata:',
+        error.response ? error.response.data : error.message,
+      );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const cancelBooking = async eventId => {
-    try {
-      await axios.put(
-        `https://biletixai.onrender.com/events/${eventId}/cancel`,
-        {userId},
-      );
-      fetchEvents();
-    } catch (error) {
-      console.error('❌ Etkinlik iptal edilemedi:', error);
     }
   };
 
@@ -153,18 +131,32 @@ const EventList = ({filterType, userId, userEvents}) => {
           renderItem={({item}) => (
             <Animated.View style={styles.eventCard}>
               <Image
-                source={{uri: item.image || 'https://via.placeholder.com/150'}}
+                source={{
+                  uri: item.images?.[0] || 'https://via.placeholder.com/150',
+                }}
                 style={styles.eventImage}
               />
               <View style={styles.eventDetails}>
                 <Text style={styles.eventTitle}>{item.title}</Text>
                 <Text style={styles.eventDate}>
+                  <MaterialCommunityIcons
+                    name="calendar"
+                    size={16}
+                    color="#666"
+                  />{' '}
                   {new Date(item.date).toLocaleDateString()} -{' '}
                   {new Date(item.date).toLocaleTimeString()}
                 </Text>
-                <Text style={styles.eventLocation}>{item.location}</Text>
+                <Text style={styles.eventLocation}>
+                  <Ionicons name="location-outline" size={16} color="#666" />{' '}
+                  {item.location}
+                </Text>
                 <Text style={styles.eventStatus}>
-                  {item.isPaid ? 'Paid' : 'Free'}
+                  {item.isPaid ? (
+                    <Text style={styles.paidEvent}>Paid</Text>
+                  ) : (
+                    <Text style={styles.freeEvent}>Free</Text>
+                  )}
                 </Text>
                 <View style={styles.buttonContainer}>
                   {filterType === 'upcoming' && (
@@ -232,6 +224,35 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 20,
   },
+  eventCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    marginBottom: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  eventImage: {width: 100, height: 100, borderRadius: 15, marginRight: 15},
+  eventDetails: {flex: 1},
+  eventTitle: {fontSize: 18, fontWeight: 'bold', color: '#333'},
+  eventDate: {fontSize: 14, color: '#777', marginVertical: 4},
+  eventLocation: {fontSize: 14, color: '#555'},
+  freeEvent: {color: '#007BFF', fontWeight: 'bold'},
+  paidEvent: {color: '#FF5733', fontWeight: 'bold'},
+  cancelButton: {backgroundColor: '#FF5A5F', padding: 8, borderRadius: 5},
+  ticketButton: {backgroundColor: '#6A5ACD', padding: 8, borderRadius: 5},
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    justifyContent: 'space-between',
+  },
+  cancelButton: {backgroundColor: '#FF5A5F', padding: 8, borderRadius: 5},
+  ticketButton: {backgroundColor: '#6A5ACD', padding: 8, borderRadius: 5},
+  buttonText: {color: 'white', textAlign: 'center', fontWeight: 'bold'},
 });
 
 export default MyBookings;
