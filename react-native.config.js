@@ -5,5 +5,11 @@ module.exports = {
         ios: null,
       },
     },
+    'react-native-view-shot': {
+      platforms: {
+        android: null, 
+        ios: null, 
+      },
+    },
   },
 };

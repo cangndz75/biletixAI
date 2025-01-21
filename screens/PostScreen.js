@@ -47,7 +47,6 @@ const PostScreen = () => {
   };
 
   const fetchUserLikedPosts = async () => {
-    try {
       const userResponse = await axios.get(
         `https://biletixai.onrender.com/users/${userId}`,
       );
@@ -56,9 +55,6 @@ const PostScreen = () => {
         userResponse.data.likedPosts.map(id => id.toString()),
       );
       setLikedPosts(userLikedPosts);
-    } catch (error) {
-      console.error('❌ Error fetching user liked posts:', error);
-    }
   };
 
   const handleLikePost = async postId => {

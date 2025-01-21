@@ -153,8 +153,8 @@ const EventList = ({filterType, userId}) => {
                   )}
                   <TouchableOpacity
                     style={styles.ticketButton}
-                    onPress={() =>
-                      navigation.navigate('ETicketScreen', {eventId: item._id})
+                    onPress={
+                      () => navigation.navigate('ETicketScreen', {event: item}) 
                     }>
                     <Text style={styles.buttonText}>View E-Ticket</Text>
                   </TouchableOpacity>

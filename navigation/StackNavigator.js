@@ -53,6 +53,8 @@ import LikeScreen from '../screens/LikeScreen';
 import CommentScreen from '../screens/CommentScreen';
 import MyBookings from '../screens/MyBookings';
 import Faqs from '../screens/Faqs';
+import ETicketScreen from '../screens/ETicketScreen';
+import StaffQrScreen from '../screens/StaffQrScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -372,9 +374,15 @@ const MainStack = () => (
       component={MyBookings}
       options={{headerShown: false}}
     />
+    <Stack.Screen name="Faqs" component={Faqs} options={{headerShown: false}} />
     <Stack.Screen
-      name="Faqs"
-      component={Faqs}
+      name="ETicketScreen"
+      component={ETicketScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="StaffQrScreen"
+      component={StaffQrScreen}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
