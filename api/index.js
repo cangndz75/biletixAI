@@ -22,6 +22,9 @@ const refreshTokens = [];
 const path = require('path');
 const {body, validationResult} = require('express-validator');
 const bcrypt = require('bcrypt');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Stripe = require('stripe');
+
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
@@ -2374,15 +2377,13 @@ app.post('/posts/:postId/like', async (req, res) => {
     }
 
     await post.save();
-    await user.save(); 
+    await user.save();
 
-    res
-      .status(200)
-      .json({
-        message: '✅ Like status updated.',
-        post,
-        likedPosts: user.likedPosts,
-      });
+    res.status(200).json({
+      message: '✅ Like status updated.',
+      post,
+      likedPosts: user.likedPosts,
+    });
   } catch (error) {
     console.error('❌ Error liking post:', error);
     res.status(500).json({message: 'Failed to like post.'});
@@ -2459,4 +2460,78 @@ app.delete('/posts/:postId', async (req, res) => {
     console.error('❌ Error deleting post:', error);
     res.status(500).json({message: 'Failed to delete post.'});
   }
+});
+
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const { priceId, userId } = req.body;
+
+    if (!priceId || !userId) {
+      return res.status(400).json({ error: 'Price ID and User ID are required' });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+      metadata: { userId },
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error('Stripe Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+
+  try {
+    const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const userId = session.metadata.userId;
+      const subscriptionId = session.subscription;
+
+      await User.findByIdAndUpdate(userId, {
+        stripeSubscriptionId: subscriptionId,
+        isPremium: true,
+      });
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('Webhook Error:', err);
+    res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+});
+
+app.post('/cancel-subscription', async (req, res) => {
+  try {
+    const { subscriptionId, userId } = req.body;
+
+    if (!subscriptionId || !userId) {
+      return res.status(400).json({ error: 'Subscription ID and User ID are required' });
+    }
+
+    await stripe.subscriptions.del(subscriptionId);
+    await User.findByIdAndUpdate(userId, { isPremium: false });
+
+    res.json({ message: 'Subscription canceled successfully.' });
+  } catch (error) {
+    console.error('Cancel Subscription Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/success', (req, res) => {
+  res.send('<h1>Payment Successful! 🎉</h1>');
+});
+
+app.get('/cancel', (req, res) => {
+  res.send('<h1>Payment Canceled ❌</h1>');
 });

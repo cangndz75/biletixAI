@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,36 @@ import {
   ScrollView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {Linking} from 'react-native';
+
+const API_BASE_URL = 'https://biletixai.onrender.com';
 
 const OrganizerSubscribe = ({navigation}) => {
-  const [selectedPlan, setSelectedPlan] = useState('weekly');
+  const priceId = 'price_1Qjp1ZBMq2jPTvoIEnXqxV92';
+  const userId = 'USER_ID_HERE'; // Kullanıcı ID'sini dinamik olarak al
 
-  const handleSubscribe = () => {
-    alert(`You have selected the ${selectedPlan} plan!`);
+  const handleSubscribe = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({priceId, userId}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const {url} = await response.json();
+      if (url) {
+        Linking.openURL(url);
+      } else {
+        alert('Payment URL could not be retrieved.');
+      }
+    } catch (error) {
+      console.error('Subscription Error:', error);
+      alert('Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -23,65 +47,26 @@ const OrganizerSubscribe = ({navigation}) => {
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
 
-      <Text style={styles.headerTitle}>Membership</Text>
+      <Text style={styles.headerTitle}>Organizer Plus Membership</Text>
 
       <View style={styles.premiumContainer}>
-        <Ionicons name="crown" size={30} color="white" />
-        <Text style={styles.premiumTitle}>Join Our Premium</Text>
+        <Ionicons name="diamond" size={30} color="white" />
+        <Text style={styles.premiumTitle}>Join Organizer Plus</Text>
         <Text style={styles.premiumSubtitle}>
           Unlock powerful tools for your events
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.planOption,
-          selectedPlan === 'weekly' && styles.selectedPlan,
-        ]}
-        onPress={() => setSelectedPlan('weekly')}>
+      <View style={[styles.planOption, styles.selectedPlan]}>
         <Ionicons name="checkmark-circle" size={20} color="white" />
         <View>
-          <Text style={styles.planText}>Weekly</Text>
-          <Text style={styles.planDesc}>Pay for 7 days</Text>
+          <Text style={styles.planText}>Organizer Plus</Text>
+          <Text style={styles.planDesc}>Full access to all features</Text>
         </View>
-        <Text style={styles.planPrice}>$9.99</Text>
-      </TouchableOpacity>
+        <Text style={styles.planPrice}>$15.00 / Month</Text>
+      </View>
 
-      <TouchableOpacity
-        style={[
-          styles.planOption,
-          selectedPlan === 'monthly' && styles.selectedPlan,
-        ]}
-        onPress={() => setSelectedPlan('monthly')}>
-        <Ionicons name="checkmark-circle-outline" size={20} color="gray" />
-        <View>
-          <Text style={styles.planText}>Monthly</Text>
-          <Text style={styles.planDesc}>Pay Monthly for more features</Text>
-        </View>
-        <View style={styles.planDetails}>
-          <Text style={styles.planPrice}>$19.99</Text>
-          <Text style={styles.planBadge}>Most Popular</Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.planOption,
-          selectedPlan === 'yearly' && styles.selectedPlan,
-        ]}
-        onPress={() => setSelectedPlan('yearly')}>
-        <Ionicons name="checkmark-circle-outline" size={20} color="gray" />
-        <View>
-          <Text style={styles.planText}>Yearly</Text>
-          <Text style={styles.planDesc}>Pay for a full year</Text>
-        </View>
-        <View style={styles.planDetails}>
-          <Text style={styles.planPrice}>$49.99</Text>
-          <Text style={styles.planBadge}>Save 12%</Text>
-        </View>
-      </TouchableOpacity>
-
-      <Text style={styles.note}>No Commitment · Cancel anytime***</Text>
+      <Text style={styles.note}>No Commitment · Cancel anytime</Text>
 
       <TouchableOpacity
         style={styles.subscribeButton}
@@ -97,28 +82,19 @@ const OrganizerSubscribe = ({navigation}) => {
 
       <View style={styles.featuresContainer}>
         <Text style={styles.featuresTitle}>What’s Included?</Text>
-        <View style={styles.featureItem}>
-          <Ionicons name="checkmark" size={20} color="green" />
-          <Text style={styles.featureText}>Unlimited Event Creation</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="checkmark" size={20} color="green" />
-          <Text style={styles.featureText}>
-            Your events will be featured under "Recommended for You"
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="checkmark" size={20} color="green" />
-          <Text style={styles.featureText}>Advertise Your Events</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="checkmark" size={20} color="green" />
-          <Text style={styles.featureText}>Advanced Analytics & Reports</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="checkmark" size={20} color="green" />
-          <Text style={styles.featureText}>Detailed Event Insights</Text>
-        </View>
+
+        {[
+          'Unlimited Event Creation',
+          "Your events will be featured under 'Recommended for You'",
+          'Advertise Your Events',
+          'Advanced Analytics & Reports',
+          'Detailed Event Insights',
+        ].map((feature, index) => (
+          <View key={index} style={styles.featureItem}>
+            <Ionicons name="checkmark" size={20} color="green" />
+            <Text style={styles.featureText}>{feature}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -131,14 +107,8 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  backButton: {
-    alignSelf: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
+  backButton: {alignSelf: 'flex-start'},
+  headerTitle: {fontSize: 22, fontWeight: 'bold', marginBottom: 20},
   premiumContainer: {
     backgroundColor: '#6200EE',
     width: '100%',
@@ -152,10 +122,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginTop: 5,
   },
-  premiumSubtitle: {
-    fontSize: 14,
-    color: 'white',
-  },
+  premiumSubtitle: {fontSize: 14, color: 'white'},
   planOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,34 +133,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     justifyContent: 'space-between',
   },
-  selectedPlan: {
-    backgroundColor: '#4CAF50',
-  },
-  planText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  planDesc: {
-    fontSize: 12,
-    color: 'gray',
-  },
-  planDetails: {
-    alignItems: 'flex-end',
-  },
-  planPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  planBadge: {
-    fontSize: 12,
-    color: 'green',
-    fontWeight: 'bold',
-  },
-  note: {
-    fontSize: 14,
-    color: 'gray',
-    marginVertical: 10,
-  },
+  selectedPlan: {backgroundColor: '#4CAF50'},
+  planText: {fontSize: 16, fontWeight: 'bold', color: 'white'},
+  planDesc: {fontSize: 12, color: 'white'},
+  planPrice: {fontSize: 16, fontWeight: 'bold', color: 'white'},
+  note: {fontSize: 14, color: 'gray', marginVertical: 10},
   subscribeButton: {
     backgroundColor: '#6200EE',
     padding: 15,
@@ -202,52 +146,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  subscribeText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  termsText: {
-    fontSize: 12,
-    color: 'gray',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  linkText: {
-    color: '#007BFF',
-    fontWeight: 'bold',
-  },
-  footerLinks: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
-  },
-  footerLink: {
-    fontSize: 12,
-    color: 'gray',
-  },
-  featuresContainer: {
-    marginTop: 20,
-    width: '100%',
-    padding: 15,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-  featuresTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 5,
-  },
-  featureText: {
-    fontSize: 14,
-    marginLeft: 10,
-  },
+  subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
+  termsText: {fontSize: 12, color: 'gray', textAlign: 'center', marginTop: 10},
+  linkText: {color: '#007BFF', fontWeight: 'bold'},
 });
 
 export default OrganizerSubscribe;
