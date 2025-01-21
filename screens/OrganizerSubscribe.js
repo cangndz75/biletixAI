@@ -18,27 +18,30 @@ const OrganizerSubscribe = ({navigation}) => {
   console.log('User ID:', userId);
   const handleSubscribe = async () => {
     if (!userId) {
-      alert('❌ User ID not found. Please log in again.');
+      alert('User ID not found. Please log in again.');
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({priceId, userId}),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/create-checkout-session/organizer`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({priceId, userId}),
+        },
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`❌ Network error: ${errorText}`);
+        throw new Error(`Network response was not ok: ${errorText}`);
       }
 
       const {url} = await response.json();
       if (url) {
         Linking.openURL(url);
       } else {
-        alert('❌ Payment URL could not be retrieved.');
+        alert('Payment URL could not be retrieved.');
       }
     } catch (error) {
       console.error('Subscription Error:', error);

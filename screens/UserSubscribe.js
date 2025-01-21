@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useContext} from 'react';
 import {
   View,
   Text,
@@ -7,124 +7,86 @@ import {
   ScrollView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {Linking} from 'react-native';
+import {AuthContext} from '../AuthContext';
+
+const API_BASE_URL = 'https://biletixai.onrender.com';
+const priceId = 'price_1QiMLuBMq2jPTvoIIdjpMcvB';
 
 const UserSubscribe = ({navigation}) => {
-  const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const {userId} = useContext(AuthContext);
+  console.log('User ID:', userId);
 
-  const handleSubscribe = () => {
-    alert(`You have selected the ${selectedPlan} plan!`);
+  const handleSubscribe = async () => {
+    if (!userId) {
+      alert('User ID not found. Please log in again.');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/create-checkout-session/user`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({priceId, userId}),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Network response was not ok: ${errorText}`);
+      }
+
+      const {url} = await response.json();
+      if (url) {
+        Linking.openURL(url);
+      } else {
+        alert('Payment URL could not be retrieved.');
+      }
+    } catch (error) {
+      console.error('Subscription Error:', error);
+      alert(`Something went wrong: ${error.message}`);
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Ionicons
-          name="arrow-back"
-          size={24}
-          color="#000"
-          onPress={() => navigation.goBack()}
-        />
-        <Text style={styles.headerTitle}>Subscription Plan</Text>
-      </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
 
-      <View style={styles.premiumBox}>
-        <Ionicons name="diamond" size={40} color="white" />
-        <Text style={styles.premiumTitle}>Premium</Text>
+      <Text style={styles.headerTitle}>User Plus Membership</Text>
+
+      <View style={styles.premiumContainer}>
+        <Ionicons name="diamond" size={30} color="white" />
+        <Text style={styles.premiumTitle}>Join User Plus</Text>
         <Text style={styles.premiumSubtitle}>
-          Unlock exclusive features for users
+          Unlock exclusive features for your experience
         </Text>
       </View>
-
-      <View style={styles.planContainer}>
-        <TouchableOpacity
-          style={[
-            styles.planOption,
-            selectedPlan === 'weekly' && styles.selectedPlan,
-          ]}
-          onPress={() => setSelectedPlan('weekly')}>
-          <Ionicons
-            name="checkmark-circle"
-            size={20}
-            color={selectedPlan === 'weekly' ? 'white' : '#999'}
-          />
-          <Text style={styles.planText}>Weekly - $9.99</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.planOption,
-            selectedPlan === 'monthly' && styles.selectedPlan,
-          ]}
-          onPress={() => setSelectedPlan('monthly')}>
-          <Ionicons
-            name="checkmark-circle"
-            size={20}
-            color={selectedPlan === 'monthly' ? 'white' : '#999'}
-          />
-          <Text style={styles.planText}>Monthly - $19.99</Text>
-          <Text style={styles.planBadge}>Most Popular</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.planOption,
-            selectedPlan === 'yearly' && styles.selectedPlan,
-          ]}
-          onPress={() => setSelectedPlan('yearly')}>
-          <Ionicons
-            name="checkmark-circle"
-            size={20}
-            color={selectedPlan === 'yearly' ? 'white' : '#999'}
-          />
-          <Text style={styles.planText}>Yearly - $49.99</Text>
-          <Text style={styles.planBadge}>Save 12%</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.commitmentText}>
-        No Commitment. Cancel anytime***
-      </Text>
 
       <TouchableOpacity
         style={styles.subscribeButton}
         onPress={handleSubscribe}>
-        <Text style={styles.subscribeText}>Subscribe Now</Text>
+        <Text style={styles.subscribeText}>Subscribe Now - $19.99 / Month</Text>
       </TouchableOpacity>
-
-      <Text style={styles.termsText}>
-        By continuing, you agree to our{' '}
-        <Text style={styles.linkText}>Terms of Service</Text> and{' '}
-        <Text style={styles.linkText}>Privacy Policy</Text>
-      </Text>
-
       <View style={styles.featuresContainer}>
-        <Text style={styles.featuresTitle}>What's Included?</Text>
+        <Text style={styles.featuresTitle}>What’s Included?</Text>
 
-        <View style={styles.featureItem}>
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={22}
-            color="#4CAF50"
-          />
-          <Text style={styles.featureText}>Messaging with other users</Text>
-        </View>
-
-        <View style={styles.featureItem}>
-          <Ionicons name="shield-checkmark-outline" size={22} color="#FFC107" />
-          <Text style={styles.featureText}>Verified User Badge</Text>
-        </View>
-
-        <View style={styles.featureItem}>
-          <Ionicons name="eye-outline" size={22} color="#2196F3" />
-          <Text style={styles.featureText}>View event participants</Text>
-        </View>
-
-        <View style={styles.featureItem}>
-          <Ionicons name="people-outline" size={22} color="#E91E63" />
-          <Text style={styles.featureText}>
-            See events your friends attended
-          </Text>
-        </View>
+        {[
+          'Messaging',
+          'Verified Badge',
+          'View Event Participants',
+          'See Events Your Friends Attended',
+        ].map((feature, index) => (
+          <View key={index} style={styles.featureItem}>
+            <Ionicons name="checkmark" size={20} color="green" />
+            <Text style={styles.featureText}>{feature}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -134,102 +96,41 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: '#F8F8F8',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    padding: 20,
     alignItems: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  premiumBox: {
-    width: '100%',
+  backButton: {alignSelf: 'flex-start'},
+  headerTitle: {fontSize: 22, fontWeight: 'bold', marginBottom: 20},
+  premiumContainer: {
     backgroundColor: '#6200EE',
+    width: '100%',
     padding: 20,
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 20,
   },
   premiumTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
     marginTop: 5,
   },
   premiumSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: 'white',
     marginTop: 5,
-    textAlign: 'center',
-  },
-  planContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  planOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E0E0E0',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    marginBottom: 10,
-    justifyContent: 'space-between',
-  },
-  selectedPlan: {
-    backgroundColor: '#4CAF50',
-  },
-  planText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-    flex: 1,
-    marginLeft: 10,
-  },
-  planBadge: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  commitmentText: {
-    fontSize: 12,
-    color: '#777',
-    marginBottom: 10,
-    textAlign: 'center',
   },
   subscribeButton: {
     backgroundColor: '#6200EE',
     padding: 15,
     borderRadius: 10,
+    marginTop: 10,
     width: '100%',
     alignItems: 'center',
   },
-  subscribeText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  termsText: {
-    fontSize: 12,
-    color: '#777',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  linkText: {
-    color: '#6200EE',
-    fontWeight: 'bold',
-  },
+  subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
   featuresContainer: {
     width: '100%',
-    backgroundColor: '#FFF',
+    backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
     marginTop: 20,

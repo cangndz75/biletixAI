@@ -2465,7 +2465,7 @@ app.delete('/posts/:postId', async (req, res) => {
   }
 });
 
-app.post('/create-checkout-session', async (req, res) => {
+app.post('/create-checkout-session/organizer', async (req, res) => {
   const {priceId, userId} = req.body;
 
   if (!priceId || !userId) {
@@ -2477,8 +2477,32 @@ app.post('/create-checkout-session', async (req, res) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
-      metadata: {userId},
-      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      metadata: {userId, subscriptionType: 'OrganizerPlus'},
+      success_url: `${process.env.CLIENT_URL}/success`,
+      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+    });
+
+    res.json({url: session.url});
+  } catch (error) {
+    console.error('Stripe Error:', error);
+    res.status(500).json({error: 'Stripe session creation failed'});
+  }
+});
+
+app.post('/create-checkout-session/user', async (req, res) => {
+  const {priceId, userId} = req.body;
+
+  if (!priceId || !userId) {
+    return res.status(400).json({error: 'Price ID and User ID are required'});
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      line_items: [{price: priceId, quantity: 1}],
+      metadata: {userId, subscriptionType: 'UserPlus'},
+      success_url: `${process.env.CLIENT_URL}/success`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
@@ -2500,22 +2524,21 @@ app.post(
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      console.error('Webhook signature verification failed.', err);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = session.metadata.userId;
-      const subscriptionId = session.subscription;
+      const subscriptionType = session.metadata.subscriptionType;
 
       try {
         await User.findByIdAndUpdate(userId, {
-          subscriptionType: 'OrganizerPlus',
+          subscriptionType,
           vipBadge: true,
-          stripeSubscriptionId: subscriptionId,
         });
-        console.log(`User ${userId} upgraded to Organizer Plus`);
+        console.log(`User ${userId} upgraded to ${subscriptionType}`);
       } catch (error) {
         console.error(`Error updating user: ${error.message}`);
       }
@@ -2549,13 +2572,13 @@ app.post('/cancel-subscription', async (req, res) => {
 });
 
 app.get('/success', (req, res) => {
-  res.send(
-    '<h1>🎉 Payment Successful! Your Organizer Plus membership is active.</h1>',
-  );
+  res.send('<h1>Payment Successful! 🎉</h1>');
 });
 
 app.get('/cancel', (req, res) => {
-  res.send(
-    '<h1>❌ Payment Canceled. Your subscription has not been activated.</h1>',
-  );
+  res.send('<h1>Payment Canceled ❌</h1>');
+});
+
+app.listen(5000, () => {
+  console.log('Server running on port 5000');
 });

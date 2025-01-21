@@ -68,6 +68,10 @@ const ProfileDetailScreen = () => {
     }
   };
 
+  const handleSubscribe = () => {
+    navigation.navigate('UserSubscribe', {userId});
+  };
+
   const clearAuthToken = async () => {
     try {
       await logout();
@@ -124,7 +128,11 @@ const ProfileDetailScreen = () => {
             </Text>
           </View>
         </View>
-
+        <TouchableOpacity
+          style={styles.subscribeButton}
+          onPress={handleSubscribe}>
+          <Text style={styles.subscribeText}>Subscribe to User Plus</Text>
+        </TouchableOpacity>
         <View style={styles.aboutMeContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.aboutMeTitle}>About Me</Text>
@@ -403,5 +411,19 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: '600',
     fontSize: 16,
+  },
+  subscribeButton: {
+    backgroundColor: '#6200EE',
+    padding: 15,
+    borderRadius: 10,
+    width: '90%',
+    alignSelf: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  subscribeText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
