@@ -24,6 +24,9 @@ const {body, validationResult} = require('express-validator');
 const bcrypt = require('bcrypt');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Stripe = require('stripe');
+console.log('Stripe API Key:', process.env.STRIPE_SECRET_KEY);
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Webhook Secret:', process.env.STRIPE_WEBHOOK_SECRET);
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -2475,7 +2478,7 @@ app.post('/create-checkout-session', async (req, res) => {
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
       metadata: {userId},
-      success_url: `${process.env.CLIENT_URL}/success`,
+      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
@@ -2497,18 +2500,20 @@ app.post(
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
-      console.error('Webhook signature verification failed.', err);
+      console.error('Webhook signature verification failed:', err);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = session.metadata.userId;
+      const subscriptionId = session.subscription;
 
       try {
         await User.findByIdAndUpdate(userId, {
           subscriptionType: 'OrganizerPlus',
           vipBadge: true,
+          stripeSubscriptionId: subscriptionId,
         });
         console.log(`User ${userId} upgraded to Organizer Plus`);
       } catch (error) {
@@ -2519,7 +2524,6 @@ app.post(
     res.json({received: true});
   },
 );
-console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY);
 
 app.post('/cancel-subscription', async (req, res) => {
   try {
@@ -2532,7 +2536,10 @@ app.post('/cancel-subscription', async (req, res) => {
     }
 
     await stripe.subscriptions.del(subscriptionId);
-    await User.findByIdAndUpdate(userId, {isPremium: false});
+    await User.findByIdAndUpdate(userId, {
+      subscriptionType: null,
+      vipBadge: false,
+    });
 
     res.json({message: 'Subscription canceled successfully.'});
   } catch (error) {
@@ -2542,9 +2549,13 @@ app.post('/cancel-subscription', async (req, res) => {
 });
 
 app.get('/success', (req, res) => {
-  res.send('<h1>Payment Successful! 🎉</h1>');
+  res.send(
+    '<h1>🎉 Payment Successful! Your Organizer Plus membership is active.</h1>',
+  );
 });
 
 app.get('/cancel', (req, res) => {
-  res.send('<h1>Payment Canceled ❌</h1>');
+  res.send(
+    '<h1>❌ Payment Canceled. Your subscription has not been activated.</h1>',
+  );
 });

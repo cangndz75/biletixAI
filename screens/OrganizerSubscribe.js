@@ -15,10 +15,10 @@ const API_BASE_URL = 'https://biletixai.onrender.com';
 const OrganizerSubscribe = ({navigation}) => {
   const {userId} = useContext(AuthContext);
   const priceId = 'price_1Qjp1ZBMq2jPTvoIEnXqxV92';
-
+  console.log('User ID:', userId);
   const handleSubscribe = async () => {
     if (!userId) {
-      alert('User ID not found. Please log in again.');
+      alert('❌ User ID not found. Please log in again.');
       return;
     }
 
@@ -31,14 +31,14 @@ const OrganizerSubscribe = ({navigation}) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Network response was not ok: ${errorText}`);
+        throw new Error(`❌ Network error: ${errorText}`);
       }
 
       const {url} = await response.json();
       if (url) {
         Linking.openURL(url);
       } else {
-        alert('Payment URL could not be retrieved.');
+        alert('❌ Payment URL could not be retrieved.');
       }
     } catch (error) {
       console.error('Subscription Error:', error);
@@ -64,45 +64,11 @@ const OrganizerSubscribe = ({navigation}) => {
         </Text>
       </View>
 
-      <View style={[styles.planOption, styles.selectedPlan]}>
-        <Ionicons name="checkmark-circle" size={20} color="white" />
-        <View>
-          <Text style={styles.planText}>Organizer Plus</Text>
-          <Text style={styles.planDesc}>Full access to all features</Text>
-        </View>
-        <Text style={styles.planPrice}>$15.00 / Month</Text>
-      </View>
-
-      <Text style={styles.note}>No Commitment · Cancel anytime</Text>
-
       <TouchableOpacity
         style={styles.subscribeButton}
         onPress={handleSubscribe}>
-        <Text style={styles.subscribeText}>Subscribe Now</Text>
+        <Text style={styles.subscribeText}>Subscribe Now - $15.00 / Month</Text>
       </TouchableOpacity>
-
-      <Text style={styles.termsText}>
-        By continuing, you agree to our{' '}
-        <Text style={styles.linkText}>Terms of Service</Text> and{' '}
-        <Text style={styles.linkText}>Privacy Policy</Text>
-      </Text>
-
-      <View style={styles.featuresContainer}>
-        <Text style={styles.featuresTitle}>What’s Included?</Text>
-
-        {[
-          'Unlimited Event Creation',
-          "Your events will be featured under 'Recommended for You'",
-          'Advertise Your Events',
-          'Advanced Analytics & Reports',
-          'Detailed Event Insights',
-        ].map((feature, index) => (
-          <View key={index} style={styles.featureItem}>
-            <Ionicons name="checkmark" size={20} color="green" />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
     </ScrollView>
   );
 };
@@ -129,22 +95,11 @@ const styles = StyleSheet.create({
     color: 'white',
     marginTop: 5,
   },
-  premiumSubtitle: {fontSize: 14, color: 'white'},
-  planOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EAEAEA',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
-    marginTop: 10,
-    justifyContent: 'space-between',
+  premiumSubtitle: {
+    fontSize: 16,
+    color: 'white',
+    marginTop: 5,
   },
-  selectedPlan: {backgroundColor: '#4CAF50'},
-  planText: {fontSize: 16, fontWeight: 'bold', color: 'white'},
-  planDesc: {fontSize: 12, color: 'white'},
-  planPrice: {fontSize: 16, fontWeight: 'bold', color: 'white'},
-  note: {fontSize: 14, color: 'gray', marginVertical: 10},
   subscribeButton: {
     backgroundColor: '#6200EE',
     padding: 15,
@@ -154,8 +109,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
-  termsText: {fontSize: 12, color: 'gray', textAlign: 'center', marginTop: 10},
-  linkText: {color: '#007BFF', fontWeight: 'bold'},
 });
 
 export default OrganizerSubscribe;
