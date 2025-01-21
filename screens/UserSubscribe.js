@@ -1,21 +1,58 @@
-import React, {useContext} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Linking} from 'react-native';
 import {AuthContext} from '../AuthContext';
+import {useNavigation} from '@react-navigation/native';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
 const priceId = 'price_1QiMLuBMq2jPTvoIIdjpMcvB';
 
-const UserSubscribe = ({navigation}) => {
+const UserSubscribe = () => {
   const {userId} = useContext(AuthContext);
-  console.log('User ID:', userId);
+  const navigation = useNavigation();
+  const [subscriptionType, setSubscriptionType] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const checkSubscriptionStatus = async () => {
+    if (!userId) return;
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/user/${userId}/subscription`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setIsSubscribed(data.isSubscribed);
+      setSubscriptionType(data.subscriptionType);
+      console.log('Subscription Type:', data.subscriptionType);
+    } catch (error) {
+      console.error('Failed to fetch subscription status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    checkSubscriptionStatus();
+  }, [userId]);
+
+  useEffect(() => {
+    if (!loading && isSubscribed) {
+      navigation.navigate('HomeScreen');
+    }
+  }, [isSubscribed, navigation, loading]);
 
   const handleSubscribe = async () => {
     if (!userId) {
@@ -50,6 +87,14 @@ const UserSubscribe = ({navigation}) => {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#6200EE" />
+      </View>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity
@@ -68,11 +113,20 @@ const UserSubscribe = ({navigation}) => {
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.subscribeButton}
-        onPress={handleSubscribe}>
-        <Text style={styles.subscribeText}>Subscribe Now - $19.99 / Month</Text>
-      </TouchableOpacity>
+      {!isSubscribed ? (
+        <TouchableOpacity
+          style={styles.subscribeButton}
+          onPress={handleSubscribe}>
+          <Text style={styles.subscribeText}>
+            Subscribe Now - $19.99 / Month
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.alreadySubscribedText}>
+          ✅ You are already subscribed to User Plus!
+        </Text>
+      )}
+
       <View style={styles.featuresContainer}>
         <Text style={styles.featuresTitle}>What’s Included?</Text>
 
@@ -128,6 +182,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
+  alreadySubscribedText: {
+    color: 'green',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
   featuresContainer: {
     width: '100%',
     backgroundColor: 'white',
@@ -155,6 +215,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
     marginLeft: 10,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

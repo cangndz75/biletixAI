@@ -18,8 +18,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImageViewing from 'react-native-image-viewing';
 import {TextInput} from 'react-native';
-import {Switch} from 'react-native-paper';
+import {ActivityIndicator, Switch} from 'react-native-paper';
 import {useIsFocused} from '@react-navigation/native';
+
+const API_BASE_URL = 'https://biletixai.onrender.com';
 
 const ProfileDetailScreen = () => {
   const [user, setUser] = useState(null);
@@ -30,18 +32,34 @@ const ProfileDetailScreen = () => {
   const {userId, logout} = useContext(AuthContext);
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    if (!userId) {
+      console.error('Error: User ID is undefined');
+      Alert.alert('Error', 'User ID is missing. Please log in again.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!userId) throw new Error('User ID is undefined');
-      const response = await axios.get(
-        `https://biletixai.onrender.com/user/${userId}`,
-      );
-      setUser(response.data);
-      setIsPrivate(response.data.isPrivate);
+      const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
+
+      if (response.status === 200) {
+        setUser(response.data);
+        setIsPrivate(response.data.isPrivate);
+      } else {
+        console.error(
+          'Error fetching user data: Unexpected response',
+          response,
+        );
+        Alert.alert('Error', 'Failed to fetch user data.');
+      }
     } catch (error) {
       console.error('Error fetching user data:', error.message);
       Alert.alert('Error', 'Failed to fetch user data.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,6 +88,24 @@ const ProfileDetailScreen = () => {
 
   const handleSubscribe = () => {
     navigation.navigate('UserSubscribe', {userId});
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/cancel-subscription`, {
+        userId,
+      });
+
+      setUser(prevState => ({
+        ...prevState,
+        subscriptionType: 'Free',
+      }));
+
+      Alert.alert('Success', 'Your subscription has been canceled.');
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error.message);
+      Alert.alert('Error', 'Failed to cancel your subscription.');
+    }
   };
 
   const clearAuthToken = async () => {
@@ -107,6 +143,14 @@ const ProfileDetailScreen = () => {
 
   const images = [{uri: user?.image || 'https://via.placeholder.com/150'}];
 
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#6200EE" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{paddingBottom: 20}}>
@@ -128,6 +172,23 @@ const ProfileDetailScreen = () => {
             </Text>
           </View>
         </View>
+
+        {user?.role === 'user' && (
+          <TouchableOpacity
+            style={styles.subscribeButton}
+            onPress={
+              user.subscriptionType === 'UserPlus'
+                ? handleCancelSubscription
+                : handleSubscribe
+            }>
+            <Text style={styles.subscribeText}>
+              {user.subscriptionType === 'UserPlus'
+                ? 'Cancel Membership'
+                : 'Subscribe to User Plus'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.subscribeButton}
           onPress={handleSubscribe}>
@@ -411,6 +472,11 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: '600',
     fontSize: 16,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subscribeButton: {
     backgroundColor: '#6200EE',
