@@ -2359,17 +2359,30 @@ app.post('/posts/:postId/like', async (req, res) => {
 
   try {
     const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({message: '❌ Post not found.'});
+    const user = await User.findById(userId);
+    if (!post || !user)
+      return res.status(404).json({message: '❌ Post or user not found.'});
 
     const isLiked = post.likes.includes(userId);
+
     if (isLiked) {
       post.likes = post.likes.filter(id => id.toString() !== userId);
+      user.likedPosts = user.likedPosts.filter(id => id.toString() !== postId);
     } else {
       post.likes.push(userId);
+      user.likedPosts.push(postId);
     }
 
     await post.save();
-    res.status(200).json({message: '✅ Like status updated.', post});
+    await user.save(); 
+
+    res
+      .status(200)
+      .json({
+        message: '✅ Like status updated.',
+        post,
+        likedPosts: user.likedPosts,
+      });
   } catch (error) {
     console.error('❌ Error liking post:', error);
     res.status(500).json({message: 'Failed to like post.'});
