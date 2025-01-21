@@ -11,6 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Linking} from 'react-native';
 import {AuthContext} from '../AuthContext';
 import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
 const priceId = 'price_1QiMLuBMq2jPTvoIIdjpMcvB';
@@ -22,30 +23,27 @@ const UserSubscribe = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkSubscriptionStatus = async () => {
+  const fetchUserData = async () => {
     if (!userId) return;
+
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/user/${userId}/subscription`,
-      );
+      const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
+      if (response.status === 200) {
+        const userData = response.data;
+        setSubscriptionType(userData.subscriptionType);
+        setIsSubscribed(userData.subscriptionType === 'UserPlus');
+        console.log('Subscription Type:', userData.subscriptionType);
       }
-
-      const data = await response.json();
-      setIsSubscribed(data.isSubscribed);
-      setSubscriptionType(data.subscriptionType);
-      console.log('Subscription Type:', data.subscriptionType);
     } catch (error) {
-      console.error('Failed to fetch subscription status:', error);
+      console.error('Failed to fetch user data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    checkSubscriptionStatus();
+    fetchUserData();
   }, [userId]);
 
   useEffect(() => {
@@ -118,7 +116,7 @@ const UserSubscribe = () => {
           style={styles.subscribeButton}
           onPress={handleSubscribe}>
           <Text style={styles.subscribeText}>
-            Subscribe Now - $19.99 / Month
+            Subscribe Now - $5 / Month
           </Text>
         </TouchableOpacity>
       ) : (
