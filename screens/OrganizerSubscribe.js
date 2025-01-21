@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,20 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Linking} from 'react-native';
+import {AuthContext} from '../AuthContext';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
 
 const OrganizerSubscribe = ({navigation}) => {
+  const {userId} = useContext(AuthContext);
   const priceId = 'price_1Qjp1ZBMq2jPTvoIEnXqxV92';
-  const userId = 'USER_ID_HERE'; // Kullanıcı ID'sini dinamik olarak al
 
   const handleSubscribe = async () => {
+    if (!userId) {
+      alert('User ID not found. Please log in again.');
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/create-checkout-session`, {
         method: 'POST',
@@ -24,7 +30,8 @@ const OrganizerSubscribe = ({navigation}) => {
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        const errorText = await response.text();
+        throw new Error(`Network response was not ok: ${errorText}`);
       }
 
       const {url} = await response.json();
@@ -35,7 +42,7 @@ const OrganizerSubscribe = ({navigation}) => {
       }
     } catch (error) {
       console.error('Subscription Error:', error);
-      alert('Something went wrong. Please try again.');
+      alert(`Something went wrong: ${error.message}`);
     }
   };
 

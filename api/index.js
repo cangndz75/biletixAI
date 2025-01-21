@@ -2463,68 +2463,81 @@ app.delete('/posts/:postId', async (req, res) => {
 });
 
 app.post('/create-checkout-session', async (req, res) => {
+  const {priceId, userId} = req.body;
+
+  if (!priceId || !userId) {
+    return res.status(400).json({error: 'Price ID and User ID are required'});
+  }
+
   try {
-    const { priceId, userId } = req.body;
-
-    if (!priceId || !userId) {
-      return res.status(400).json({ error: 'Price ID and User ID are required' });
-    }
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      line_items: [{price: priceId, quantity: 1}],
+      metadata: {userId},
+      success_url: `${process.env.CLIENT_URL}/success`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
-      metadata: { userId },
     });
 
-    res.json({ url: session.url });
+    res.json({url: session.url});
   } catch (error) {
     console.error('Stripe Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({error: 'Stripe session creation failed'});
   }
 });
 
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
+app.post(
+  '/webhook',
+  express.raw({type: 'application/json'}),
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  try {
-    const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed.', err);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = session.metadata.userId;
-      const subscriptionId = session.subscription;
 
-      await User.findByIdAndUpdate(userId, {
-        stripeSubscriptionId: subscriptionId,
-        isPremium: true,
-      });
+      try {
+        await User.findByIdAndUpdate(userId, {
+          subscriptionType: 'OrganizerPlus',
+          vipBadge: true,
+        });
+        console.log(`User ${userId} upgraded to Organizer Plus`);
+      } catch (error) {
+        console.error(`Error updating user: ${error.message}`);
+      }
     }
 
-    res.sendStatus(200);
-  } catch (err) {
-    console.error('Webhook Error:', err);
-    res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-});
+    res.json({received: true});
+  },
+);
+console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY);
 
 app.post('/cancel-subscription', async (req, res) => {
   try {
-    const { subscriptionId, userId } = req.body;
+    const {subscriptionId, userId} = req.body;
 
     if (!subscriptionId || !userId) {
-      return res.status(400).json({ error: 'Subscription ID and User ID are required' });
+      return res
+        .status(400)
+        .json({error: 'Subscription ID and User ID are required'});
     }
 
     await stripe.subscriptions.del(subscriptionId);
-    await User.findByIdAndUpdate(userId, { isPremium: false });
+    await User.findByIdAndUpdate(userId, {isPremium: false});
 
-    res.json({ message: 'Subscription canceled successfully.' });
+    res.json({message: 'Subscription canceled successfully.'});
   } catch (error) {
     console.error('Cancel Subscription Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({error: error.message});
   }
 });
 
