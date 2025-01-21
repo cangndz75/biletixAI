@@ -2505,15 +2505,15 @@ app.post('/create-checkout-session/user', async (req, res) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
-      metadata: {userId, subscriptionType: 'UserPlus'},
+      metadata: {userId, plan: 'user', subscriptionType: 'UserPlus'},
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
-    console.log('Checkout session created:', session.id);
+    console.log('✅ Checkout session created:', session.id);
     res.json({url: session.url});
   } catch (error) {
-    console.error('Stripe Checkout Session Error:', error);
+    console.error('🚨 Stripe Checkout Session Error:', error);
     res.status(500).json({error: error.message});
   }
 });
@@ -2528,46 +2528,46 @@ app.post(
     let event;
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      console.log('Webhook received:', event.type);
+      console.log('✅ Webhook received:', event.type);
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      console.error('🚨 Webhook signature verification failed:', err);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const userId = session.metadata.userId;
+      const userId = session.metadata?.userId;
+      const subscriptionType = session.metadata?.subscriptionType;
 
-      console.log(`User ID from metadata: ${userId}`);
+      console.log(`🔍 Webhook processing for User ID: ${userId}`);
 
-      if (!userId) {
-        console.error('User ID not found in metadata');
-        return res.status(400).send('User ID is required');
-      }
-
-      let subscriptionType;
-      if (session.metadata.plan === 'user') {
-        subscriptionType = 'UserPlus';
-      } else if (session.metadata.plan === 'organizer') {
-        subscriptionType = 'OrganizerPlus';
+      if (!userId || !subscriptionType) {
+        console.error('❌ Missing userId or subscriptionType in metadata');
+        return res.status(400).send('userId or subscriptionType is missing');
       }
 
       try {
         const updatedUser = await User.findByIdAndUpdate(
           userId,
           {
-            subscriptionType,
-            vipBadge: true,
+            $set: {
+              subscriptionType,
+              vipBadge: true,
+            },
           },
           {new: true},
         );
 
-        console.log('Updated user:', updatedUser);
         if (!updatedUser) {
-          console.error('User not found in database');
+          console.error('❌ User not found in database!');
+        } else {
+          console.log(
+            '✅ User subscription updated successfully:',
+            updatedUser,
+          );
         }
       } catch (error) {
-        console.error(`Error updating user: ${error.message}`);
+        console.error(`🚨 Error updating user: ${error.message}`);
       }
     }
 
@@ -2630,7 +2630,7 @@ app.get('/user/:userId/subscription', async (req, res) => {
 
     res.json({
       isSubscribed: !!subscriptionStatus,
-      subscriptionType: subscriptionStatus, 
+      subscriptionType: subscriptionStatus,
     });
   } catch (error) {
     console.error('Error fetching subscription status:', error);
