@@ -1,21 +1,25 @@
-import React, {useContext} from 'react';
+import React, {useContext, useState, useEffect} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Modal,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Linking} from 'react-native';
 import {AuthContext} from '../AuthContext';
+import {useNavigation} from '@react-navigation/native';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
 
-const OrganizerSubscribe = ({navigation}) => {
+const OrganizerSubscribe = () => {
   const {userId} = useContext(AuthContext);
+  const navigation = useNavigation();
   const priceId = 'price_1Qjp1ZBMq2jPTvoIEnXqxV92';
-  console.log('User ID:', userId);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const handleSubscribe = async () => {
     if (!userId) {
       alert('User ID not found. Please log in again.');
@@ -40,6 +44,9 @@ const OrganizerSubscribe = ({navigation}) => {
       const {url} = await response.json();
       if (url) {
         Linking.openURL(url);
+        setTimeout(() => {
+          setShowSuccessModal(true);
+        }, 5000);
       } else {
         alert('Payment URL could not be retrieved.');
       }
@@ -48,6 +55,24 @@ const OrganizerSubscribe = ({navigation}) => {
       alert(`Something went wrong: ${error.message}`);
     }
   };
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        navigation.navigate('HomeScreen');
+      }, 3000);
+    }
+  }, [showSuccessModal]);
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      setTimeout(() => {
+        setShowSuccessModal(false);
+        navigation.navigate('HomeScreen');
+      }, 3000);
+    }
+  }, [showSuccessModal]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -72,6 +97,21 @@ const OrganizerSubscribe = ({navigation}) => {
         onPress={handleSubscribe}>
         <Text style={styles.subscribeText}>Subscribe Now - $15.00 / Month</Text>
       </TouchableOpacity>
+
+      <Modal visible={showSuccessModal} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Ionicons name="checkmark-circle" size={50} color="green" />
+            <Text style={styles.modalTitle}>Payment Success</Text>
+            <Text>Your Organizer Plus subscription is active!</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => navigation.navigate('HomeScreen')}>
+              <Text style={styles.modalButtonText}>Go to Homepage</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };

@@ -197,9 +197,19 @@ const ProfileDetailScreen = () => {
         </View>
         <TouchableOpacity
           style={styles.subscribeButton}
-          onPress={user?.vipBadge ? handleCancelSubscription : handleSubscribe}>
+          onPress={
+            user?.subscriptionType !== 'free'
+              ? handleCancelSubscription
+              : handleSubscribe
+          }>
           <Text style={styles.subscribeText}>
-            {user?.vipBadge ? 'Cancel Membership' : 'Subscribe to User Plus'}
+            {user?.subscriptionType === 'UserPlus'
+              ? 'Cancel Membership'
+              : user?.subscriptionType === 'OrganizerPlus'
+              ? 'Cancel Organizer Membership'
+              : user?.role === 'organizer'
+              ? 'Subscribe to Organizer Plus'
+              : 'Subscribe to User Plus'}
           </Text>
         </TouchableOpacity>
 

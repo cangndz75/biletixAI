@@ -2537,19 +2537,24 @@ app.post('/create-checkout-session/organizer', async (req, res) => {
     return res.status(400).json({error: 'Price ID and User ID are required'});
   }
 
+  console.log(
+    `🚀 Creating OrganizerPlus Checkout Session for User: ${userId} with Price ID: ${priceId}`,
+  );
+
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
       metadata: {userId, subscriptionType: 'OrganizerPlus'},
-      success_url: `${process.env.CLIENT_URL}/success`,
+      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
+    console.log('✅ OrganizerPlus Checkout session created:', session.id);
     res.json({url: session.url});
   } catch (error) {
-    console.error('Stripe Error:', error);
+    console.error('🚨 Stripe Error:', error);
     res.status(500).json({error: 'Stripe session creation failed'});
   }
 });
@@ -2605,7 +2610,7 @@ app.post('/cancel-subscription', async (req, res) => {
 
     res.json({message: 'Subscription canceled successfully.'});
   } catch (error) {
-    console.error('Cancel Subscription Error:', error);
+    console.error('❌ Cancel Subscription Error:', error);
     res.status(500).json({error: error.message});
   }
 });
@@ -2628,15 +2633,20 @@ app.get('/user/:userId/subscription', async (req, res) => {
       status: 'active',
     });
 
+    let subscriptionType = null;
+    let stripeSubscriptionId = null;
+
     if (subscriptions.data.length > 0) {
-      return res.json({
-        isSubscribed: true,
-        subscriptionType: 'UserPlus',
-        stripeSubscriptionId: subscriptions.data[0].id,
-      });
+      const subscription = subscriptions.data[0];
+      subscriptionType = subscription.metadata?.subscriptionType || null;
+      stripeSubscriptionId = subscription.id;
     }
 
-    return res.json({isSubscribed: false, subscriptionType: null});
+    return res.json({
+      isSubscribed: Boolean(subscriptionType),
+      subscriptionType,
+      stripeSubscriptionId,
+    });
   } catch (error) {
     console.error('❌ Error fetching subscription status:', error.message);
     res.status(500).json({error: 'Internal Server Error'});
