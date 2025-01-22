@@ -2540,17 +2540,22 @@ app.post(
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const userId = session.metadata.userId;
+      const customerId = session.customer;
 
       console.log(`🎉 Payment successful for User ID: ${userId}`);
 
       try {
         const updatedUser = await User.findByIdAndUpdate(
           userId,
-          {subscriptionType: 'UserPlus', vipBadge: true},
+          {
+            stripeCustomerId: customerId,
+            subscriptionType: 'UserPlus',
+            vipBadge: true,
+          },
           {new: true},
         );
 
-        console.log('✅ User updated:', updatedUser);
+        console.log('✅ User subscription updated:', updatedUser);
       } catch (error) {
         console.error('❌ Error updating user:', error.message);
       }
@@ -2591,34 +2596,35 @@ app.get('/cancel', (req, res) => {
   res.send('<h1>Payment Canceled ❌</h1>');
 });
 
-app.listen(5000, () => {
-  console.log('Server running on port 5000');
-});
-
 app.get('/user/:userId/subscription', async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
+    const userId = req.params.userId;
+
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({error: 'User not found'});
     }
 
-    let subscriptionStatus = null;
-
-    if (user.role === 'user' && user.subscriptionType === 'UserPlus') {
-      subscriptionStatus = 'UserPlus';
-    } else if (
-      user.role === 'organizer' &&
-      user.subscriptionType === 'OrganizerPlus'
-    ) {
-      subscriptionStatus = 'OrganizerPlus';
+    if (!user.stripeCustomerId) {
+      return res.json({isSubscribed: false, subscriptionType: null});
     }
 
-    res.json({
-      isSubscribed: !!subscriptionStatus,
-      subscriptionType: subscriptionStatus,
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'active',
     });
+
+    if (subscriptions.data.length > 0) {
+      return res.json({
+        isSubscribed: true,
+        subscriptionType: subscriptions.data[0].items.data[0].plan.nickname,
+        stripeSubscriptionId: subscriptions.data[0].id,
+      });
+    }
+
+    return res.json({isSubscribed: false, subscriptionType: null});
   } catch (error) {
-    console.error('Error fetching subscription status:', error);
+    console.error('❌ Error fetching subscription status:', error.message);
     res.status(500).json({error: 'Internal Server Error'});
   }
 });
