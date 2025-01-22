@@ -13,6 +13,7 @@ import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {AuthContext} from '../AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {RadioButton} from 'react-native-paper';
 
 const JoinCommunityScreen = () => {
   const [questions, setQuestions] = useState([]);
@@ -35,7 +36,7 @@ const JoinCommunityScreen = () => {
           setQuestions(communityData.questions);
           setAnswers(
             communityData.questions.reduce((acc, question) => {
-              acc[question.text] = '';
+              acc[question._id] = ''; // Question ID'ye göre state saklanıyor
               return acc;
             }, {}),
           );
@@ -60,7 +61,11 @@ const JoinCommunityScreen = () => {
 
       if (response.status === 200) {
         Alert.alert('Başarılı', 'Başvuru gönderildi. Onay bekleniyor.');
-        navigation.goBack();
+
+        navigation.navigate('CommunityDetailScreen', {
+          communityId,
+          refresh: true,
+        });
       }
     } catch (error) {
       console.error('Başvuru gönderirken hata:', error.message);
@@ -88,17 +93,36 @@ const JoinCommunityScreen = () => {
         </Text>
       ) : (
         questions.map((question, index) => (
-          <View key={index} style={styles.questionContainer}>
+          <View key={question._id} style={styles.questionContainer}>
             <Text style={styles.questionText}>{question.text}</Text>
-            <TextInput
-              placeholder="Cevabınızı yazın..."
-              style={styles.input}
-              multiline
-              value={answers[question.text]}
-              onChangeText={text =>
-                setAnswers(prev => ({...prev, [question.text]: text}))
-              }
-            />
+
+            {question.type === 'multiple_choice' &&
+            question.options?.length > 0 ? (
+              question.options.map((option, idx) => (
+                <View key={idx} style={styles.radioContainer}>
+                  <RadioButton
+                    value={option}
+                    status={
+                      answers[question._id] === option ? 'checked' : 'unchecked'
+                    }
+                    onPress={() =>
+                      setAnswers(prev => ({...prev, [question._id]: option}))
+                    }
+                  />
+                  <Text style={styles.radioText}>{option}</Text>
+                </View>
+              ))
+            ) : (
+              <TextInput
+                placeholder="Cevabınızı yazın..."
+                style={styles.input}
+                multiline
+                value={answers[question._id]}
+                onChangeText={text =>
+                  setAnswers(prev => ({...prev, [question._id]: text}))
+                }
+              />
+            )}
           </View>
         ))
       )}
@@ -143,6 +167,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     backgroundColor: '#f9f9f9',
     color: '#333',
+  },
+  radioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  radioText: {
+    fontSize: 14,
+    marginLeft: 8,
   },
   submitButton: {
     backgroundColor: '#28a745',

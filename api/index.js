@@ -1728,22 +1728,36 @@ app.get('/communities/:communityId/requests', async (req, res) => {
       .filter(req => req.status === 'pending')
       .map(request => {
         const answersObject = request.answers || {};
+
+        const userAnswers = community.questions.map(q => ({
+          questionId: q._id.toString(),
+          questionText: q.text,
+          answer: answersObject.get(q._id.toString()) || 'Cevap verilmedi',
+        }));
+
+        console.log(
+          `📌 Kullanıcı: ${request.userId.firstName} ${request.userId.lastName}`,
+        );
+        userAnswers.forEach((ans, index) => {
+          console.log(`🔹 Soru ${index + 1}: ${ans.questionText}`);
+          console.log(`   ✅ Cevap: ${ans.answer}`);
+        });
+
         return {
           _id: request._id,
           userId: request.userId,
           status: request.status,
           requestedAt: request.requestedAt,
-          answers: community.questions.map(q => ({
-            questionId: q._id.toString(),
-            questionText: q.text,
-            answer: answersObject[q.text] || 'Cevap verilmedi',
-          })),
+          answers: userAnswers,
         };
       });
 
     res.status(200).json(pendingRequests);
   } catch (error) {
-    console.error('Error fetching join requests:', error);
+    console.error(
+      '❌ Hata: Kullanıcı başvuru istekleri çekilirken hata oluştu:',
+      error,
+    );
     res.status(500).json({message: 'Internal server error'});
   }
 });

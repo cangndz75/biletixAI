@@ -19,6 +19,8 @@ const CommunityDetailScreen = () => {
   const [isJoined, setIsJoined] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [loadingRequest, setLoadingRequest] = useState(false);
+  const [loadingJoin, setLoadingJoin] = useState(false);
+
   const navigation = useNavigation();
   const route = useRoute();
   const {communityId} = route.params;
@@ -32,11 +34,6 @@ const CommunityDetailScreen = () => {
         );
         const communityData = response.data;
         setCommunityDetail(communityData);
-
-        const userResponse = await axios.get(
-          `https://biletixai.onrender.com/user/${userId}`,
-        );
-        const userData = userResponse.data;
 
         const joined = communityData.members.some(
           member => member._id === userId,
@@ -57,7 +54,7 @@ const CommunityDetailScreen = () => {
     };
 
     fetchCommunityDetails();
-  }, [communityId, userId]);
+  }, [communityId, userId, route.params?.refresh]);
 
   const joinCommunity = async () => {
     try {
@@ -97,6 +94,11 @@ const CommunityDetailScreen = () => {
     } finally {
       setLoadingRequest(false);
     }
+  };
+
+  const joinCommunityWithQuestions = async () => {
+    setLoadingJoin(true);
+    navigation.navigate('JoinCommunityScreen', {communityId});
   };
 
   if (!community) {
@@ -152,11 +154,9 @@ const CommunityDetailScreen = () => {
         ) : community.isPrivate ? (
           <TouchableOpacity
             style={styles.joinButton}
-            onPress={() =>
-              navigation.navigate('JoinCommunityScreen', {communityId})
-            }
-            disabled={loadingRequest}>
-            {loadingRequest ? (
+            onPress={joinCommunityWithQuestions}
+            disabled={loadingJoin}>
+            {loadingJoin ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.joinButtonText}>
