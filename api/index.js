@@ -2516,52 +2516,44 @@ app.post('/create-checkout-session/user', async (req, res) => {
   }
 });
 
-app.post(
-  '/webhook',
-  express.raw({type: 'application/json'}),
-  async (req, res) => {
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      console.log('✅ Webhook received:', event.type);
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        console.log('✅ Webhook received:', event.type);
     } catch (err) {
-      console.error('❌ Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+        console.error('❌ Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
-      const userId = session.metadata.userId;
-      const customerId = session.customer;
-      const subscriptionId = session.subscription;
+        const session = event.data.object;
+        const userId = session.metadata.userId;
+        const customerId = session.customer;
 
-      console.log(`🎉 Payment successful for User ID: ${userId}`);
+        console.log(`🎉 Payment successful for User ID: ${userId}`);
 
-      try {
-        const updatedUser = await User.findByIdAndUpdate(
-          userId,
-          {
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-            subscriptionType: 'UserPlus',
-            vipBadge: true,
-          },
-          {new: true},
-        );
-
-        console.log('✅ User subscription updated:', updatedUser);
-      } catch (error) {
-        console.error('❌ Error updating user:', error.message);
-      }
+        try {
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                {
+                    stripeCustomerId: customerId,
+                    subscriptionType: 'UserPlus',
+                    vipBadge: true,
+                },
+                { new: true }
+            );
+            console.log('✅ User subscription updated:', updatedUser);
+        } catch (error) {
+            console.error('❌ Error updating user:', error.message);
+        }
     }
 
-    res.json({received: true});
-  },
-);
-
+    res.json({ received: true });
+});
 app.post('/cancel-subscription', async (req, res) => {
   try {
     const {subscriptionId, userId} = req.body;
