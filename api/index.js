@@ -27,46 +27,49 @@ console.log('Stripe API Key:', process.env.STRIPE_SECRET_KEY);
 console.log('Environment:', process.env.NODE_ENV);
 console.log('Webhook Secret:', process.env.STRIPE_WEBHOOK_SECRET);
 
-app.use('/webhook', express.raw({ type: 'application/json' }));
+app.use('/webhook', express.raw({type: 'application/json'}));
 
-app.post('/webhook', async (req, res) => {
+app.post(
+  '/webhook',
+  express.raw({type: 'application/json'}),
+  async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     let event;
     try {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-        console.log('✅ Webhook received:', event.type);
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      console.log('✅ Webhook received:', event.type);
     } catch (err) {
-        console.error('❌ Webhook signature verification failed:', err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+      console.error('❌ Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const userId = session.metadata.userId;
-        const customerId = session.customer;
+      const session = event.data.object;
+      const userId = session.metadata ? session.metadata.userId : null;
 
-        console.log(`🎉 Payment successful for User ID: ${userId}`);
+      console.log(`✅ Payment successful for User ID: ${userId}`);
 
+      if (userId) {
         try {
-            const updatedUser = await User.findByIdAndUpdate(
-                userId,
-                {
-                    stripeCustomerId: customerId,
-                    subscriptionType: 'UserPlus',
-                    vipBadge: true,
-                },
-                { new: true }
-            );
-            console.log('✅ User subscription updated:', updatedUser);
+          const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {subscriptionType: 'UserPlus', vipBadge: true},
+            {new: true},
+          );
+          console.log('✅ User subscription updated:', updatedUser);
         } catch (error) {
-            console.error('❌ Error updating user:', error.message);
+          console.error('❌ Error updating user:', error.message);
         }
+      } else {
+        console.error('❌ User ID is missing from metadata');
+      }
     }
 
-    res.json({ received: true });
-});
+    res.json({received: true});
+  },
+);
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -75,7 +78,7 @@ app.use('/generate', generateRoute);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/webhook', express.raw({type: 'application/json'}));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true}));
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -2540,15 +2543,20 @@ app.post('/create-checkout-session/user', async (req, res) => {
       return res.status(400).json({error: 'Price ID and User ID are required'});
     }
 
+    console.log(
+      `Creating checkout session for user: ${userId} with priceId: ${priceId}`,
+    );
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
-      metadata: {userId, plan: 'UserPlus'},
+      metadata: {userId: userId}, 
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
+    console.log('✅ Checkout session created:', session.id);
     res.json({url: session.url});
   } catch (error) {
     console.error('🚨 Stripe Checkout Session Error:', error);
