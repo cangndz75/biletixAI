@@ -2116,9 +2116,9 @@ app.put('/user/:userId/privacy', async (req, res) => {
 app.post('/beorganizator', async (req, res) => {
   console.log('Request received:', req.body);
 
-  const {email, firstName, lastName, reason} = req.body;
+  const {firstName, lastName, reason} = req.body;
 
-  if (!email || !firstName || !lastName || !reason) {
+  if (!firstName || !lastName || !reason) {
     return res
       .status(400)
       .json({message: 'Please fill out all required fields.'});
@@ -2131,16 +2131,64 @@ app.post('/beorganizator', async (req, res) => {
       return res.status(404).json({message: 'User not found.'});
     }
 
-    user.role = 'organizer';
-    user.aboutMe = reason;
-    await user.save();
+    if (user.role === 'organizer') {
+      return res.status(400).json({message: 'User is already an organizer.'});
+    }
 
-    return res.status(200).json({message: 'You are now an organizer!'});
+    user.organizerApplication = {
+      status: 'pending',
+      reason,
+      appliedAt: new Date(),
+    };
+
+    await user.save();
+    return res
+      .status(200)
+      .json({message: 'Your application has been submitted for review.'});
   } catch (error) {
-    console.error('Error updating user role:', error);
+    console.error('Error submitting organizer application:', error);
     return res
       .status(500)
       .json({message: 'An unexpected error occurred. Please try again later.'});
+  }
+});
+
+app.get('/pending-organizers', async (req, res) => {
+  try {
+    const pendingUsers = await User.find(
+      {'organizerApplication.status': 'pending'},
+      'firstName lastName organizerApplication',
+    );
+    res.json(pendingUsers);
+  } catch (error) {
+    console.error('Error fetching pending organizers:', error);
+    res.status(500).json({message: 'Internal server error'});
+  }
+});
+
+app.post('/review-organizer', async (req, res) => {
+  const {userId, decision} = req.body;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({message: 'User not found.'});
+    }
+
+    if (decision === 'approved') {
+      user.role = 'organizer';
+      user.vipBadge = true;
+      user.organizerApplication.status = 'approved';
+    } else if (decision === 'rejected') {
+      user.organizerApplication.status = 'rejected';
+    }
+
+    await user.save();
+    res.json({message: `Organizer application ${decision}`});
+  } catch (error) {
+    console.error('Error reviewing organizer application:', error);
+    res.status(500).json({message: 'An error occurred.'});
   }
 });
 

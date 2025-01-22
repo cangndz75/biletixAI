@@ -7,6 +7,9 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -14,39 +17,38 @@ import {AuthContext} from '../AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 
+const API_BASE_URL = 'https://biletixai.onrender.com';
+
 const BecomeOrganizerScreen = () => {
   const {userId} = useContext(AuthContext);
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     phone: '',
     reason: '',
   });
   const [loading, setLoading] = useState(true);
-  const [editable, setEditable] = useState({
-    fullName: false,
-    email: false,
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const response = await axios.get(
-          `http://10.0.2.2:8000/user/${userId}`,
-          {
-            headers: {Authorization: `Bearer ${token}`},
-          },
-        );
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          headers: {Authorization: `Bearer ${token}`},
+        });
 
         const user = response.data;
-        setFormData({
-          fullName: `${user.firstName} ${user.lastName}`,
-          email: user.email,
-          phone: '',
-          reason: '',
-        });
+        if (user.role === 'organizer') {
+          Alert.alert('Info', 'You are already an organizer.');
+          navigation.navigate('HomeScreen');
+        } else {
+          setFormData({
+            fullName: `${user.firstName} ${user.lastName}`,
+            phone: '',
+            reason: '',
+          });
+        }
         setLoading(false);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -63,19 +65,22 @@ const BecomeOrganizerScreen = () => {
   };
 
   const handleSubmit = async () => {
-    const {fullName, email, phone, reason} = formData;
+    const {fullName, phone, reason} = formData;
 
-    if (!fullName || !email || !reason) {
-      Alert.alert('Error', 'Please fill out all required fields.');
+    if (!reason) {
+      Alert.alert(
+        'Error',
+        'Please explain why you want to become an organizer.',
+      );
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
-        `http://10.0.2.2:8000/beorganizator`,
+        `${API_BASE_URL}/beorganizator`,
         {
-          email,
           firstName: fullName.split(' ')[0],
           lastName: fullName.split(' ').slice(1).join(' '),
           phone,
@@ -90,6 +95,8 @@ const BecomeOrganizerScreen = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       Alert.alert('Error', 'Failed to submit the form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -102,61 +109,65 @@ const BecomeOrganizerScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Become an Organizer</Text>
-      <Text style={styles.subtitle}>
-        Fill out the form below to apply as an organizer.
-      </Text>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={formData.fullName}
-          editable={editable.fullName}
-          onChangeText={text => handleInputChange('fullName', text)}
-        />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <TouchableOpacity
-          onPress={() =>
-            setEditable(prev => ({...prev, fullName: !prev.fullName}))
-          }>
-          <Ionicons name="pencil" size={20} color="#5c6bc0" />
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={28} color="#333" />
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={formData.email}
-          editable={editable.email}
-          onChangeText={text => handleInputChange('email', text)}
-        />
+        <Text style={styles.title}>Become an Organizer</Text>
+        <Text style={styles.subtitle}>
+          Fill out the form below to apply as an organizer.
+        </Text>
+
+        <View style={styles.inputContainer}>
+          <Ionicons name="person-circle" size={24} color="#666" />
+          <TextInput
+            style={[styles.input, styles.disabledInput]}
+            placeholder="Full Name"
+            value={formData.fullName}
+            editable={false}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Ionicons name="call" size={24} color="#666" />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number (Optional)"
+            value={formData.phone}
+            keyboardType="phone-pad"
+            onChangeText={text => handleInputChange('phone', text)}
+          />
+        </View>
+
+        <View style={[styles.inputContainer, styles.multilineContainer]}>
+          <Ionicons name="chatbubble-ellipses" size={24} color="#666" />
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            placeholder="Why do you want to become an organizer?"
+            multiline
+            value={formData.reason}
+            onChangeText={text => handleInputChange('reason', text)}
+          />
+        </View>
+
         <TouchableOpacity
-          onPress={() => setEditable(prev => ({...prev, email: !prev.email}))}>
-          <Ionicons name="pencil" size={20} color="#5c6bc0" />
+          style={styles.submitButton}
+          onPress={handleSubmit}
+          disabled={isSubmitting}>
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={styles.submitButtonText}>Submit</Text>
+          )}
         </TouchableOpacity>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        value={formData.phone}
-        keyboardType="phone-pad"
-        onChangeText={text => handleInputChange('phone', text)}
-      />
-      <TextInput
-        style={[styles.input, {height: 100}]}
-        placeholder="Why do you want to become an organizer?"
-        multiline
-        value={formData.reason}
-        onChangeText={text => handleInputChange('reason', text)}
-      />
-
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Submit</Text>
-      </TouchableOpacity>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -165,11 +176,21 @@ export default BecomeOrganizerScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f4f4f4',
+  },
+  scrollContainer: {
     padding: 16,
-    backgroundColor: '#f8f8f8',
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    zIndex: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
@@ -181,29 +202,39 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    flex: 1,
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
     marginBottom: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingLeft: 10,
+    color: '#333',
+  },
+  disabledInput: {
+    backgroundColor: '#e0e0e0',
+    color: '#666',
+  },
+  multilineContainer: {
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+  },
+  multilineInput: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   submitButton: {
     backgroundColor: '#5c6bc0',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
   },

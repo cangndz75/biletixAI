@@ -52,9 +52,18 @@ const userSchema = mongoose.Schema(
     followers: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     following: [{type: mongoose.Schema.Types.ObjectId, ref: 'User'}],
     community: {type: mongoose.Schema.Types.ObjectId, ref: 'Community'},
-    likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
-    stripeCustomerId: { type: String, default: null },
-    stripeSubscriptionId: { type: String, default: null }, 
+    likedPosts: [{type: mongoose.Schema.Types.ObjectId, ref: 'Post'}],
+    stripeCustomerId: {type: String, default: null},
+    stripeSubscriptionId: {type: String, default: null},
+    organizerApplication: {
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: null,
+      },
+      reason: {type: String},
+      appliedAt: {type: Date},
+    },
     notifications: [
       {
         type: {

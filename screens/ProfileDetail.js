@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import React, {useContext, useState, useEffect} from 'react';
 import axios from 'axios';
@@ -18,7 +19,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import ImageViewing from 'react-native-image-viewing';
 import {TextInput} from 'react-native';
-import {ActivityIndicator, Switch} from 'react-native-paper';
+import {Switch} from 'react-native-paper';
 import {useIsFocused} from '@react-navigation/native';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
@@ -102,14 +103,19 @@ const ProfileDetailScreen = () => {
     }
   };
 
+  const handleSubscriptionNavigation = () => {
+    if (user?.role === 'organizer') {
+      navigation.navigate('OrganizerSubscribe', {userId});
+    } else {
+      navigation.navigate('UserSubscribe', {userId});
+    }
+  };
+
   const handleSubscribe = () => {
     navigation.navigate('UserSubscribe', {userId});
   };
 
   const handleCancelSubscription = async () => {
-    console.log('🚨 Cancelling Subscription for User:', userId);
-    console.log('🔄 Subscription ID:', user?.stripeSubscriptionId);
-
     if (!user?.stripeSubscriptionId) {
       Alert.alert('Error', 'Subscription ID is missing.');
       return;
@@ -130,7 +136,7 @@ const ProfileDetailScreen = () => {
 
       Alert.alert('Success', 'Your subscription has been canceled.');
     } catch (error) {
-      console.error('❌ Failed to cancel subscription:', error.message);
+      console.error('Failed to cancel subscription:', error.message);
       Alert.alert('Error', 'Failed to cancel your subscription.');
     }
   };
@@ -178,6 +184,16 @@ const ProfileDetailScreen = () => {
     );
   }
 
+  const getSubscriptionButtonText = () => {
+    if (user?.vipBadge) {
+      return 'Cancel Membership';
+    } else {
+      return user?.role === 'organizer'
+        ? 'Subscribe to Organizer Plus'
+        : 'Subscribe to User Plus';
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{paddingBottom: 20}}>
@@ -207,9 +223,13 @@ const ProfileDetailScreen = () => {
         </View>
         <TouchableOpacity
           style={styles.subscribeButton}
-          onPress={user?.vipBadge ? handleCancelSubscription : handleSubscribe}>
+          onPress={
+            user?.vipBadge
+              ? handleCancelSubscription
+              : handleSubscriptionNavigation
+          }>
           <Text style={styles.subscribeText}>
-            {user?.vipBadge ? 'Cancel Membership' : 'Subscribe to User Plus'}
+            {getSubscriptionButtonText()}
           </Text>
         </TouchableOpacity>
 
