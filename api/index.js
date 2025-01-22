@@ -33,6 +33,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use('/generate', generateRoute);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/webhook', express.raw({type: 'application/json'}));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -2530,44 +2533,26 @@ app.post(
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
       console.log('✅ Webhook received:', event.type);
     } catch (err) {
-      console.error('🚨 Webhook signature verification failed:', err);
+      console.error('❌ Webhook signature verification failed:', err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const userId = session.metadata?.userId;
-      const subscriptionType = session.metadata?.subscriptionType;
+      const userId = session.metadata.userId;
 
-      console.log(`🔍 Webhook processing for User ID: ${userId}`);
-
-      if (!userId || !subscriptionType) {
-        console.error('❌ Missing userId or subscriptionType in metadata');
-        return res.status(400).send('userId or subscriptionType is missing');
-      }
+      console.log(`🎉 Payment successful for User ID: ${userId}`);
 
       try {
         const updatedUser = await User.findByIdAndUpdate(
           userId,
-          {
-            $set: {
-              subscriptionType,
-              vipBadge: true,
-            },
-          },
+          {subscriptionType: 'UserPlus', vipBadge: true},
           {new: true},
         );
 
-        if (!updatedUser) {
-          console.error('❌ User not found in database!');
-        } else {
-          console.log(
-            '✅ User subscription updated successfully:',
-            updatedUser,
-          );
-        }
+        console.log('✅ User updated:', updatedUser);
       } catch (error) {
-        console.error(`🚨 Error updating user: ${error.message}`);
+        console.error('❌ Error updating user:', error.message);
       }
     }
 
