@@ -53,12 +53,33 @@ app.post(
 
       if (userId) {
         try {
+          const user = await User.findById(userId);
+          if (!user) {
+            console.error('❌ User not found');
+            return res.status(404).json({error: 'User not found'});
+          }
+
+          let newSubscriptionType;
+          if (user.role === 'organizer') {
+            newSubscriptionType = 'OrganizerPlus';
+          } else {
+            newSubscriptionType = 'UserPlus';
+          }
+
           const updatedUser = await User.findByIdAndUpdate(
             userId,
-            {subscriptionType: 'UserPlus', vipBadge: true},
+            {
+              subscriptionType: newSubscriptionType,
+              vipBadge: true,
+              stripeSubscriptionId: session.subscription,
+            },
             {new: true},
           );
-          console.log('✅ User subscription updated:', updatedUser);
+
+          console.log(
+            `✅ ${newSubscriptionType} subscription updated for User ID: ${userId}`,
+          );
+          console.log('✅ Updated User:', updatedUser);
         } catch (error) {
           console.error('❌ Error updating user:', error.message);
         }
@@ -2504,7 +2525,7 @@ app.post('/create-checkout-session/organizer', async (req, res) => {
   }
 
   console.log(
-    `🚀 Creating OrganizerPlus Checkout Session for User: ${userId} with Price ID: ${priceId}`,
+    `🚀 Creating OrganizerPlus Checkout Session for User ID: ${userId} with Price ID: ${priceId}`,
   );
 
   try {
@@ -2568,6 +2589,13 @@ app.post('/cancel-subscription', async (req, res) => {
     }
 
     await stripe.subscriptions.del(subscriptionId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.error('❌ User not found');
+      return res.status(404).json({error: 'User not found'});
+    }
+
     await User.findByIdAndUpdate(userId, {
       subscriptionType: 'free',
       vipBadge: false,
@@ -2575,6 +2603,7 @@ app.post('/cancel-subscription', async (req, res) => {
     });
 
     res.json({message: 'Subscription canceled successfully.'});
+    console.log(`✅ Subscription canceled for User ID: ${userId}`);
   } catch (error) {
     console.error('❌ Cancel Subscription Error:', error);
     res.status(500).json({error: error.message});

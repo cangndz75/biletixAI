@@ -65,15 +65,6 @@ const OrganizerSubscribe = () => {
     }
   }, [showSuccessModal]);
 
-  useEffect(() => {
-    if (showSuccessModal) {
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        navigation.navigate('HomeScreen');
-      }, 3000);
-    }
-  }, [showSuccessModal]);
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity
