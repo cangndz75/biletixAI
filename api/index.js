@@ -197,14 +197,19 @@ app.get('/user/:userId', async (req, res) => {
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
-        'firstName lastName username image subscriptionType aboutMe events followers following',
+        'firstName lastName username image subscriptionType aboutMe events vipBadge followers following isPrivate',
       );
 
     if (!user) {
       return res.status(404).json({message: 'User not found'});
     }
 
-    res.status(200).json(user);
+    const vipBadge = user.subscriptionType === 'UserPlus';
+
+    res.status(200).json({
+      ...user.toObject(), 
+      vipBadge, 
+    });
   } catch (error) {
     console.error('Error fetching user data:', error);
     res
@@ -2551,7 +2556,7 @@ app.post('/create-checkout-session/user', async (req, res) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
-      metadata: {userId: userId}, 
+      metadata: {userId: userId},
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });

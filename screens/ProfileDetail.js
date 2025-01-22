@@ -69,6 +69,12 @@ const ProfileDetailScreen = () => {
     }
   }, [isFocused, userId]);
 
+  useEffect(() => {
+    if (user) {
+      console.log('✅ Logged-in user:', user);
+    }
+  }, [user]);
+
   const handlePrivacyToggle = async () => {
     try {
       const newPrivacyStatus = !isPrivate;
@@ -98,7 +104,8 @@ const ProfileDetailScreen = () => {
 
       setUser(prevState => ({
         ...prevState,
-        subscriptionType: 'Free',
+        subscriptionType: 'free',
+        vipBadge: false,
       }));
 
       Alert.alert('Success', 'Your subscription has been canceled.');
@@ -162,6 +169,12 @@ const ProfileDetailScreen = () => {
             />
           </Pressable>
           <Text style={styles.userName}>{user?.firstName || 'User Name'}</Text>
+          {user?.vipBadge && (
+            <View style={styles.vipBadge}>
+              <Text style={styles.vipText}>VIP</Text>
+            </View>
+          )}
+
           <View style={styles.followContainer}>
             <Text style={styles.followText}>
               {user?.followers?.length || 0} Followers
@@ -172,17 +185,16 @@ const ProfileDetailScreen = () => {
             </Text>
           </View>
         </View>
-
         {user?.role === 'user' && (
           <TouchableOpacity
             style={styles.subscribeButton}
             onPress={
-              user.subscriptionType === 'UserPlus'
+              user?.subscriptionType === 'UserPlus'
                 ? handleCancelSubscription
                 : handleSubscribe
             }>
             <Text style={styles.subscribeText}>
-              {user.subscriptionType === 'UserPlus'
+              {user?.subscriptionType === 'UserPlus'
                 ? 'Cancel Membership'
                 : 'Subscribe to User Plus'}
             </Text>
