@@ -218,14 +218,16 @@ app.get('/user/:userId', async (req, res) => {
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
-        'firstName lastName username image subscriptionType aboutMe events vipBadge followers stripeSubscriptionId following isPrivate',
+        'firstName lastName username image subscriptionType aboutMe role events vipBadge followers stripeSubscriptionId following isPrivate',
       );
 
     if (!user) {
       return res.status(404).json({message: 'User not found'});
     }
 
-    const vipBadge = user.subscriptionType === 'UserPlus';
+    const vipBadge =
+      user.subscriptionType === 'UserPlus' ||
+      user.subscriptionType === 'OrganizerPlus';
 
     res.status(200).json({
       ...user.toObject(),

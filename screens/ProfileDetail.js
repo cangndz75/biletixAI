@@ -187,11 +187,11 @@ const ProfileDetailScreen = () => {
   const getSubscriptionButtonText = () => {
     if (user?.vipBadge) {
       return 'Cancel Membership';
-    } else {
-      return user?.role === 'organizer'
-        ? 'Subscribe to Organizer Plus'
-        : 'Subscribe to User Plus';
     }
+    if (user?.role === 'organizer') {
+      return 'Subscribe to Organizer Plus';
+    }
+    return 'Subscribe to User Plus';
   };
 
   return (
