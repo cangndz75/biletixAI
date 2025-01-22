@@ -23,10 +23,50 @@ const path = require('path');
 const {body, validationResult} = require('express-validator');
 const bcrypt = require('bcrypt');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const Stripe = require('stripe');
 console.log('Stripe API Key:', process.env.STRIPE_SECRET_KEY);
 console.log('Environment:', process.env.NODE_ENV);
 console.log('Webhook Secret:', process.env.STRIPE_WEBHOOK_SECRET);
+
+app.use('/webhook', express.raw({ type: 'application/json' }));
+
+app.post('/webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+        console.log('✅ Webhook received:', event.type);
+    } catch (err) {
+        console.error('❌ Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const userId = session.metadata.userId;
+        const customerId = session.customer;
+
+        console.log(`🎉 Payment successful for User ID: ${userId}`);
+
+        try {
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                {
+                    stripeCustomerId: customerId,
+                    subscriptionType: 'UserPlus',
+                    vipBadge: true,
+                },
+                { new: true }
+            );
+            console.log('✅ User subscription updated:', updatedUser);
+        } catch (error) {
+            console.error('❌ Error updating user:', error.message);
+        }
+    }
+
+    res.json({ received: true });
+});
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -35,7 +75,7 @@ app.use('/generate', generateRoute);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/webhook', express.raw({type: 'application/json'}));
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -2516,44 +2556,6 @@ app.post('/create-checkout-session/user', async (req, res) => {
   }
 });
 
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    let event;
-    try {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-        console.log('✅ Webhook received:', event.type);
-    } catch (err) {
-        console.error('❌ Webhook signature verification failed:', err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const userId = session.metadata.userId;
-        const customerId = session.customer;
-
-        console.log(`🎉 Payment successful for User ID: ${userId}`);
-
-        try {
-            const updatedUser = await User.findByIdAndUpdate(
-                userId,
-                {
-                    stripeCustomerId: customerId,
-                    subscriptionType: 'UserPlus',
-                    vipBadge: true,
-                },
-                { new: true }
-            );
-            console.log('✅ User subscription updated:', updatedUser);
-        } catch (error) {
-            console.error('❌ Error updating user:', error.message);
-        }
-    }
-
-    res.json({ received: true });
-});
 app.post('/cancel-subscription', async (req, res) => {
   try {
     const {subscriptionId, userId} = req.body;
