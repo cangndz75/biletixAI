@@ -197,7 +197,7 @@ app.get('/user/:userId', async (req, res) => {
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
-        'firstName lastName username image subscriptionType aboutMe events vipBadge followers following isPrivate',
+        'firstName lastName username image subscriptionType aboutMe events vipBadge followers stripeSubscriptionId following isPrivate',
       );
 
     if (!user) {
@@ -207,8 +207,8 @@ app.get('/user/:userId', async (req, res) => {
     const vipBadge = user.subscriptionType === 'UserPlus';
 
     res.status(200).json({
-      ...user.toObject(), 
-      vipBadge, 
+      ...user.toObject(),
+      vipBadge,
     });
   } catch (error) {
     console.error('Error fetching user data:', error);
@@ -2572,6 +2572,9 @@ app.post('/create-checkout-session/user', async (req, res) => {
 app.post('/cancel-subscription', async (req, res) => {
   try {
     const {subscriptionId, userId} = req.body;
+
+    console.log('🔎 Received subscriptionId:', subscriptionId);
+    console.log('🔎 Received userId:', userId);
 
     if (!subscriptionId || !userId) {
       return res

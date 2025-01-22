@@ -97,20 +97,30 @@ const ProfileDetailScreen = () => {
   };
 
   const handleCancelSubscription = async () => {
+    console.log('🚨 Cancelling Subscription for User:', userId);
+    console.log('🔄 Subscription ID:', user?.stripeSubscriptionId);
+
+    if (!user?.stripeSubscriptionId) {
+      Alert.alert('Error', 'Subscription ID is missing.');
+      return;
+    }
+
     try {
       await axios.post(`${API_BASE_URL}/cancel-subscription`, {
         userId,
+        subscriptionId: user?.stripeSubscriptionId,
       });
 
       setUser(prevState => ({
         ...prevState,
         subscriptionType: 'free',
         vipBadge: false,
+        stripeSubscriptionId: null,
       }));
 
       Alert.alert('Success', 'Your subscription has been canceled.');
     } catch (error) {
-      console.error('Failed to cancel subscription:', error.message);
+      console.error('❌ Failed to cancel subscription:', error.message);
       Alert.alert('Error', 'Failed to cancel your subscription.');
     }
   };
@@ -170,8 +180,8 @@ const ProfileDetailScreen = () => {
           </Pressable>
           <Text style={styles.userName}>{user?.firstName || 'User Name'}</Text>
           {user?.vipBadge && (
-            <View style={styles.vipBadge}>
-              <Text style={styles.vipText}>VIP</Text>
+            <View style={styles.vipBadgeContainer}>
+              <Ionicons name="checkmark-circle" size={18} color="#0095F6" />
             </View>
           )}
 
@@ -185,27 +195,14 @@ const ProfileDetailScreen = () => {
             </Text>
           </View>
         </View>
-        {user?.role === 'user' && (
-          <TouchableOpacity
-            style={styles.subscribeButton}
-            onPress={
-              user?.subscriptionType === 'UserPlus'
-                ? handleCancelSubscription
-                : handleSubscribe
-            }>
-            <Text style={styles.subscribeText}>
-              {user?.subscriptionType === 'UserPlus'
-                ? 'Cancel Membership'
-                : 'Subscribe to User Plus'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
         <TouchableOpacity
           style={styles.subscribeButton}
-          onPress={handleSubscribe}>
-          <Text style={styles.subscribeText}>Subscribe to User Plus</Text>
+          onPress={user?.vipBadge ? handleCancelSubscription : handleSubscribe}>
+          <Text style={styles.subscribeText}>
+            {user?.vipBadge ? 'Cancel Membership' : 'Subscribe to User Plus'}
+          </Text>
         </TouchableOpacity>
+
         <View style={styles.aboutMeContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.aboutMeTitle}>About Me</Text>
@@ -503,5 +500,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vipBadgeContainer: {
+    marginLeft: 6,
+    backgroundColor: 'transparent',
   },
 });
