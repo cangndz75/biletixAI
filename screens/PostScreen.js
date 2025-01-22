@@ -47,14 +47,14 @@ const PostScreen = () => {
   };
 
   const fetchUserLikedPosts = async () => {
-      const userResponse = await axios.get(
-        `https://biletixai.onrender.com/users/${userId}`,
-      );
+    const userResponse = await axios.get(
+      `https://biletixai.onrender.com/users/${userId}`,
+    );
 
-      const userLikedPosts = new Set(
-        userResponse.data.likedPosts.map(id => id.toString()),
-      );
-      setLikedPosts(userLikedPosts);
+    const userLikedPosts = new Set(
+      userResponse.data.likedPosts.map(id => id.toString()),
+    );
+    setLikedPosts(userLikedPosts);
   };
 
   const handleLikePost = async postId => {
@@ -119,7 +119,6 @@ const PostScreen = () => {
           keyExtractor={item => item._id}
           renderItem={({item}) => {
             const isLiked = likedPosts.has(item._id);
-
             return (
               <View style={styles.postContainer}>
                 <View style={styles.postHeader}>
@@ -178,6 +177,11 @@ const PostScreen = () => {
               </View>
             );
           }}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No posts available</Text>
+            </View>
+          )}
         />
       )}
     </View>
@@ -238,6 +242,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   actionText: {fontSize: 14, color: '#000'},
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#888',
+    fontStyle: 'italic',
+  },
 });
 
 export default PostScreen;

@@ -31,14 +31,31 @@ const CreatePost = () => {
 
   const handlePickImage = () => {
     launchImageLibrary({mediaType: 'photo', quality: 1}, async response => {
-      if (!response.didCancel && !response.errorMessage) {
+      console.log('📷 Image Picker Response:', response);
+
+      if (
+        !response.didCancel &&
+        !response.errorMessage &&
+        response.assets?.length > 0
+      ) {
+        console.log('✅ Seçilen Resim:', response.assets[0]);
         setNewPostImage(response.assets[0]);
+      } else {
+        console.warn(
+          '⚠️ Resim seçilmedi veya hata oluştu:',
+          response.errorMessage,
+        );
       }
     });
   };
 
   const uploadImageToCloudinary = async () => {
-    if (!newPostImage) return null;
+    if (!newPostImage || !newPostImage.uri) {
+      console.warn('⚠️ Cloudinary upload skipped: No image selected.');
+      return null;
+    }
+
+    console.log('🚀 Uploading image to Cloudinary:', newPostImage.uri);
 
     const formData = new FormData();
     formData.append('file', {
@@ -49,9 +66,19 @@ const CreatePost = () => {
     formData.append('upload_preset', UPLOAD_PRESET);
 
     try {
+      console.log('🔍 Cloudinary URL:', CLOUDINARY_URL);
+      console.log('🔍 Upload Preset:', UPLOAD_PRESET);
+
+      if (!CLOUDINARY_URL || !UPLOAD_PRESET) {
+        console.error('❌ Cloudinary ayarları eksik!');
+        Alert.alert('Hata', 'Cloudinary yapılandırması eksik.');
+        return null;
+      }
+
       const res = await axios.post(CLOUDINARY_URL, formData, {
         headers: {'Content-Type': 'multipart/form-data'},
       });
+
       console.log('✅ Cloudinary Upload Success:', res.data);
       return res.data.secure_url;
     } catch (error) {
@@ -89,7 +116,6 @@ const CreatePost = () => {
       setNewPostImage(null);
       setNewPostDescription('');
 
-      // ✅ PostScreen'e yönlendir ve sayfayı yenile
       navigation.replace('PostScreen', {communityId});
     } catch (error) {
       console.error(

@@ -2401,6 +2401,7 @@ app.post('/posts/create', async (req, res) => {
   const {description, userId, communityId, imageUrl} = req.body;
 
   if (!description || !userId || !communityId) {
+    console.log('❌ Missing fields:', {description, userId, communityId});
     return res.status(400).json({
       message: '❗ Description, user ID, and community ID are required.',
     });
@@ -2415,6 +2416,7 @@ app.post('/posts/create', async (req, res) => {
     });
 
     await newPost.save();
+    console.log('✅ Post created successfully:', newPost);
     res
       .status(201)
       .json({message: '✅ Post created successfully', post: newPost});

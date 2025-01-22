@@ -34,6 +34,16 @@ const ProfileDetailScreen = () => {
   const isFocused = useIsFocused();
   const [loading, setLoading] = useState(true);
 
+  // useEffect(() => {
+  //   if (!userId) {
+  //     console.warn('⚠️ userId is null, redirecting to Login screen...');
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [{name: 'Login'}],
+  //     });
+  //   }
+  // }, [userId]);
+
   const fetchUser = async () => {
     if (!userId) {
       console.error('Error: User ID is undefined');
@@ -197,19 +207,9 @@ const ProfileDetailScreen = () => {
         </View>
         <TouchableOpacity
           style={styles.subscribeButton}
-          onPress={
-            user?.subscriptionType !== 'free'
-              ? handleCancelSubscription
-              : handleSubscribe
-          }>
+          onPress={user?.vipBadge ? handleCancelSubscription : handleSubscribe}>
           <Text style={styles.subscribeText}>
-            {user?.subscriptionType === 'UserPlus'
-              ? 'Cancel Membership'
-              : user?.subscriptionType === 'OrganizerPlus'
-              ? 'Cancel Organizer Membership'
-              : user?.role === 'organizer'
-              ? 'Subscribe to Organizer Plus'
-              : 'Subscribe to User Plus'}
+            {user?.vipBadge ? 'Cancel Membership' : 'Subscribe to User Plus'}
           </Text>
         </TouchableOpacity>
 
