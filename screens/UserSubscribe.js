@@ -22,21 +22,24 @@ const UserSubscribe = () => {
   const [subscriptionType, setSubscriptionType] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [stripeSubscriptionId, setStripeSubscriptionId] = useState(null);
 
   const fetchUserData = async () => {
     if (!userId) return;
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/user/${userId}/subscription`,
+      );
 
       if (response.status === 200) {
         const userData = response.data;
         setSubscriptionType(userData.subscriptionType);
-        setIsSubscribed(userData.subscriptionType === 'UserPlus');
-        console.log('Subscription Type:', userData.subscriptionType);
+        setStripeSubscriptionId(userData.stripeSubscriptionId);
+        setIsSubscribed(userData.isSubscribed);
       }
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error('Failed to fetch user subscription data:', error);
     } finally {
       setLoading(false);
     }
@@ -59,29 +62,40 @@ const UserSubscribe = () => {
     }
 
     try {
-      const response = await fetch(
+      const response = await axios.post(
         `${API_BASE_URL}/create-checkout-session/user`,
-        {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({priceId, userId}),
-        },
+        {priceId, userId},
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Network response was not ok: ${errorText}`);
-      }
-
-      const {url} = await response.json();
-      if (url) {
-        Linking.openURL(url);
+      if (response.data.url) {
+        Linking.openURL(response.data.url);
       } else {
         alert('Payment URL could not be retrieved.');
       }
     } catch (error) {
       console.error('Subscription Error:', error);
       alert(`Something went wrong: ${error.message}`);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!stripeSubscriptionId) {
+      alert('No active subscription found.');
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/cancel-subscription`, {
+        subscriptionId: stripeSubscriptionId,
+        userId,
+      });
+
+      setIsSubscribed(false);
+      setSubscriptionType(null);
+      alert('Subscription canceled successfully.');
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error);
+      alert('Error canceling subscription.');
     }
   };
 
@@ -115,14 +129,14 @@ const UserSubscribe = () => {
         <TouchableOpacity
           style={styles.subscribeButton}
           onPress={handleSubscribe}>
-          <Text style={styles.subscribeText}>
-            Subscribe Now - $5 / Month
-          </Text>
+          <Text style={styles.subscribeText}>Subscribe Now - $5 / Month</Text>
         </TouchableOpacity>
       ) : (
-        <Text style={styles.alreadySubscribedText}>
-          ✅ You are already subscribed to User Plus!
-        </Text>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={handleCancelSubscription}>
+          <Text style={styles.cancelButtonText}>Cancel Subscription</Text>
+        </TouchableOpacity>
       )}
 
       <View style={styles.featuresContainer}>
@@ -180,12 +194,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
-  alreadySubscribedText: {
-    color: 'green',
-    fontSize: 16,
-    fontWeight: 'bold',
+  cancelButton: {
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 10,
     marginTop: 10,
+    width: '100%',
+    alignItems: 'center',
   },
+  cancelButtonText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
   featuresContainer: {
     width: '100%',
     backgroundColor: 'white',

@@ -2500,20 +2500,15 @@ app.post('/create-checkout-session/user', async (req, res) => {
       return res.status(400).json({error: 'Price ID and User ID are required'});
     }
 
-    console.log(
-      `Creating checkout session for user: ${userId} with priceId: ${priceId}`,
-    );
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{price: priceId, quantity: 1}],
-      metadata: {userId, plan: 'user', subscriptionType: 'UserPlus'},
+      metadata: {userId, plan: 'UserPlus'},
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,
     });
 
-    console.log('✅ Checkout session created:', session.id);
     res.json({url: session.url});
   } catch (error) {
     console.error('🚨 Stripe Checkout Session Error:', error);
@@ -2541,6 +2536,7 @@ app.post(
       const session = event.data.object;
       const userId = session.metadata.userId;
       const customerId = session.customer;
+      const subscriptionId = session.subscription;
 
       console.log(`🎉 Payment successful for User ID: ${userId}`);
 
@@ -2549,6 +2545,7 @@ app.post(
           userId,
           {
             stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptionId,
             subscriptionType: 'UserPlus',
             vipBadge: true,
           },
@@ -2577,8 +2574,9 @@ app.post('/cancel-subscription', async (req, res) => {
 
     await stripe.subscriptions.del(subscriptionId);
     await User.findByIdAndUpdate(userId, {
-      subscriptionType: null,
+      subscriptionType: 'free',
       vipBadge: false,
+      stripeSubscriptionId: null,
     });
 
     res.json({message: 'Subscription canceled successfully.'});
@@ -2586,14 +2584,6 @@ app.post('/cancel-subscription', async (req, res) => {
     console.error('Cancel Subscription Error:', error);
     res.status(500).json({error: error.message});
   }
-});
-
-app.get('/success', (req, res) => {
-  res.send('<h1>Payment Successful! 🎉</h1>');
-});
-
-app.get('/cancel', (req, res) => {
-  res.send('<h1>Payment Canceled ❌</h1>');
 });
 
 app.get('/user/:userId/subscription', async (req, res) => {
@@ -2617,7 +2607,7 @@ app.get('/user/:userId/subscription', async (req, res) => {
     if (subscriptions.data.length > 0) {
       return res.json({
         isSubscribed: true,
-        subscriptionType: subscriptions.data[0].items.data[0].plan.nickname,
+        subscriptionType: 'UserPlus',
         stripeSubscriptionId: subscriptions.data[0].id,
       });
     }
@@ -2627,4 +2617,12 @@ app.get('/user/:userId/subscription', async (req, res) => {
     console.error('❌ Error fetching subscription status:', error.message);
     res.status(500).json({error: 'Internal Server Error'});
   }
+});
+
+app.get('/success', (req, res) => {
+  res.send('<h1>Payment Successful! 🎉</h1>');
+});
+
+app.get('/cancel', (req, res) => {
+  res.send('<h1>Payment Canceled ❌</h1>');
 });
