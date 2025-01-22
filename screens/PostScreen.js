@@ -39,7 +39,6 @@ const PostScreen = () => {
       );
       setPosts(response.data.posts || []);
     } catch (error) {
-      console.error('❌ Error fetching posts:', error);
       setPosts([]);
     } finally {
       setLoading(false);
@@ -47,20 +46,22 @@ const PostScreen = () => {
   };
 
   const fetchUserLikedPosts = async () => {
-    const userResponse = await axios.get(
-      `https://biletixai.onrender.com/users/${userId}`,
-    );
-
-    const userLikedPosts = new Set(
-      userResponse.data.likedPosts.map(id => id.toString()),
-    );
-    setLikedPosts(userLikedPosts);
+    try {
+      const userResponse = await axios.get(
+        `https://biletixai.onrender.com/users/${userId}`,
+      );
+      const userLikedPosts = new Set(
+        userResponse.data.likedPosts.map(id => id.toString()),
+      );
+      setLikedPosts(userLikedPosts);
+    } catch (error) {
+      setLikedPosts(new Set());
+    }
   };
 
   const handleLikePost = async postId => {
     try {
       const isCurrentlyLiked = likedPosts.has(postId);
-
       setLikedPosts(prev => {
         const updated = new Set(prev);
         if (isCurrentlyLiked) {
@@ -88,13 +89,17 @@ const PostScreen = () => {
         userId,
       });
     } catch (error) {
-      console.error('❌ Error liking post:', error);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
+          <Ionicons name="arrow-back" size={26} color="#000" />
+        </TouchableOpacity>
         <Text style={styles.title}>EventMate</Text>
         <View style={styles.headerIcons}>
           <TouchableOpacity onPress={() => navigation.navigate('LikeScreen')}>
@@ -252,6 +257,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
     fontStyle: 'italic',
+  },
+  backButton: {
+    padding: 5,
+    marginRight: 10,
   },
 });
 

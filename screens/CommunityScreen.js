@@ -15,6 +15,7 @@ import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Animated, {FadeIn, FadeOut, Layout} from 'react-native-reanimated';
 
 const CommunityScreen = () => {
   const [communities, setCommunities] = useState([]);
@@ -39,7 +40,6 @@ const CommunityScreen = () => {
       );
       setCommunities(response.data);
     } catch (error) {
-      console.error('Error fetching communities:', error.message);
       Alert.alert('Error', 'Could not load communities.');
     } finally {
       setLoading(false);
@@ -67,16 +67,18 @@ const CommunityScreen = () => {
         navigation.navigate('CommunityDetailScreen', {communityId});
       }
     } catch (error) {
-      console.error('Error checking user membership:', error);
       navigation.navigate('CommunityDetailScreen', {communityId});
     }
   };
 
   const renderCommunityItem = ({item: community}) => (
-    <Pressable
-      onPress={() => handleNavigation(community._id)}
-      style={styles.communityItem}>
-      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+    <Animated.View
+      entering={FadeIn}
+      exiting={FadeOut}
+      layout={Layout.springify()}>
+      <Pressable
+        onPress={() => handleNavigation(community._id)}
+        style={styles.communityItem}>
         <Image
           style={styles.communityImage}
           source={{
@@ -90,36 +92,35 @@ const CommunityScreen = () => {
           </Text>
           {community.organizer && (
             <Text style={styles.communityOrganizer}>
-              Organizator: {community.organizer.firstName}{' '}
+              Organizatör: {community.organizer.firstName}{' '}
               {community.organizer.lastName}
             </Text>
           )}
         </View>
-      </View>
-    </Pressable>
+        <Ionicons name="chevron-forward" size={24} color="#888" />
+      </Pressable>
+    </Animated.View>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#07bc0c" />
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
   return (
-    <View style={{flex: 1}}>
-      {/* Üst Bar - Geri Butonu ve Başlık */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <Animated.View entering={FadeIn} style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Communities</Text>
-      </View>
+      </Animated.View>
 
-      {/* FlatList içinde artık geri butonu çakışmıyor */}
       <FlatList
         data={communities}
         renderItem={renderCommunityItem}
@@ -127,23 +128,32 @@ const CommunityScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        contentContainerStyle={{paddingBottom: 20}}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {flex: 1, backgroundColor: '#F7F7F7'},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007bff',
+    backgroundColor: '#007AFF',
     paddingVertical: 15,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
   },
   backButton: {
     padding: 10,
     borderRadius: 50,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerTitle: {
     flex: 1,
@@ -151,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
-    marginRight: 40, // Butonla hizalamak için
+    marginRight: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -162,18 +172,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 16,
-    marginBottom: 20,
-    marginHorizontal: 10,
+    marginVertical: 10,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
-    elevation: 8,
+    elevation: 6,
   },
   communityImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 15,
     marginRight: 12,
   },
   communityName: {
@@ -184,7 +196,7 @@ const styles = StyleSheet.create({
   communityMembers: {
     fontSize: 14,
     color: '#777',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   communityOrganizer: {
     fontSize: 14,

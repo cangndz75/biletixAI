@@ -2040,38 +2040,6 @@ app.get('/posts/:postId/comments', async (req, res) => {
   }
 });
 
-app.post('/posts/create', async (req, res) => {
-  console.log('Request received:', req.body);
-
-  const {description, userId, communityId, imageUrl} = req.body;
-
-  if (!description || !userId || !communityId) {
-    console.log('Missing fields:', {description, userId, communityId});
-    return res.status(400).json({
-      message: 'Description, user ID, and community ID are required.',
-    });
-  }
-
-  try {
-    const newPost = new Post({
-      description,
-      imageUrl: imageUrl || null,
-      user: userId,
-      community: communityId,
-    });
-
-    await newPost.save();
-    await Community.findByIdAndUpdate(communityId, {
-      $push: {posts: newPost._id},
-    });
-
-    res.status(201).json({message: 'Post created successfully', post: newPost});
-  } catch (error) {
-    console.error('Error creating post:', error);
-    res.status(500).json({message: 'Failed to create post.'});
-  }
-});
-
 app.get('/posts', authenticateToken, async (req, res) => {
   try {
     const posts = await Post.find()
@@ -2398,13 +2366,11 @@ app.get('/communities/:communityId/posts', async (req, res) => {
 });
 
 app.post('/posts/create', async (req, res) => {
+  console.log('Request received:', req.body);
   const {description, userId, communityId, imageUrl} = req.body;
 
   if (!description || !userId || !communityId) {
-    console.log('❌ Missing fields:', {description, userId, communityId});
-    return res.status(400).json({
-      message: '❗ Description, user ID, and community ID are required.',
-    });
+    return res.status(400).json({message: 'Eksik alanlar var!'});
   }
 
   try {
@@ -2416,13 +2382,11 @@ app.post('/posts/create', async (req, res) => {
     });
 
     await newPost.save();
-    console.log('✅ Post created successfully:', newPost);
     res
       .status(201)
-      .json({message: '✅ Post created successfully', post: newPost});
+      .json({message: 'Post başarıyla oluşturuldu!', post: newPost});
   } catch (error) {
-    console.error('❌ Error creating post:', error);
-    res.status(500).json({message: 'Failed to create post.'});
+    res.status(500).json({message: 'Post oluşturulamadı!'});
   }
 });
 
@@ -2661,4 +2625,28 @@ app.get('/success', (req, res) => {
 
 app.get('/cancel', (req, res) => {
   res.send('<h1>Payment Canceled ❌</h1>');
+});
+
+app.put('/posts/:id/update', async (req, res) => {
+  try {
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      {description: req.body.description},
+      {new: true},
+    );
+    res
+      .status(200)
+      .json({message: '✅ Post updated successfully', post: updatedPost});
+  } catch (error) {
+    res.status(500).json({message: '❌ Failed to update post.'});
+  }
+});
+
+app.delete('/posts/:id/delete', async (req, res) => {
+  try {
+    await Post.findByIdAndDelete(req.params.id);
+    res.status(200).json({message: '✅ Post deleted successfully'});
+  } catch (error) {
+    res.status(500).json({message: '❌ Failed to delete post.'});
+  }
 });

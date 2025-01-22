@@ -12,19 +12,19 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
-import {useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 
 const CommentScreen = () => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(true);
-
+  const navigation = useNavigation();
   const {userId} = useContext(AuthContext);
   const route = useRoute();
-  const {postId} = route.params; // Gelen postId'yi aldık
+  const {postId} = route.params;
 
   useEffect(() => {
-    console.log('Yüklenen Post ID:', postId); // Hangi post'un yorumlarını çektiğimizi kontrol etmek için
+    console.log('Yüklenen Post ID:', postId);
     fetchComments();
   }, []);
 
@@ -60,7 +60,13 @@ const CommentScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Yorumlar</Text>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}>
+        <Ionicons name="arrow-back" size={26} color="#000" />
+      </TouchableOpacity>
+
+      <Text style={styles.title}>Comments</Text>
 
       {loading ? (
         <ActivityIndicator
@@ -141,6 +147,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     padding: 8,
+    marginRight: 10,
+  },
+  backButton: {
+    padding: 5,
     marginRight: 10,
   },
 });
