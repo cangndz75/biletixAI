@@ -25,7 +25,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
 
   const saveQuestion = () => {
     if (!newQuestion.trim()) {
-      alert('Soru metni boş olamaz.');
+      alert('Question text cannot be empty.');
       return;
     }
 
@@ -47,11 +47,11 @@ const CreateCustomQuestion = ({navigation, route}) => {
           style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="black" />
         </TouchableOpacity>
-        <Text style={styles.title}>Yeni Soru Ekle</Text>
+        <Text style={styles.title}>Add New Question</Text>
       </View>
 
       <TextInput
-        placeholder="Soru Metni"
+        placeholder="Enter question text"
         value={newQuestion}
         onChangeText={setNewQuestion}
         style={styles.input}
@@ -66,7 +66,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
               styles.tabText,
               questionType === 'text' && styles.activeTabText,
             ]}>
-            Metin
+            Text
           </Text>
         </TouchableOpacity>
 
@@ -81,7 +81,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
               styles.tabText,
               questionType === 'multiple_choice' && styles.activeTabText,
             ]}>
-            Çoktan Seçmeli
+            Multiple Choice
           </Text>
         </TouchableOpacity>
       </View>
@@ -90,7 +90,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
         <View>
           <View style={styles.optionInputContainer}>
             <TextInput
-              placeholder="Seçenek Ekle"
+              placeholder="Add option"
               value={newOption}
               onChangeText={setNewOption}
               style={styles.optionInput}
@@ -104,7 +104,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
 
           {options.length > 0 && (
             <View>
-              <Text style={styles.subtitle}>Seçenekler:</Text>
+              <Text style={styles.subtitle}>Options:</Text>
               {options.map((opt, index) => (
                 <View key={index} style={styles.optionItem}>
                   <Text style={styles.optionText}>{opt}</Text>
@@ -122,7 +122,7 @@ const CreateCustomQuestion = ({navigation, route}) => {
       )}
 
       <TouchableOpacity style={styles.saveButton} onPress={saveQuestion}>
-        <Text style={styles.saveButtonText}>Soruyu Kaydet</Text>
+        <Text style={styles.saveButtonText}>Save Question</Text>
       </TouchableOpacity>
     </View>
   );

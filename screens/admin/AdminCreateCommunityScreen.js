@@ -77,7 +77,7 @@ const AdminCreateCommunityScreen = () => {
     };
 
     console.log(
-      '📤 Gönderilen communityData:',
+      '📤 Sending communityData:',
       JSON.stringify(communityData, null, 2),
     );
 
@@ -91,17 +91,20 @@ const AdminCreateCommunityScreen = () => {
       );
 
       if (response.status === 201) {
-        Alert.alert('Başarılı', 'Topluluk başarıyla oluşturuldu!');
+        Alert.alert('Success', 'Community created successfully!');
         navigation.navigate('AdminDashboard');
       } else {
-        Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
+        Alert.alert(
+          'Error',
+          'Failed to create the community. Please try again.',
+        );
       }
     } catch (error) {
       console.error(
-        'Topluluk oluşturma hatası:',
+        'Error creating community:',
         error.response?.data || error.message,
       );
-      Alert.alert('Hata', 'Topluluk oluşturulamadı. Tekrar deneyin.');
+      Alert.alert('Error', 'Failed to create the community. Please try again.');
     }
   };
 
@@ -173,7 +176,7 @@ const AdminCreateCommunityScreen = () => {
 
         {isPrivate && selectedQuestions.length > 0 && (
           <View style={styles.questionContainer}>
-            <Text style={styles.questionHeader}>Seçilen Sorular:</Text>
+            <Text style={styles.questionHeader}>Selected Questions:</Text>
             {selectedQuestions.map((q, index) => {
               const question = QUESTIONS.find(question => question.id === q.id);
               return question ? (

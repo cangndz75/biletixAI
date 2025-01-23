@@ -36,14 +36,14 @@ const JoinCommunityScreen = () => {
           setQuestions(communityData.questions);
           setAnswers(
             communityData.questions.reduce((acc, question) => {
-              acc[question._id] = ''; // Question ID'ye göre state saklanıyor
+              acc[question._id] = '';
               return acc;
             }, {}),
           );
         }
       } catch (error) {
         console.error('Error fetching questions:', error);
-        Alert.alert('Hata', 'Sorular yüklenirken bir hata oluştu.');
+        Alert.alert('Error', 'An error occurred while loading questions.');
       } finally {
         setLoading(false);
       }
@@ -60,7 +60,10 @@ const JoinCommunityScreen = () => {
       );
 
       if (response.status === 200) {
-        Alert.alert('Başarılı', 'Başvuru gönderildi. Onay bekleniyor.');
+        Alert.alert(
+          'Success',
+          'Your request has been submitted. Waiting for approval.',
+        );
 
         navigation.navigate('CommunityDetailScreen', {
           communityId,
@@ -68,8 +71,8 @@ const JoinCommunityScreen = () => {
         });
       }
     } catch (error) {
-      console.error('Başvuru gönderirken hata:', error.message);
-      Alert.alert('Hata', 'Başvuru gönderilirken bir sorun oluştu.');
+      console.error('Error submitting request:', error.message);
+      Alert.alert('Error', 'An issue occurred while submitting your request.');
     }
   };
 
@@ -80,16 +83,16 @@ const JoinCommunityScreen = () => {
         style={styles.backButton}>
         <Ionicons name="arrow-back" size={28} color="black" />
       </TouchableOpacity>
-      <Text style={styles.title}>Topluluğa Katıl</Text>
+      <Text style={styles.title}>Join Community</Text>
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007bff" />
-          <Text style={styles.loadingText}>Yükleniyor...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : questions.length === 0 ? (
         <Text style={styles.noQuestions}>
-          Bu topluluk için özel sorular bulunmuyor.
+          There are no specific questions for this community.
         </Text>
       ) : (
         questions.map((question, index) => (
@@ -114,7 +117,7 @@ const JoinCommunityScreen = () => {
               ))
             ) : (
               <TextInput
-                placeholder="Cevabınızı yazın..."
+                placeholder="Write your answer..."
                 style={styles.input}
                 multiline
                 value={answers[question._id]}
@@ -129,7 +132,7 @@ const JoinCommunityScreen = () => {
 
       {!loading && questions.length > 0 && (
         <TouchableOpacity style={styles.submitButton} onPress={submitAnswers}>
-          <Text style={styles.submitButtonText}>Gönder</Text>
+          <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
       )}
     </ScrollView>

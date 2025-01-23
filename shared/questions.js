@@ -1,19 +1,25 @@
 const QUESTIONS = [
-  {id: '1', text: 'Ad Soyad', type: 'text'},
+  {id: '1', text: 'Full Name', type: 'text'},
   {id: '2', text: 'E-mail', type: 'text'},
-  {id: '3', text: 'Telefon Numarası', type: 'text'},
+  {id: '3', text: 'Phone Number', type: 'text'},
   {
     id: '4',
-    text: 'Yaş Aralığı',
+    text: 'Age Range',
     type: 'multiple_choice',
     options: ['0-18', '19-25', '26-35', '36+'],
   },
   {
     id: '5',
-    text: 'Eğitim Durumu',
+    text: 'Education Level',
     type: 'multiple_choice',
-    options: ['Lise', 'Önlisans', 'Lisans', 'Yüksek Lisans', 'Doktora'],
+    options: [
+      'High School',
+      'Associate Degree',
+      "Bachelor's Degree",
+      "Master's Degree",
+      'Doctorate',
+    ],
   },
 ];
 
-module.exports = { QUESTIONS };
+module.exports = {QUESTIONS};

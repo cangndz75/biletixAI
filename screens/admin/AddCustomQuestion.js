@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
-import {QUESTIONS} from  '../../shared/questions';
+import {QUESTIONS} from '../../shared/questions';
 
 const AddCustomQuestion = ({navigation}) => {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
@@ -44,7 +44,7 @@ const AddCustomQuestion = ({navigation}) => {
           style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="black" />
         </TouchableOpacity>
-        <Text style={styles.title}>Topluluk Katılım Soruları</Text>
+        <Text style={styles.title}>Community Join Questions</Text>
       </View>
 
       <FlatList
@@ -67,7 +67,7 @@ const AddCustomQuestion = ({navigation}) => {
         )}
         ListHeaderComponent={() => (
           <View>
-            <Text style={styles.subtitle}>Önceden Tanımlı Sorular</Text>
+            <Text style={styles.subtitle}>Predefined Questions</Text>
           </View>
         )}
       />
@@ -81,16 +81,16 @@ const AddCustomQuestion = ({navigation}) => {
           })
         }>
         <Ionicons name="add-circle" size={24} color="white" />
-        <Text style={styles.buttonText}>Özel Soru Ekle</Text>
+        <Text style={styles.buttonText}>Add Custom Question</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Kaydet ve Devam Et</Text>
+        <Text style={styles.saveButtonText}>Save and Continue</Text>
       </TouchableOpacity>
 
       {customQuestions.length > 0 && (
         <View style={styles.customQuestionsContainer}>
-          <Text style={styles.subtitle}>Özel Sorular:</Text>
+          <Text style={styles.subtitle}>Custom Questions:</Text>
           {customQuestions.map((q, index) => (
             <View key={index} style={styles.customQuestionCard}>
               <View style={styles.customQuestionTextContainer}>

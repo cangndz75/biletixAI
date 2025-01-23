@@ -12,6 +12,8 @@ import {
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {AuthContext} from '../AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const ProfileViewScreen = () => {
   const route = useRoute();
@@ -45,16 +47,11 @@ const ProfileViewScreen = () => {
 
   const handleFollowRequest = async () => {
     try {
-      const response = await axios.post(
-        `https://biletixai.onrender.com/user/follow`,
-        {
-          fromUserId: loggedInUserId,
-          toUserId: userId,
-        },
-      );
-      if (response.status === 200) {
-        setIsFollowing(true);
-      }
+      await axios.post('https://biletixai.onrender.com/user/follow', {
+        fromUserId: loggedInUserId,
+        toUserId: userId,
+      });
+      setIsFollowing(true);
     } catch (error) {
       Alert.alert('Error', 'Failed to follow user.');
     }
@@ -62,16 +59,11 @@ const ProfileViewScreen = () => {
 
   const handleUnfollow = async () => {
     try {
-      const response = await axios.post(
-        `https://biletixai.onrender.com/user/unfollow`,
-        {
-          fromUserId: loggedInUserId,
-          toUserId: userId,
-        },
-      );
-      if (response.status === 200) {
-        setIsFollowing(false);
-      }
+      await axios.post('https://biletixai.onrender.com/user/unfollow', {
+        fromUserId: loggedInUserId,
+        toUserId: userId,
+      });
+      setIsFollowing(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to unfollow user.');
     }
@@ -80,7 +72,7 @@ const ProfileViewScreen = () => {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#07bc0c" />
+        <ActivityIndicator size="large" color="#7C3AED" />
       </View>
     );
   }
@@ -95,95 +87,124 @@ const ProfileViewScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.coverContainer}>
+      {/* Kullanıcı Profili */}
+      <View style={styles.profileCard}>
         <Image
           source={{uri: userData.image || 'https://via.placeholder.com/100'}}
           style={styles.profileImage}
         />
-      </View>
-
-      <View style={styles.card}>
-        <Text
-          style={
-            styles.name
-          }>{`${userData.firstName} ${userData.lastName}`}</Text>
-        <Text style={styles.location}>
-          @{userData.username} • {userData.location || 'Unknown'}
+        <Text style={styles.name}>
+          {`${userData.firstName} ${userData.lastName}`}{' '}
+          {userData.vipBadge && <Ionicons name="star" size={18} color="gold" />}
         </Text>
+        <Text style={styles.username}>@{userData.username}</Text>
 
-        <View style={styles.stats}>
-          <Text style={styles.statText}>
-            {userData.following?.length || 0} Following
-          </Text>
-          <Text style={styles.statText}>
-            {userData.followers?.length || 0} Followers
-          </Text>
-        </View>
-
-        {/* Kullanıcının Abonelik Tipini Kontrol Et */}
-        {userData.subscriptionType === 'UserPlus' &&
-          userId !== loggedInUserId && (
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={
-                  isFollowing ? styles.unfollowButton : styles.followButton
-                }
-                onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
-                <Text style={styles.followButtonText}>
-                  {isFollowing ? 'Unfollow' : 'Follow'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.messageButton}
-                onPress={() => navigation.navigate('ChatRoom', {userId})}>
-                <Text style={styles.messageButtonText}>Message</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={selectedTab === 'About' ? styles.activeTab : styles.tab}
-            onPress={() => setSelectedTab('About')}>
-            <Text style={styles.tabText}>About</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={selectedTab === 'Event' ? styles.activeTab : styles.tab}
-            onPress={() => setSelectedTab('Event')}>
-            <Text style={styles.tabText}>Event</Text>
-          </TouchableOpacity>
-        </View>
-
-        {selectedTab === 'About' ? (
-          <View style={styles.aboutSection}>
-            <Text>{userData.aboutMe || 'No information provided'}</Text>
+        {/* Eğer Kullanıcı Private ise */}
+        {userData.isPrivate ? (
+          <View style={styles.privateContainer}>
+            <Ionicons name="lock-closed" size={20} color="#666" />
+            <Text style={styles.privateText}>This Account is Private</Text>
           </View>
         ) : (
-          <View style={styles.eventSection}>
-            {userData.events?.length > 0 ? (
-              userData.events.map(event => (
-                <View key={event._id} style={styles.eventItem}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDate}>{event.date}</Text>
-                </View>
-              ))
-            ) : (
-              <Text>No events to display.</Text>
+          <>
+            <View style={styles.stats}>
+              <Text style={styles.statText}>{userData.posts || 0} Posts</Text>
+              <Text style={styles.statText}>
+                {userData.followers?.length || 0} Followers
+              </Text>
+              <Text style={styles.statText}>
+                {userData.following?.length || 0} Following
+              </Text>
+            </View>
+
+            {/* Eğer giriş yapan kişi VIP ise butonları göster */}
+            {userData.vipBadge && (
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={
+                    isFollowing ? styles.unfollowButton : styles.followButton
+                  }
+                  onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
+                  <Text style={styles.followButtonText}>
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={() => navigation.navigate('ChatRoom', {userId})}>
+                  <Text style={styles.messageButtonText}>Message</Text>
+                </TouchableOpacity>
+              </View>
             )}
-          </View>
+          </>
         )}
       </View>
+
+      {/* Tablara geçiş */}
+      {!userData.isPrivate && (
+        <View style={styles.tabs}>
+          {['About', 'Interest', 'Events'].map(tab => (
+            <TouchableOpacity
+              key={tab}
+              style={selectedTab === tab ? styles.activeTab : styles.tab}
+              onPress={() => setSelectedTab(tab)}>
+              <Text style={styles.tabText}>{tab}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Seçilen Tabın İçeriği */}
+      {!userData.isPrivate && (
+        <View style={styles.tabContent}>
+          {selectedTab === 'About' && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>About Me</Text>
+              <Text style={styles.aboutText}>
+                {userData.aboutMe || 'No information available'}
+              </Text>
+            </View>
+          )}
+          {selectedTab === 'Interest' && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Interests</Text>
+              <View style={styles.interestsContainer}>
+                {userData.interests?.length > 0 ? (
+                  userData.interests.map((interest, index) => (
+                    <Text key={index} style={styles.interestTag}>
+                      {interest}
+                    </Text>
+                  ))
+                ) : (
+                  <Text>No interests available.</Text>
+                )}
+              </View>
+            </View>
+          )}
+          {selectedTab === 'Events' && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Upcoming Events</Text>
+              {userData.events?.length > 0 ? (
+                userData.events.map((event, index) => (
+                  <View key={index} style={styles.eventCard}>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                    <Text style={styles.eventDate}>{event.date}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text>No events to display.</Text>
+              )}
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  card: {
+  container: {alignItems: 'center', padding: 20, backgroundColor: '#f5f5f5'},
+  profileContainer: {
     backgroundColor: 'white',
     width: '90%',
     padding: 20,
@@ -192,7 +213,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 5,
-    marginTop: -50,
+    marginTop: 20,
   },
   profileImage: {
     width: 100,
@@ -201,47 +222,109 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
   },
-  name: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
+  name: {fontSize: 20, fontWeight: 'bold', marginTop: 10},
+  username: {fontSize: 16, color: 'gray', marginBottom: 10},
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
     marginBottom: 15,
   },
-  actions: {
+  statText: {fontSize: 14, color: '#555'},
+  tabs: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-around',
     width: '100%',
-    marginTop: 10,
+    marginVertical: 10,
+  },
+  tab: {paddingVertical: 10, paddingHorizontal: 20},
+  activeTab: {borderBottomWidth: 2, borderBottomColor: '#7C3AED'},
+  tabText: {fontSize: 16, fontWeight: '600'},
+  tabContent: {padding: 20},
+  privateContainer: {flexDirection: 'row', alignItems: 'center', marginTop: 10},
+  privateText: {marginLeft: 5, fontSize: 16, color: '#666'},
+  vipBadge: {flexDirection: 'row', alignItems: 'center', marginTop: 5},
+  vipText: {color: 'gold', fontWeight: 'bold', marginLeft: 5},
+  cardTitle: {fontSize: 18, fontWeight: 'bold', marginBottom: 10},
+  interestsContainer: {flexDirection: 'row', flexWrap: 'wrap'},
+  interestTag: {
+    backgroundColor: '#E0E0E0',
+    padding: 5,
+    borderRadius: 5,
+    marginRight: 5,
   },
   followButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 5,
   },
   unfollowButton: {
-    backgroundColor: 'red',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#E63946',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 5,
   },
   followButtonText: {
-    color: 'white',
-    fontSize: 15,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   messageButton: {
-    backgroundColor: '#28a745',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#1E88E5',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginLeft: 5,
   },
   messageButtonText: {
-    color: 'white',
-    fontSize: 15,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 15,
+  },
+  profileCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  aboutText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 22,
+  },
+  interestTag: {
+    backgroundColor: '#EFEFEF',
+    padding: 8,
+    borderRadius: 15,
+    margin: 5,
+  },
+  eventCard: {
+    backgroundColor: '#F8F9FA',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
   },
 });
 

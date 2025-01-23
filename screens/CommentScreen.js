@@ -99,7 +99,7 @@ const CommentScreen = () => {
 
       <View style={styles.commentBox}>
         <TextInput
-          placeholder="Yorum yaz..."
+          placeholder="Write a comment..."
           value={commentText}
           onChangeText={setCommentText}
           style={styles.commentInput}
