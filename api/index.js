@@ -218,7 +218,7 @@ app.get('/user/:userId', async (req, res) => {
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
-        'firstName lastName username image subscriptionType aboutMe role events vipBadge followers stripeSubscriptionId following isPrivate',
+        'firstName lastName username email image subscriptionType aboutMe role events vipBadge followers stripeSubscriptionId following isPrivate',
       );
 
     if (!user) {
@@ -2118,9 +2118,9 @@ app.put('/user/:userId/privacy', async (req, res) => {
 app.post('/beorganizator', async (req, res) => {
   console.log('Request received:', req.body);
 
-  const {firstName, lastName, reason} = req.body;
+  const {firstName, email, reason} = req.body;
 
-  if (!firstName || !lastName || !reason) {
+  if (!firstName || !email || !reason) {
     return res
       .status(400)
       .json({message: 'Please fill out all required fields.'});

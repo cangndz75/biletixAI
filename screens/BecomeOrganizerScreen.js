@@ -23,6 +23,7 @@ const BecomeOrganizerScreen = () => {
   const {userId} = useContext(AuthContext);
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     reason: '',
   });
@@ -45,6 +46,7 @@ const BecomeOrganizerScreen = () => {
         } else {
           setFormData({
             fullName: `${user.firstName} ${user.lastName}`,
+            email: user.email,
             phone: '',
             reason: '',
           });
@@ -65,7 +67,7 @@ const BecomeOrganizerScreen = () => {
   };
 
   const handleSubmit = async () => {
-    const {fullName, phone, reason} = formData;
+    const {fullName, email, phone, reason} = formData;
 
     if (!reason) {
       Alert.alert(
@@ -82,16 +84,15 @@ const BecomeOrganizerScreen = () => {
         `${API_BASE_URL}/beorganizator`,
         {
           firstName: fullName.split(' ')[0],
-          lastName: fullName.split(' ').slice(1).join(' '),
+          email,
           phone,
           reason,
         },
         {headers: {Authorization: `Bearer ${token}`}},
       );
 
-      Alert.alert('Success', 'You are now an organizer!');
-      await AsyncStorage.removeItem('token');
-      navigation.navigate('LoginScreen');
+      Alert.alert('Success', 'Your application has been submitted for review.');
+      navigation.navigate('HomeScreen');
     } catch (error) {
       console.error('Error submitting form:', error);
       Alert.alert('Error', 'Failed to submit the form. Please try again.');
@@ -130,6 +131,16 @@ const BecomeOrganizerScreen = () => {
             style={[styles.input, styles.disabledInput]}
             placeholder="Full Name"
             value={formData.fullName}
+            editable={false}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail" size={24} color="#666" />
+          <TextInput
+            style={[styles.input, styles.disabledInput]}
+            placeholder="Email"
+            value={formData.email || ''} 
             editable={false}
           />
         </View>
