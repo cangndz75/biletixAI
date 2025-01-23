@@ -66,7 +66,7 @@ const AdminCreateScreen = () => {
   useEffect(() => {
     if (route.params?.taggedVenue) {
       setTaggedVenue(route.params.taggedVenue);
-      setLocation(route.params.taggedVenue); 
+      setLocation(route.params.taggedVenue);
     }
   }, [route.params]);
 

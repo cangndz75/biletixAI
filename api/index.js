@@ -524,16 +524,11 @@ app.post('/createevent', async (req, res) => {
       });
     }
 
-    const venue = await Venue.findById(location);
-    if (!venue) {
-      return res.status(404).json({message: 'Venue not found'});
-    }
-
     const newEvent = new Event({
       title,
       description,
       tags: Array.isArray(tags) ? tags : [],
-      location: venue._id,
+      location,
       date,
       time,
       eventType,
@@ -545,9 +540,6 @@ app.post('/createevent', async (req, res) => {
     });
 
     await newEvent.save();
-
-    venue.eventsAvailable.push(newEvent._id);
-    await venue.save();
 
     user.remainingEventLimit -= 1;
     await user.save();
@@ -561,7 +553,6 @@ app.post('/createevent', async (req, res) => {
       .json({message: 'Failed to create event.', error: error.message});
   }
 });
-
 app.get('/events', async (req, res) => {
   const {organizerId, role, userId} = req.query;
 
@@ -1242,7 +1233,7 @@ app.get('/venues/:venueId/events', async (req, res) => {
   try {
     const venue = await Venue.findById(venueId).populate({
       path: 'eventsAvailable',
-      select: 'title eventType price location date time images',
+      select: 'title eventType price location date time image',
     });
 
     if (!venue) {
@@ -1257,9 +1248,7 @@ app.get('/venues/:venueId/events', async (req, res) => {
       location: event.location || 'Unknown Location',
       date: event.date || 'TBA',
       time: event.time || 'TBA',
-      image: event.images.length
-        ? event.images[0]
-        : 'https://via.placeholder.com/150',
+      image: event.image || 'https://via.placeholder.com/150',
     }));
 
     res.status(200).json(events);
