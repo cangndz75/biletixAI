@@ -350,7 +350,7 @@ const EventSetUpScreen = () => {
   );
 
   const renderReviewSection = () => (
-    <View style={{marginVertical: 10}}>
+    <View style={{marginVertical: 10, paddingHorizontal: 16}}>
       <Animated.View entering={FadeInUp} exiting={FadeOutDown}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ReviewScreen', {eventId})}
@@ -365,33 +365,65 @@ const EventSetUpScreen = () => {
         </TouchableOpacity>
       </Animated.View>
 
-      <Text style={{fontWeight: 'bold', fontSize: 18}}>Reviews</Text>
-
-      {renderRatingStars()}
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Write your review"
-          value={comment}
-          onChangeText={setComment}
-          style={styles.textInput}
-        />
-        <TouchableOpacity onPress={submitReview}>
-          <Ionicons name="send" size={24} color="blue" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={{height: 1, backgroundColor: '#ddd', marginVertical: 10}} />
-      <Text style={{fontSize: 16, fontWeight: 'bold', marginBottom: 5}}>
-        User Reviews
+      <Text style={{fontWeight: 'bold', fontSize: 18, marginBottom: 10}}>
+        Reviews
       </Text>
 
-      <FlatList
-        data={reviews.slice(0, 2)}
-        keyExtractor={(_, index) => index.toString()}
-        renderItem={renderReviewItem}
-        style={styles.reviewList}
-      />
+      {/* {renderRatingStars()} */}
+
+      <TouchableOpacity
+        style={styles.reviewButton}
+        onPress={() => navigation.navigate('ReviewScreen', {eventId})}>
+        <Ionicons
+          name="heart"
+          size={20}
+          color="white"
+          style={{marginRight: 8}}
+        />
+        <Text style={styles.reviewButtonText}>Leave a review</Text>
+      </TouchableOpacity>
+
+      <View style={{height: 1, backgroundColor: '#ddd', marginVertical: 10}} />
+
+      <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        {reviews.slice(-3).map((review, index) => (
+          <Animated.View
+            key={index}
+            entering={FadeInUp}
+            exiting={FadeOutDown}
+            style={styles.reviewCard}>
+            <View style={styles.reviewHeader}>
+              <Image
+                source={{
+                  uri: review.userImage || 'https://via.placeholder.com/50',
+                }}
+                style={styles.userImage}
+              />
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{review.userName}</Text>
+                <Text style={styles.reviewDate}>
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.ratingContainer}>
+              {Array(5)
+                .fill()
+                .map((_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < (review.rating || 0) ? 'star' : 'star-outline'}
+                    size={18}
+                    color="#2ECC71"
+                  />
+                ))}
+            </View>
+
+            <Text style={styles.reviewText}>{review.review}</Text>
+          </Animated.View>
+        ))}
+      </ScrollView>
     </View>
   );
 
@@ -602,12 +634,11 @@ const EventSetUpScreen = () => {
                   </Text>
                 </TouchableOpacity>
               )}
+              {renderActionButton()}
             </View>
           ) : (
             renderReviewSection()
           )}
-
-          {renderActionButton()}
 
           <BottomModal
             visible={modalVisible}
@@ -754,4 +785,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   textInput: {flex: 1, height: 40, paddingHorizontal: 10},
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  reviewButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

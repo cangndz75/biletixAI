@@ -218,7 +218,7 @@ app.get('/user/:userId', async (req, res) => {
       .populate('followers', 'firstName lastName username image')
       .populate('following', 'firstName lastName username image')
       .select(
-        'firstName lastName username email image subscriptionType aboutMe role events vipBadge followers stripeSubscriptionId following isPrivate',
+        'firstName lastName username email image subscriptionType aboutMe role events vipBadge followers stripeSubscriptionId following isPrivate remainingEventLimit',
       );
 
     if (!user) {

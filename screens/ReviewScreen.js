@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,29 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import Animated, {FadeInUp, FadeOutDown} from 'react-native-reanimated';
+import {BottomModal, ModalContent, SlideAnimation} from 'react-native-modals';
+import {TextInput} from 'react-native-paper';
+import {AuthContext} from '../AuthContext';
+import {useFocusEffect} from '@react-navigation/native';
 
 const ReviewScreen = ({route, navigation}) => {
+  const {userId} = useContext(AuthContext);
   const eventId = route?.params?.eventId;
   const [reviews, setReviews] = useState([]);
-  const [averageScore, setAverageScore] = useState(null); // Başlangıçta null yapıldı
+  const [averageScore, setAverageScore] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('All time');
-  const [loading, setLoading] = useState(true); // Loading durumu eklendi
+  const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [comment, setComment] = useState('');
+  const [rating, setRating] = useState(5);
+  const [userReview, setUserReview] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchReviews();
+    }, [eventId, userId]),
+  );
   useEffect(() => {
     if (eventId) {
       fetchReviews();
@@ -36,10 +51,15 @@ const ReviewScreen = ({route, navigation}) => {
       );
       setReviews(response.data || []);
       calculateAverageScore(response.data);
+
+      const userOwnReview = response.data.find(
+        review => review.userId === userId,
+      );
+      setUserReview(userOwnReview);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch reviews.');
     } finally {
-      setLoading(false); // Yükleme tamamlandıktan sonra loading kapanacak
+      setLoading(false);
     }
   };
 
@@ -53,6 +73,45 @@ const ReviewScreen = ({route, navigation}) => {
       0,
     );
     setAverageScore(totalScore / reviews.length);
+  };
+
+  const submitReview = async () => {
+    if (!comment.trim()) {
+      Alert.alert('Error', 'Comment cannot be empty.');
+      return;
+    }
+    try {
+      if (userReview) {
+        await axios.put(
+          `https://biletixai.onrender.com/events/${eventId}/reviews/${userReview._id}`,
+          {userId, comment, rating},
+          {headers: {'Content-Type': 'application/json'}},
+        );
+      } else {
+        await axios.post(
+          `https://biletixai.onrender.com/events/${eventId}/reviews`,
+          {userId, comment, rating},
+          {headers: {'Content-Type': 'application/json'}},
+        );
+      }
+      setModalVisible(false);
+      fetchReviews();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit review.');
+    }
+  };
+
+  const deleteReview = async () => {
+    try {
+      await axios.delete(
+        `https://biletixai.onrender.com/events/${eventId}/reviews/${userReview._id}`,
+      );
+      setUserReview(null);
+      fetchReviews();
+      Alert.alert('Success', 'Your review has been deleted.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete review.');
+    }
   };
 
   const renderReviewItem = ({item}) => (
@@ -92,7 +151,6 @@ const ReviewScreen = ({route, navigation}) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Ionicons
           name="arrow-back"
@@ -102,7 +160,6 @@ const ReviewScreen = ({route, navigation}) => {
         <Text style={styles.headerTitle}>Reviews</Text>
       </View>
 
-      {/* Eğer loading true ise, yükleniyor göstergesi */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0000ff" />
@@ -110,7 +167,6 @@ const ReviewScreen = ({route, navigation}) => {
         </View>
       ) : (
         <>
-          {/* Ortalama Puan */}
           <View style={styles.averageScoreContainer}>
             <Animated.Text entering={FadeInUp} style={styles.averageScore}>
               {averageScore !== null ? averageScore.toFixed(1) : '...'}
@@ -130,8 +186,6 @@ const ReviewScreen = ({route, navigation}) => {
                 ))}
             </View>
           </View>
-
-          {/* Filtreleme Seçenekleri */}
           <View style={styles.filterContainer}>
             {['All time', 'This month', 'This year', 'This week'].map(
               filter => (
@@ -153,14 +207,74 @@ const ReviewScreen = ({route, navigation}) => {
               ),
             )}
           </View>
-
-          {/* Yorum Listesi */}
           <FlatList
             data={reviews}
             keyExtractor={(_, index) => index.toString()}
             renderItem={renderReviewItem}
             style={styles.reviewList}
           />
+          {!userReview && (
+            <TouchableOpacity
+              style={styles.floatingButton}
+              onPress={() => setModalVisible(true)}>
+              <Ionicons name="add" size={28} color="white" />
+            </TouchableOpacity>
+          )}
+
+          <BottomModal
+            visible={modalVisible}
+            onTouchOutside={() => setModalVisible(false)}
+            modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}>
+            <ModalContent style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Submit a Comment</Text>
+              <Text style={styles.modalSubtitle}>How was your experience?</Text>
+
+              <View style={styles.ratingContainer}>
+                {Array(5)
+                  .fill()
+                  .map((_, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => setRating(index + 1)}>
+                      <Ionicons
+                        name={index < rating ? 'star' : 'star-outline'}
+                        size={32}
+                        color="#7C3AED"
+                      />
+                    </TouchableOpacity>
+                  ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Write Your Review</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  value={comment}
+                  onChangeText={setComment}
+                  placeholder="Share your experience..."
+                  style={styles.textInput}
+                  multiline
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, {backgroundColor: '#E0E0E0'}]}
+                  onPress={() => setModalVisible(false)}>
+                  <Text style={{color: 'black', fontWeight: '600'}}>
+                    Maybe Later
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={submitReview}>
+                  <Text style={{color: 'white', fontWeight: '600'}}>
+                    Submit
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ModalContent>
+          </BottomModal>
         </>
       )}
     </View>
@@ -211,6 +325,75 @@ const styles = StyleSheet.create({
   reviewDate: {fontSize: 12, color: '#888'},
   ratingContainer: {flexDirection: 'row', marginBottom: 5},
   reviewText: {fontSize: 14, color: '#333'},
+  floatingButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#7C3AED',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  modalContent: {
+    width: '100%',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 20,
+    backgroundColor: 'white',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  inputContainer: {
+    backgroundColor: '#F3F3F3',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+  },
+  textInput: {
+    minHeight: 80,
+    fontSize: 14,
+    color: '#333',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: '#7C3AED',
+  },
 });
 
 export default ReviewScreen;

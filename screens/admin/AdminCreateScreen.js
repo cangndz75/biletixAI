@@ -461,8 +461,16 @@ const AdminCreateScreen = () => {
           />
         )}
 
-        <TouchableOpacity onPress={createEvent} style={createButtonStyle}>
-          <Text style={buttonTextStyle}>Create Event</Text>
+        <TouchableOpacity
+          onPress={
+            remainingEventLimit === 0
+              ? () => navigation.navigate('OrganizerSubscription')
+              : createEvent
+          }
+          style={createButtonStyle}>
+          <Text style={buttonTextStyle}>
+            {remainingEventLimit === 0 ? 'Be Plus' : 'Create Event'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

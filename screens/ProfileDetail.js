@@ -34,6 +34,7 @@ const ProfileDetailScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [loading, setLoading] = useState(true);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   // useEffect(() => {
   //   if (!userId) {
@@ -108,6 +109,19 @@ const ProfileDetailScreen = () => {
       navigation.navigate('OrganizerSubscribe', {userId});
     } else {
       navigation.navigate('UserSubscribe', {userId});
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
+    } catch (error) {
+      console.error('Error during logout:', error.message);
+      Alert.alert('Error', 'Failed to log out.');
     }
   };
 
@@ -291,8 +305,8 @@ const ProfileDetailScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.optionContainer}
-          onPress={clearAuthToken}>
+          onPress={() => setLogoutModalVisible(true)}
+          style={styles.optionContainer}>
           <View style={styles.iconContainer}>
             <Ionicons name="log-out-outline" size={24} color="red" />
           </View>
@@ -325,6 +339,52 @@ const ProfileDetailScreen = () => {
               style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={logoutModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setLogoutModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: 'red',
+                marginBottom: 10,
+              }}>
+              Logout
+            </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                color: '#333',
+                textAlign: 'center',
+                marginBottom: 20,
+              }}>
+              Are you sure you want to log out?
+            </Text>
+            <View
+              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+              <TouchableOpacity
+                onPress={() => setLogoutModalVisible(false)}
+                style={[styles.button, {backgroundColor: '#ddd'}]}>
+                <Text style={{fontSize: 16, fontWeight: 'bold', color: '#555'}}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={[styles.button, {backgroundColor: '#6200EE'}]}>
+                <Text style={{fontSize: 16, fontWeight: 'bold', color: '#fff'}}>
+                  Yes, Logout
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -468,10 +528,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
+    width: '85%',
     backgroundColor: 'white',
-    padding: 25,
-    borderRadius: 10,
+    padding: 20,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
   modalTitle: {
     fontSize: 22,
