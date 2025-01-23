@@ -2159,7 +2159,7 @@ app.get('/pending-organizers', async (req, res) => {
   try {
     const pendingUsers = await User.find(
       {'organizerApplication.status': 'pending'},
-      'firstName lastName organizerApplication',
+      'firstName lastName image organizerApplication reason appliedAt',
     );
     res.json(pendingUsers);
   } catch (error) {
@@ -2180,7 +2180,6 @@ app.post('/review-organizer', async (req, res) => {
 
     if (decision === 'approved') {
       user.role = 'organizer';
-      user.vipBadge = true;
       user.organizerApplication.status = 'approved';
     } else if (decision === 'rejected') {
       user.organizerApplication.status = 'rejected';

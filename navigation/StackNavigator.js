@@ -55,6 +55,7 @@ import MyBookings from '../screens/MyBookings';
 import Faqs from '../screens/Faqs';
 import ETicketScreen from '../screens/ETicketScreen';
 import StaffQrScreen from '../screens/StaffQrScreen';
+import RequestForOrganizer from '../screens/super-admin/RequestForOrganizer';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -388,6 +389,11 @@ const MainStack = () => (
     <Stack.Screen
       name="HomeScreen"
       component={HomeScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="RequestForOrganizer"
+      component={RequestForOrganizer}
       options={{headerShown: false}}
     />
   </Stack.Navigator>

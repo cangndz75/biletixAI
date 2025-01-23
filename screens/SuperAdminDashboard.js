@@ -83,15 +83,24 @@ const SuperAdminDashboard = ({navigation}) => {
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('AddStaffScreen')}>
-        <Ionicons name="add-circle" size={24} color="white" />
+        <Ionicons name="person-add" size={24} color="white" />
         <Text style={styles.addButtonText}>Add New Staff</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.manageButton}
         onPress={() => navigation.navigate('ManageOrganizersScreen')}>
-        <Ionicons name="cog" size={24} color="white" />
-        <Text style={styles.manageButtonText}>Manage Organizers</Text>
+        <Ionicons name="people" size={24} color="white" />
+        <Text style={styles.manageButtonText}>See Organizers</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.manageButton}
+        onPress={() => navigation.navigate('RequestForOrganizer')}>
+        <Ionicons name="clipboard" size={24} color="white" />
+        <Text style={styles.manageButtonText}>
+          Manage Requests to Become Organizer
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
