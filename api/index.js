@@ -507,12 +507,26 @@ app.post('/createevent', async (req, res) => {
       totalParticipants,
       organizer,
     });
-    return res.status(400).json({
-      message: 'All required fields must be provided.',
-    });
+    return res
+      .status(400)
+      .json({message: 'All required fields must be provided.'});
   }
 
   try {
+    const user = await User.findById(organizer);
+    if (!user) {
+      return res.status(404).json({message: 'Organizer not found'});
+    }
+
+    if (user.remainingEventLimit === 0) {
+      return res
+        .status(403)
+        .json({
+          message:
+            'You have reached your event limit. Upgrade to OrganizerPlus.',
+        });
+    }
+
     const newEvent = new Event({
       title,
       description,
@@ -523,12 +537,16 @@ app.post('/createevent', async (req, res) => {
       eventType,
       totalParticipants: Number(totalParticipants),
       organizer,
-      images: Array.isArray(images) ? images : [],
+      images: Array.isArray(images) ? images : [], 
       isPaid: Boolean(isPaid),
       price: isPaid ? Number(price) || 0 : 0,
     });
 
     await newEvent.save();
+
+    user.remainingEventLimit -= 1;
+    await user.save();
+
     console.log('✅ Event created successfully:', newEvent);
     res.status(201).json(newEvent);
   } catch (error) {

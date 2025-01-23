@@ -38,13 +38,31 @@ const AdminCreateScreen = () => {
   const [times] = useState(['10:00 AM', '12:00 PM', '02:00 PM', '04:00 PM']);
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState('');
+  const [remainingEventLimit, setRemainingEventLimit] = useState(0);
 
   const navigation = useNavigation();
   const {userId} = useContext(AuthContext);
   const route = useRoute();
 
   const eventTypes = ['Concert', 'Football', 'Theater', 'Dance', 'Other'];
-
+  const CLOUDINARY_URL =
+    'https://api.cloudinary.com/v1_1/dhe3yon5d/image/upload';
+  const UPLOAD_PRESET = 'eventmate';
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const response = await axios.get(
+          `https://biletixai.onrender.com/user/${userId}`,
+        );
+        if (response.data) {
+          setRemainingEventLimit(response.data.remainingEventLimit);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    fetchUserDetails();
+  }, [userId]);
   useEffect(() => {
     if (route.params?.taggedVenue) {
       setTaggedVenue(route.params.taggedVenue);
@@ -129,6 +147,14 @@ const AdminCreateScreen = () => {
   console.log('Participants:', noOfParticipants);
 
   const createEvent = async () => {
+    if (remainingEventLimit === 0) {
+      Alert.alert(
+        'Upgrade Required',
+        'You have reached your event limit. Upgrade to OrganizerPlus.',
+      );
+      return;
+    }
+
     if (
       !event ||
       !selectedType ||
@@ -141,43 +167,66 @@ const AdminCreateScreen = () => {
       return;
     }
 
-    const eventData = {
-      title: event,
-      eventType: selectedType.toLowerCase(),
-      location: taggedVenue || location,
-      date,
-      time: timeInterval,
-      totalParticipants: parseInt(noOfParticipants, 10),
-      description,
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-      images: images.map(img => img.uri || img),
-      isPaid,
-      price: isPaid ? Number(price) || 0 : 0,
-      organizer: userId || '659ae6fbc65b3f001c8eae9e', 
-    };
-
     try {
-      console.log('Sending Event Data:', JSON.stringify(eventData, null, 2));
+      let uploadedImageUrls = [];
+
+      if (images.length > 0) {
+        for (const img of images) {
+          try {
+            const formData = new FormData();
+            formData.append('file', {
+              uri: img,
+              type: 'image/jpeg',
+              name: `event_${Date.now()}.jpg`,
+            });
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            const uploadResponse = await axios.post(CLOUDINARY_URL, formData, {
+              headers: {'Content-Type': 'multipart/form-data'},
+            });
+
+            if (uploadResponse.data.secure_url) {
+              uploadedImageUrls.push(uploadResponse.data.secure_url);
+            }
+          } catch (uploadError) {
+            console.error('Cloudinary Upload Error:', uploadError);
+          }
+        }
+      }
+
+      const eventData = {
+        title: event,
+        eventType: selectedType.toLowerCase(),
+        location: taggedVenue || location,
+        date,
+        time: timeInterval,
+        totalParticipants: parseInt(noOfParticipants, 10),
+        description,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+        images: uploadedImageUrls,
+        isPaid,
+        price: isPaid ? Number(price) || 0 : 0,
+        organizer: userId,
+      };
+
+      console.log('📤 Sending Event Data:', JSON.stringify(eventData, null, 2));
 
       const response = await axios.post(
         'https://biletixai.onrender.com/createevent',
         eventData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
+        {headers: {'Content-Type': 'application/json'}},
       );
 
       if (response.status === 201) {
         Alert.alert('Success', 'Event created successfully!');
+        setRemainingEventLimit(prev => prev - 1);
         navigation.goBack();
       } else {
         Alert.alert('Error', 'Failed to create event. Please try again.');
       }
     } catch (error) {
       console.error(
-        'Event creation error:',
+        'Event Creation Error:',
         error.response?.data || error.message,
       );
       Alert.alert(
