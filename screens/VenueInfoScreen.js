@@ -1,20 +1,21 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
   Image,
   FlatList,
-  Pressable,
   TextInput,
   SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import StarRating from 'react-native-star-rating-widget';
 import axios from 'axios';
+import {AuthContext} from '../AuthContext';
 
 const {width} = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -22,6 +23,7 @@ const ITEM_WIDTH = (width - 48) / 2;
 const VenueInfoScreen = () => {
   const route = useRoute();
   const {venueId} = route.params;
+  const {userId} = useContext(AuthContext);
   const [venue, setVenue] = useState(null);
   const [events, setEvents] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -34,17 +36,17 @@ const VenueInfoScreen = () => {
     const fetchVenueAndEvents = async () => {
       try {
         const venueResponse = await axios.get(
-          `http://10.0.2.2:8000/venues/${venueId}`,
+          `https://biletixai.onrender.com/venues/${venueId}`,
         );
         setVenue(venueResponse.data);
 
         const eventsResponse = await axios.get(
-          `http://10.0.2.2:8000/venues/${venueId}/events`,
+          `https://biletixai.onrender.com/venues/${venueId}/events`,
         );
         setEvents(eventsResponse.data);
 
         const reviewsResponse = await axios.get(
-          `http://10.0.2.2:8000/venues/${venueId}/reviews`,
+          `https://biletixai.onrender.com/venues/${venueId}/reviews`,
         );
         setReviews(reviewsResponse.data);
       } catch (error) {
@@ -61,10 +63,14 @@ const VenueInfoScreen = () => {
     if (!comment.trim() || rating === 0) return;
     try {
       const response = await axios.post(
-        `http://10.0.2.2:8000/venues/${venueId}/comments`,
-        {text: comment, rating},
+        `https://biletixai.onrender.com/venues/${venueId}/reviews`,
+        {
+          userId,
+          rating,
+          comment,
+        },
       );
-      setReviews(prev => [...prev, response.data.comment]);
+      setReviews(prev => [...prev, response.data.review]);
       setComment('');
       setRating(0);
     } catch (error) {
@@ -119,6 +125,9 @@ const VenueInfoScreen = () => {
               backgroundColor: '#f1f1f1',
               borderRadius: 8,
             }}>
+            <Text style={{fontWeight: 'bold'}}>
+              {review.userName || 'Anonymous'}
+            </Text>
             <StarRating
               rating={review.rating}
               onChange={() => {}}
@@ -126,6 +135,9 @@ const VenueInfoScreen = () => {
               readonly
             />
             <Text>{review.comment}</Text>
+            <Text style={{color: 'gray', fontSize: 12}}>
+              {new Date(review.reviewedAt).toLocaleDateString()}
+            </Text>
           </View>
         ))
       ) : (
@@ -160,58 +172,65 @@ const VenueInfoScreen = () => {
     </View>
   );
 
-  const renderHeader = () => (
-    <>
-      <Image
-        style={{width: '100%', height: 250, resizeMode: 'cover'}}
-        source={{uri: venue.image}}
-      />
-      <View style={{padding: 16, backgroundColor: '#fff', borderRadius: 20}}>
-        <Text style={{fontSize: 24, fontWeight: 'bold'}}>{venue.name}</Text>
-        <View style={{flexDirection: 'row', marginVertical: 5}}>
-          <MaterialCommunityIcons
-            name="map-marker-outline"
-            size={24}
-            color="#555"
-          />
-          <Text style={{marginLeft: 8}}>{venue.location}</Text>
-        </View>
-        <View style={{flexDirection: 'row', marginVertical: 5}}>
-          <MaterialCommunityIcons
-            name="account-outline"
-            size={24}
-            color="#555"
-          />
-          <Text style={{marginLeft: 8}}>
-            Organized by: {venue.organizer || 'Unknown'}
-          </Text>
-        </View>
+  const renderHeader = () => {
+    if (!venue) return null;
 
-        <View style={{flexDirection: 'row', marginTop: 10}}>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              padding: 10,
-              borderBottomWidth: selectedTab === 'Events' ? 2 : 0,
-            }}
-            onPress={() => setSelectedTab('Events')}>
-            <Text>Events</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              padding: 10,
-              borderBottomWidth: selectedTab === 'Reviews' ? 2 : 0,
-            }}
-            onPress={() => setSelectedTab('Reviews')}>
-            <Text>Reviews</Text>
-          </TouchableOpacity>
+    return (
+      <>
+        <Image
+          style={{width: '100%', height: 250, resizeMode: 'cover'}}
+          source={{uri: venue.image || 'https://via.placeholder.com/250'}}
+        />
+        <View style={{padding: 16, backgroundColor: '#fff', borderRadius: 20}}>
+          <Text style={{fontSize: 24, fontWeight: 'bold'}}>
+            {venue.name || 'Unknown Venue'}
+          </Text>
+          <View style={{flexDirection: 'row', marginVertical: 5}}>
+            <MaterialCommunityIcons
+              name="map-marker-outline"
+              size={24}
+              color="#555"
+            />
+            <Text style={{marginLeft: 8}}>
+              {venue.location || 'Unknown Location'}
+            </Text>
+          </View>
+          <View style={{flexDirection: 'row', marginVertical: 5}}>
+            <MaterialCommunityIcons
+              name="account-outline"
+              size={24}
+              color="#555"
+            />
+            <Text style={{marginLeft: 8}}>
+              Organized by: {venue.organizer || 'Unknown'}
+            </Text>
+          </View>
+          <View style={{flexDirection: 'row', marginTop: 10}}>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                padding: 10,
+                borderBottomWidth: selectedTab === 'Events' ? 2 : 0,
+              }}
+              onPress={() => setSelectedTab('Events')}>
+              <Text>Events</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                padding: 10,
+                borderBottomWidth: selectedTab === 'Reviews' ? 2 : 0,
+              }}
+              onPress={() => setSelectedTab('Reviews')}>
+              <Text>Reviews</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </>
-  );
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#f5f5f5'}}>

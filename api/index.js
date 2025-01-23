@@ -519,30 +519,35 @@ app.post('/createevent', async (req, res) => {
     }
 
     if (user.remainingEventLimit === 0) {
-      return res
-        .status(403)
-        .json({
-          message:
-            'You have reached your event limit. Upgrade to OrganizerPlus.',
-        });
+      return res.status(403).json({
+        message: 'You have reached your event limit. Upgrade to OrganizerPlus.',
+      });
+    }
+
+    const venue = await Venue.findById(location);
+    if (!venue) {
+      return res.status(404).json({message: 'Venue not found'});
     }
 
     const newEvent = new Event({
       title,
       description,
       tags: Array.isArray(tags) ? tags : [],
-      location,
+      location: venue._id,
       date,
       time,
       eventType,
       totalParticipants: Number(totalParticipants),
       organizer,
-      images: Array.isArray(images) ? images : [], 
+      images: Array.isArray(images) ? images : [],
       isPaid: Boolean(isPaid),
       price: isPaid ? Number(price) || 0 : 0,
     });
 
     await newEvent.save();
+
+    venue.eventsAvailable.push(newEvent._id);
+    await venue.save();
 
     user.remainingEventLimit -= 1;
     await user.save();
@@ -1214,7 +1219,13 @@ app.get('/venues/:venueId', async (req, res) => {
       return res.status(404).json({message: 'Venue not found'});
     }
 
-    res.status(200).json(venue);
+    const venueData = {
+      ...venue.toObject(),
+      image: venue.image || 'https://via.placeholder.com/250',
+      eventsAvailable: venue.eventsAvailable || [],
+    };
+
+    res.status(200).json(venueData);
   } catch (error) {
     console.error('Error fetching venue:', error.message);
     res.status(500).json({message: 'Internal Server Error'});
@@ -1231,20 +1242,24 @@ app.get('/venues/:venueId/events', async (req, res) => {
   try {
     const venue = await Venue.findById(venueId).populate({
       path: 'eventsAvailable',
-      select: 'title eventType price location date time image',
+      select: 'title eventType price location date time images',
     });
 
-    if (!venue) return res.status(404).json({message: 'Venue not found'});
+    if (!venue) {
+      return res.status(404).json({message: 'Venue not found'});
+    }
 
-    const events = venue.eventsAvailable.map(event => ({
+    const events = (venue.eventsAvailable || []).map(event => ({
       _id: event._id,
       title: event.title,
       eventType: event.eventType,
-      price: event.price,
-      location: event.location,
-      date: event.date,
-      time: event.time,
-      image: event.image || 'https://via.placeholder.com/150',
+      price: event.price || 0,
+      location: event.location || 'Unknown Location',
+      date: event.date || 'TBA',
+      time: event.time || 'TBA',
+      image: event.images.length
+        ? event.images[0]
+        : 'https://via.placeholder.com/150',
     }));
 
     res.status(200).json(events);
@@ -1404,6 +1419,38 @@ app.get('/user/:userId/interests', async (req, res) => {
   } catch (error) {
     console.error('Error fetching interests:', error);
     res.status(500).json({message: 'Internal Server Error'});
+  }
+});
+
+app.get('/venues/:venueId/reviews', async (req, res) => {
+  const {venueId} = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(venueId)) {
+    return res.status(400).json({message: 'Invalid Venue ID'});
+  }
+
+  try {
+    const venue = await Venue.findById(venueId).select('reviews').populate({
+      path: 'reviews.userId',
+      select: 'name',
+    });
+
+    if (!venue) {
+      return res.status(404).json({message: 'Venue not found'});
+    }
+
+    const reviews = (venue.reviews || []).map(review => ({
+      userId: review.userId?._id,
+      userName: review.userId?.name || 'Anonymous',
+      rating: review.rating,
+      comment: review.comment || 'No comment',
+      reviewedAt: review.reviewedAt,
+    }));
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error('Error fetching reviews:', error.message);
+    res.status(500).json({message: `Error fetching reviews: ${error.message}`});
   }
 });
 

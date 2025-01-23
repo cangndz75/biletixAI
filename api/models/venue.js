@@ -20,6 +20,7 @@ const venueSchema = new Schema({
       reviewedAt: {type: Date, default: Date.now},
     },
   ],
+  eventsAvailable: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
 });
 
 const Venue = mongoose.model('Venue', venueSchema);
