@@ -21,7 +21,7 @@ const axios = require('axios');
 const refreshTokens = [];
 const path = require('path');
 const {body, validationResult} = require('express-validator');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 console.log('Stripe API Key:', process.env.STRIPE_SECRET_KEY);
 console.log('Environment:', process.env.NODE_ENV);
@@ -138,9 +138,17 @@ app.post('/register', async (req, res) => {
       communityId,
     } = req.body;
 
+    const existingUser = await User.findOne({email});
+    if (existingUser) {
+      return res.status(400).json({message: 'Email is already in use.'});
+    }
+
+    const salt = await bcrypt.genSalt(10); 
+    const hashedPassword = await bcrypt.hash(password, salt); 
+
     const newUser = new User({
       email,
-      password,
+      password: hashedPassword, 
       firstName,
       lastName,
       role,
