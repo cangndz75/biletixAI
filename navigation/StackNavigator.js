@@ -56,6 +56,7 @@ import Faqs from '../screens/Faqs';
 import ETicketScreen from '../screens/ETicketScreen';
 import StaffQrScreen from '../screens/StaffQrScreen';
 import RequestForOrganizer from '../screens/super-admin/RequestForOrganizer';
+import StartScreen from '../screens/StartScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -396,16 +397,21 @@ const MainStack = () => (
       component={RequestForOrganizer}
       options={{headerShown: false}}
     />
+    <Stack.Screen
+      name="StartScreen"
+      component={StartScreen}
+      options={{headerShown: false}}
+    />
   </Stack.Navigator>
 );
 
 const AuthStack = () => (
   <Stack.Navigator>
-    {/* <Stack.Screen
+    <Stack.Screen
       name="Start"
       component={StartScreen}
       options={{headerShown: false}}
-    /> */}
+    />
     <Stack.Screen
       name="Login"
       component={LoginScreen}

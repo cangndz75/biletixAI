@@ -36,15 +36,15 @@ const ProfileDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
-  // useEffect(() => {
-  //   if (!userId) {
-  //     console.warn('⚠️ userId is null, redirecting to Login screen...');
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [{name: 'Login'}],
-  //     });
-  //   }
-  // }, [userId]);
+  useEffect(() => {
+    if (!userId) {
+      console.warn('⚠️ userId is null, redirecting to Login screen...');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'StartScreen'}],
+      });
+    }
+  }, [userId]);
 
   const fetchUser = async () => {
     if (!userId) {
