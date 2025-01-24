@@ -178,11 +178,11 @@ app.post('/register', async (req, res) => {
 
 app.post('/login', async (req, res) => {
   try {
-    const {email, password} = req.body;
-    const user = await User.findOne({email});
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    if (!user || user.password !== password) {
-      return res.status(401).json({message: 'Invalid credentials'});
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     res.status(200).json({
@@ -198,7 +198,8 @@ app.post('/login', async (req, res) => {
       following: user.following,
     });
   } catch (error) {
-    res.status(500).json({message: 'Internal Server Error'});
+    console.error('Login Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
