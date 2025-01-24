@@ -428,11 +428,7 @@ const AuthStack = () => (
 const StackNavigator = () => {
   const {role} = useContext(AuthContext);
 
-  return (
-    <NavigationContainer>
-      {role ? <MainStack /> : <AuthStack />}
-    </NavigationContainer>
-  );
+  return role ? <MainStack /> : <AuthStack />;
 };
 
 export default StackNavigator;

@@ -5,6 +5,7 @@
  * @format
  */
 
+import 'react-native-gesture-handler';
 import React from 'react';
 import {
   SafeAreaView,
@@ -24,12 +25,13 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import StackNavigator from './navigation/StackNavigator';
 import {AuthProvider} from './AuthContext';
 import {ModalPortal} from 'react-native-modals';
-import { EventProvider } from './EventContext';
-import { SocketProvider } from './SocketContext';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {EventProvider} from './EventContext';
+import {SocketProvider} from './SocketContext';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import DrawerNavigator from './navigation/DraverNavigator';
+import { NavigationContainer } from '@react-navigation/native';
 
 function Section({children, title}) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -65,16 +67,18 @@ function App() {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-    <AuthProvider>
-      <EventProvider>
-        <SocketProvider>
-          <StackNavigator />
-          <ModalPortal />
-        </SocketProvider>
-      </EventProvider>
-    </AuthProvider>
-  </GestureHandlerRootView>
+    <GestureHandlerRootView style={{flex: 1}}>
+      <AuthProvider>
+        <EventProvider>
+          <SocketProvider>
+            <NavigationContainer>
+              <DrawerNavigator />
+            </NavigationContainer>
+            <ModalPortal />
+          </SocketProvider>
+        </EventProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

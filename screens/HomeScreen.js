@@ -193,10 +193,7 @@ const HomeScreen = () => {
           marginBottom: 20,
         }}>
         <TouchableOpacity
-          onPress={() => {
-            active.value = !active.value;
-            navigation.dispatch(DrawerActions.openDrawer());
-          }}
+          onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
           style={{padding: 10}}>
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
@@ -514,7 +511,7 @@ const HomeScreen = () => {
         </View>
       </View>
 
-      <View
+      {/* <View
         style={{
           flexDirection: 'row',
           backgroundColor: '#fff',
@@ -583,7 +580,7 @@ const HomeScreen = () => {
             Organizer
           </Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       <View
         style={{
