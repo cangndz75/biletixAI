@@ -589,17 +589,15 @@ app.post('/createevent', async (req, res) => {
   }
 });
 app.get('/events', async (req, res) => {
-  let {organizerId, role = '', userId} = req.query;
+  const {organizerId, role, userId} = req.query;
 
   try {
     let filter = {};
 
-    if (role === 'organizer' && mongoose.isValidObjectId(organizerId)) {
+    if (role === 'organizer' && organizerId) {
       filter = {organizer: new mongoose.Types.ObjectId(organizerId)};
-    } else if (mongoose.isValidObjectId(userId)) {
+    } else if (userId) {
       filter = {attendees: new mongoose.Types.ObjectId(userId)};
-    } else {
-      return res.status(400).json({message: 'Invalid user or organizer ID'});
     }
 
     console.log('📌 Etkinlikler getiriliyor. Filtre:', filter);
