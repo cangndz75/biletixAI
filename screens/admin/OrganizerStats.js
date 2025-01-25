@@ -56,20 +56,24 @@ const OrganizerStats = () => {
         <>
           <Text style={styles.title}>📊 Organizer Stats</Text>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Total Events || 0</Text>
-            <Text style={styles.cardText}>{stats.totalEvents} || 0</Text>
-          </View>
+          {stats && (
+            <>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Total Events || 0</Text>
+                <Text style={styles.cardText}>{stats.totalEvents} || 0</Text>
+              </View>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Total Attendees || 0</Text>
-            <Text style={styles.cardText}>{stats.totalAttendees}</Text>
-          </View>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Total Attendees || 0</Text>
+                <Text style={styles.cardText}>{stats.totalAttendees}</Text>
+              </View>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Total Communities || 0</Text>
-            <Text style={styles.cardText}>{stats.totalCommunities}</Text>
-          </View>
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Total Communities || 0</Text>
+                <Text style={styles.cardText}>{stats.totalCommunities}</Text>
+              </View>
+            </>
+          )}
 
           <Text style={styles.subtitle}>📅 Last 30 Days Event Attendance</Text>
           <BarChart

@@ -2868,21 +2868,19 @@ app.get('/ads', async (req, res) => {
   }
 });
 
-router.get('/organizer-stats', async (req, res) => {
+app.get('/organizer-stats', async (req, res) => {
   try {
-    const {userId} = req.query; 
+    const {userId} = req.query;
 
     if (!userId) {
       return res.status(400).json({message: 'User ID is required.'});
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate('events community');
 
     if (!user) {
       return res.status(404).json({message: 'User not found.'});
     }
-
-    console.log(`👤 Kullanıcı Bilgisi:`, user);
 
     if (user.role !== 'organizer') {
       return res
@@ -2890,9 +2888,7 @@ router.get('/organizer-stats', async (req, res) => {
         .json({message: `Access denied. User role is: ${user.role}`});
     }
 
-    console.log(`📡 Fetching Stats for Organizer: ${userId}`);
-
-    const totalEvents = await Event.countDocuments({organizer: userId});
+    const totalEvents = user.events.length;
 
     const totalAttendees = await Event.aggregate([
       {$match: {organizer: userId}},
@@ -2921,9 +2917,7 @@ router.get('/organizer-stats', async (req, res) => {
       .limit(5)
       .select('title attendees date');
 
-    const totalCommunities = await Community.countDocuments({
-      organizer: userId,
-    });
+    const totalCommunities = user.community.length;
 
     console.log(`📊 Stats for ${userId}: `, {
       totalEvents,
