@@ -2868,9 +2868,9 @@ app.get('/ads', async (req, res) => {
   }
 });
 
-app.get('/organizer-stats', async (req, res) => {
+router.get('/organizer-stats', async (req, res) => {
   try {
-    const {userId} = req.query;
+    const {userId} = req.query; 
 
     if (!userId) {
       return res.status(400).json({message: 'User ID is required.'});
@@ -2882,17 +2882,22 @@ app.get('/organizer-stats', async (req, res) => {
       return res.status(404).json({message: 'User not found.'});
     }
 
+    console.log(`👤 Kullanıcı Bilgisi:`, user);
+
     if (user.role !== 'organizer') {
       return res
         .status(403)
-        .json({message: 'Access denied. Not an organizer.'});
+        .json({message: `Access denied. User role is: ${user.role}`});
     }
+
+    console.log(`📡 Fetching Stats for Organizer: ${userId}`);
 
     const totalEvents = await Event.countDocuments({organizer: userId});
 
     const totalAttendees = await Event.aggregate([
       {$match: {organizer: userId}},
-      {$group: {_id: null, total: {$sum: {$size: '$attendees'}}}},
+      {$unwind: '$attendees'},
+      {$group: {_id: null, total: {$sum: 1}}},
     ]);
 
     const last30DaysEvents = await Event.aggregate([
@@ -2902,8 +2907,13 @@ app.get('/organizer-stats', async (req, res) => {
           date: {$gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)},
         },
       },
-      {$group: {_id: '$date', attendees: {$sum: {$size: '$attendees'}}}},
-      {$sort: {_id: 1}},
+      {
+        $project: {
+          date: {$dateToString: {format: '%Y-%m-%d', date: '$date'}},
+          attendeesCount: {$size: '$attendees'},
+        },
+      },
+      {$sort: {date: 1}},
     ]);
 
     const topEvents = await Event.find({organizer: userId})
@@ -2915,10 +2925,11 @@ app.get('/organizer-stats', async (req, res) => {
       organizer: userId,
     });
 
-    const totalCommunityMembers = await Community.aggregate([
-      {$match: {organizer: userId}},
-      {$group: {_id: null, total: {$sum: {$size: '$members'}}}},
-    ]);
+    console.log(`📊 Stats for ${userId}: `, {
+      totalEvents,
+      totalAttendees,
+      totalCommunities,
+    });
 
     res.status(200).json({
       totalEvents,
@@ -2926,9 +2937,6 @@ app.get('/organizer-stats', async (req, res) => {
       last30DaysEvents,
       topEvents,
       totalCommunities,
-      totalCommunityMembers: totalCommunityMembers.length
-        ? totalCommunityMembers[0].total
-        : 0,
     });
   } catch (error) {
     console.error('❌ Organizer Stats Error:', error);

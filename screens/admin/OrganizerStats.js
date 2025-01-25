@@ -18,22 +18,22 @@ const OrganizerStats = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (role === 'organizer') {
-      fetchStats();
-    } else {
-      setLoading(false);
-    }
+    fetchStats();
   }, []);
 
   const fetchStats = async () => {
     try {
+      console.log(`📡 Fetching Stats for Organizer: ${userId}`);
       const response = await axios.get(`${API_BASE_URL}/organizer-stats`, {
         params: {userId},
       });
-      console.log('📊 Organizer Stats Response:', response.data);
+      console.log('📊 Gelen API Yanıtı:', response.data);
       setStats(response.data);
     } catch (error) {
-      console.error('❌ Stats Fetch Error:', error);
+      console.error(
+        '❌ Stats Fetch Error:',
+        error.response?.data || error.message,
+      );
     } finally {
       setLoading(false);
     }
