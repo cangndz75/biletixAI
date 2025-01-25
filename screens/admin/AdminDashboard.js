@@ -68,7 +68,6 @@ const AdminDashboard = () => {
   const dashboardItems = [
     {title: 'Create Event', icon: 'add-circle-outline', route: 'AdminCreate'},
     {title: 'My Events', icon: 'calendar-outline', route: 'AdminEvents'},
-    {title: 'Attends', icon: 'people-outline', route: 'Attends'},
     {
       title: 'Communities',
       icon: 'people-outline',

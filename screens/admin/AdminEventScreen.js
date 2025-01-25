@@ -4,7 +4,6 @@ import {
   Text,
   SafeAreaView,
   Pressable,
-  ScrollView,
   FlatList,
   ActivityIndicator,
   StyleSheet,
@@ -30,30 +29,18 @@ const AdminEventScreen = () => {
   const fetchOrganizerEvents = async () => {
     try {
       setLoading(true);
+
+      // Fetch events filtered by organizer's userId
       const response = await axios.get(
         `https://biletixai.onrender.com/events`,
-        {params: {organizerId: userId}},
+        {params: {organizer: userId}}, // Filtering by organizer
       );
 
-      if (response.status === 200 && response.data.length === 0) {
-        console.warn('No events found for this organizer.');
-        setEvents([]);
-      } else {
-        setEvents(response.data);
+      if (response.status === 200) {
+        setEvents(response.data || []);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
-      if (error.response) {
-        if (error.response.status === 404) {
-          console.error('No events found for the given organizer ID.');
-        } else {
-          console.error(
-            `Server responded with status ${error.response.status}`,
-          );
-        }
-      } else {
-        console.error('Network error or server unreachable.');
-      }
     } finally {
       setLoading(false);
     }
@@ -67,52 +54,50 @@ const AdminEventScreen = () => {
     );
   }
 
-  if (events.length === 0) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.noEventText}>No Events Found</Text>
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <View style={styles.header}>
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color="#000"
-            onPress={() => navigation.goBack()}
-            style={styles.backIcon}
-          />
-          <Text style={styles.headerTitle}>My Events</Text>
-        </View>
+      <FlatList
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <View style={styles.header}>
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color="#000"
+                onPress={() => navigation.goBack()}
+                style={styles.backIcon}
+              />
+              <Text style={styles.headerTitle}>My Events</Text>
+            </View>
 
-        <Pressable
-          onPress={() => navigation.navigate('AdminCreate')}
-          style={styles.createButton}>
-          <Text style={styles.createButtonText}>Create Event</Text>
-        </Pressable>
-
-        <View style={styles.eventSection}>
-          <View style={styles.eventHeader}>
-            <Text style={styles.sectionTitle}>My Events</Text>
-            <Pressable onPress={() => fetchOrganizerEvents()}>
-              <Text style={styles.seeAllText}>See All</Text>
+            <Pressable
+              onPress={() => navigation.navigate('AdminCreate')}
+              style={styles.createButton}>
+              <Text style={styles.createButtonText}>+ Create Event</Text>
             </Pressable>
-          </View>
 
-          <FlatList
-            horizontal
-            data={events}
-            renderItem={({item}) => <UpComingEvent item={item} />}
-            keyExtractor={item => item._id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.eventList}
-          />
-        </View>
-      </ScrollView>
+            <View style={styles.eventSection}>
+              <Text style={styles.sectionTitle}>My Events</Text>
+            </View>
+          </View>
+        }
+        data={events}
+        renderItem={({item}) => <UpComingEvent item={item} />}
+        keyExtractor={item => item._id}
+        numColumns={2} // Displays events in a 2-column grid
+        columnWrapperStyle={{
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.eventList}
+        ListEmptyComponent={
+          <View style={styles.centeredContainer}>
+            <Ionicons name="calendar-outline" size={48} color="#888" />
+            <Text style={styles.noEventText}>No Events Found</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -123,15 +108,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9f9f9',
+    paddingHorizontal: 10, // Adds horizontal padding
   },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 20,
   },
   noEventText: {
     fontSize: 18,
     color: '#888',
+    marginTop: 8,
+  },
+  headerContainer: {
+    marginBottom: 10,
   },
   header: {
     flexDirection: 'row',
@@ -164,22 +155,13 @@ const styles = StyleSheet.create({
   eventSection: {
     paddingHorizontal: 15,
   },
-  eventHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
-  },
-  seeAllText: {
-    color: '#ff6b6b',
-    fontWeight: '600',
+    marginBottom: 10,
   },
   eventList: {
-    paddingVertical: 10,
+    paddingBottom: 20,
   },
 });

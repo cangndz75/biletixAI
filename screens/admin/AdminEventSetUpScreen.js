@@ -45,55 +45,19 @@ const AdminEventSetUpScreen = () => {
 
   useEffect(() => {
     const fetchAttendees = async () => {
-      if (!eventId) {
-        Alert.alert('Error', 'Invalid event ID.');
-        navigation.goBack();
-        return;
-      }
-
+      if (!eventId) return;
       try {
-        console.log(
-          `Fetching attendees from: https://biletixai.onrender.com/event/${eventId}/attendees`,
-        );
         const response = await axios.get(
           `https://biletixai.onrender.com/event/${eventId}/attendees`,
         );
-
-        if (response.status === 200) {
-          setAttendees(response.data || []);
-          console.log('Attendees fetched:', response.data);
-        } else {
-          Alert.alert('Error', 'No attendees found for this event.');
-        }
+        setAttendees(response.data || []);
       } catch (error) {
         console.error('Failed to fetch attendees:', error.message);
-        const errorMessage =
-          error.response?.data?.message || 'Failed to load attendees.';
-        Alert.alert('Error', errorMessage);
       }
     };
 
     fetchAttendees();
   }, []);
-
-  const fetchAttendees = async () => {
-    if (!eventId) return;
-
-    try {
-      const response = await axios.get(
-        `https://biletixai.onrender.com/event/${eventId}/attendees`,
-      );
-      if (response.status === 200) {
-        setAttendees(response.data || []);
-        console.log('Attendees fetched:', response.data);
-      } else {
-        Alert.alert('Error', 'Attendees not found.');
-      }
-    } catch (error) {
-      console.error('Failed to fetch attendees:', error.message);
-      Alert.alert('Error', 'Failed to load attendees.');
-    }
-  };
 
   const openEditModal = () => {
     setEditModalVisible(true);
@@ -177,17 +141,6 @@ const AdminEventSetUpScreen = () => {
             onPress={() => navigation.goBack()}
           />
         </View>
-        <View
-          style={{
-            position: 'absolute',
-            top: 20,
-            right: 20,
-            flexDirection: 'row',
-            gap: 15,
-          }}>
-          <Ionicons name="heart-outline" size={24} color="#fff" />
-          <Entypo name="share" size={24} color="#fff" />
-        </View>
 
         <View style={{padding: 16}}>
           <Text style={{fontSize: 24, fontWeight: 'bold', color: '#333'}}>
@@ -207,7 +160,10 @@ const AdminEventSetUpScreen = () => {
                 paddingHorizontal: 10,
                 paddingVertical: 5,
               }}>
-              <Text style={{color: '#5c6bc0'}}>Music</Text>
+              <Text style={{color: '#5c6bc0'}}>
+                {' '}
+                {route?.params?.item?.eventType || ''}
+              </Text>
             </TouchableOpacity>
             <View
               style={{
@@ -234,56 +190,16 @@ const AdminEventSetUpScreen = () => {
               </Text>
             </View>
           </View>
-
-          <TouchableOpacity
+          <View
             style={{
-              backgroundColor: '#5c6bc0',
-              borderRadius: 10,
-              paddingVertical: 10,
+              flexDirection: 'row',
               alignItems: 'center',
               marginVertical: 10,
             }}>
-            <Text style={{color: '#fff'}}>Add to My Calendar</Text>
-          </TouchableOpacity>
-
-          {/* Location Section */}
-          <View style={{flexDirection: 'row', marginVertical: 10}}>
             <MaterialIcons name="location-on" size={24} color="#5c6bc0" />
-            <View style={{marginLeft: 10}}>
-              <Text style={{fontWeight: 'bold', color: '#333'}}>
-                {route?.params?.item?.location ||
-                  'Grand Park, New York City, US'}
-              </Text>
-              <Text style={{color: '#666'}}>
-                Grand City St. 100, New York, United States.
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#5c6bc0',
-              borderRadius: 10,
-              paddingVertical: 10,
-              alignItems: 'center',
-              marginBottom: 20,
-            }}>
-            <Text style={{color: '#fff'}}>See Location on Maps</Text>
-          </TouchableOpacity>
-
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Image
-              source={{
-                uri: organizer?.imageUrl || 'https://via.placeholder.com/150',
-              }}
-              style={{width: 60, height: 60, borderRadius: 30}}
-            />
-            <View style={{marginLeft: 10}}>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-                {organizer?.name || 'World of Music'}
-              </Text>
-              <Text style={{color: 'gray'}}>Organizer</Text>
-            </View>
+            <Text style={{marginLeft: 8, fontSize: 16, color: '#333'}}>
+              {eventData?.location || 'Event Location'}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -297,7 +213,6 @@ const AdminEventSetUpScreen = () => {
             }}>
             <Text style={{color: '#fff'}}>Edit Event</Text>
           </TouchableOpacity>
-
           <View>
             <View
               style={{
@@ -307,37 +222,6 @@ const AdminEventSetUpScreen = () => {
                 marginVertical: 12,
               }}
             />
-            <Pressable
-              style={{flexDirection: 'row', alignItems: 'center', gap: 14}}>
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderWidth: 1,
-                  borderColor: '#E0E0E0',
-                  borderRadius: 30,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
-                <Image
-                  style={{width: 30, height: 30, resizeMode: 'contain'}}
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/128/343/343303.png',
-                  }}
-                />
-              </View>
-
-              <Text style={{fontSize: 15, fontWeight: '500', flex: 1}}>
-                Add Co-Host
-              </Text>
-
-              <MaterialCommunityIcons
-                style={{textAlign: 'center'}}
-                name="chevron-right"
-                size={24}
-                color="black"
-              />
-            </Pressable>
 
             <View
               style={{
@@ -354,34 +238,6 @@ const AdminEventSetUpScreen = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}>
-              <Pressable>
-                <Pressable
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderWidth: 1,
-                    borderColor: '#E0E0E0',
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Image
-                    style={{width: 30, height: 30, resizeMode: 'contain'}}
-                    source={{
-                      uri: 'https://cdn-icons-png.flaticon.com/128/1474/1474545.png',
-                    }}
-                  />
-                </Pressable>
-                <Text
-                  style={{
-                    marginTop: 8,
-                    fontWeight: '500',
-                    textAlign: 'center',
-                  }}>
-                  Add
-                </Text>
-              </Pressable>
-
               <Pressable>
                 <Pressable
                   onPress={() =>
@@ -422,46 +278,6 @@ const AdminEventSetUpScreen = () => {
                   Manage ({requests?.length})
                 </Text>
               </Pressable>
-
-              <Pressable
-                onPress={() =>
-                  navigation.navigate('Players', {
-                    players: attendees,
-                  })
-                }
-                style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
-                <View
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    padding: 10,
-                    borderColor: '#E0E0E0',
-                    borderWidth: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginVertical: 12,
-                  }}>
-                  <MaterialCommunityIcons
-                    style={{textAlign: 'center'}}
-                    name="chevron-right"
-                    size={24}
-                    color="black"
-                  />
-                </View>
-
-                <Text
-                  style={{
-                    marginBottom: 12,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                  }}>
-                  All Players
-                </Text>
-              </Pressable>
             </View>
 
             <View
@@ -472,73 +288,7 @@ const AdminEventSetUpScreen = () => {
                 marginVertical: 12,
               }}
             />
-
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 15}}>
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderWidth: 1,
-                  borderColor: '#E0E0E0',
-                  borderRadius: 30,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
-                <Image
-                  style={{width: 30, height: 30, resizeMode: 'contain'}}
-                  source={{
-                    uri: 'https://cdn-icons-png.flaticon.com/128/1511/1511847.png',
-                  }}
-                />
-              </View>
-
-              <View>
-                <Text>Not on Playo? Invite</Text>
-                <Text style={{marginTop: 6, color: 'gray', width: '80%'}}>
-                  Earn 100 Karma points by referring your friend
-                </Text>
-              </View>
-            </View>
           </View>
-          <Pressable
-            onPress={() =>
-              navigation.navigate('Players', {
-                players: attendees,
-              })
-            }
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderTopColor: '#E0E0E0',
-              borderTopWidth: 1,
-              borderBottomColor: '#E0E0E0',
-              borderBottomWidth: 1,
-              marginBottom: 20,
-            }}>
-            <View
-              style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
-                padding: 10,
-                borderColor: '#E0E0E0',
-                borderWidth: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginVertical: 12,
-              }}>
-              <MaterialCommunityIcons
-                style={{textAlign: 'center'}}
-                name="chevron-right"
-                size={24}
-                color="black"
-              />
-            </View>
-
-            <Text style={{marginBottom: 12, fontWeight: '600'}}>
-              All Players
-            </Text>
-          </Pressable>
         </View>
       </ScrollView>
       <BottomModal

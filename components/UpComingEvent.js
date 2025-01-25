@@ -1,13 +1,16 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {Image, Pressable, Text, View, Dimensions} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {AuthContext} from '../AuthContext';
 
 const UpComingEvent = ({item}) => {
   const navigation = useNavigation();
-
+  const {role} = useContext(AuthContext);
   const handleNavigation = () => {
-    navigation.navigate('EventSetUp', {item});
+    const targetScreen =
+      role === 'organizer' ? 'AdminEventSetUp' : 'EventSetUp';
+    navigation.navigate(targetScreen, {item});
   };
 
   return (
@@ -37,6 +40,15 @@ const UpComingEvent = ({item}) => {
         <Text style={{fontSize: 14, color: '#777', marginVertical: 2}}>
           {item.location}
         </Text>
+        {role === 'organizer' && (
+          <View
+            style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
+            <Ionicons name="cog-outline" size={16} color="#FF6347" />
+            <Text style={{fontSize: 12, color: '#FF6347', marginLeft: 4}}>
+              Manage Event
+            </Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );
