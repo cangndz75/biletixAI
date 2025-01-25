@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  StyleSheet,
 } from 'react-native';
 import {
   DrawerActions,
@@ -42,6 +43,8 @@ const HomeScreen = () => {
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [vipEvents, setVipEvents] = useState([]);
+  const [isLoadingVip, setIsLoadingVip] = useState(true);
   const categories = [
     'All',
     'Sports',
@@ -188,6 +191,23 @@ const HomeScreen = () => {
       console.error('Error toggling favorite:', error);
     }
   };
+
+  const fetchVipEvents = async () => {
+    try {
+      const response = await axios.get(
+        'https://biletixai.onrender.com/vip-events',
+      );
+      setVipEvents(response.data);
+    } catch (error) {
+      console.error('Error fetching VIP events:', error);
+    } finally {
+      setIsLoadingVip(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVipEvents();
+  }, []);
 
   if (isLoading) {
     return (
@@ -372,6 +392,48 @@ const HomeScreen = () => {
           </Pressable>
         )}
       </View>
+
+      {vipEvents.length > 0 && (
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Trending Events</Text>
+            {/* <TouchableOpacity onPress={() => navigation.navigate('VipEvents')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity> */}
+          </View>
+
+          {isLoadingVip ? (
+            <ActivityIndicator size="large" color="#5c6bc0" />
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {vipEvents.map(event => (
+                <Pressable
+                  key={event._id}
+                  onPress={() => navigation.navigate('Event', {event})}
+                  style={styles.eventCard}>
+                  <Image
+                    source={{
+                      uri:
+                        event.images && event.images.length > 0
+                          ? event.images[0]
+                          : 'https://via.placeholder.com/200',
+                    }}
+                    style={styles.eventImage}
+                  />
+                  <View style={styles.eventInfo}>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                    <Text style={styles.eventLocation}>{event.location}</Text>
+                    <View style={styles.eventMeta}>
+                      <Ionicons name="time-outline" size={14} color="#777" />
+                      <Text style={styles.eventDate}>{event.date}</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      )}
 
       <View style={{flex: 1, backgroundColor: '#f8f8f8', padding: 16}}>
         <ScrollView
@@ -586,3 +648,79 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
+    padding: 16,
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  seeAll: {
+    color: '#7b61ff',
+    fontWeight: 'bold',
+  },
+  eventCard: {
+    width: 180,
+    marginRight: 15,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  eventImage: {
+    width: '100%',
+    height: 120,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+  },
+  eventInfo: {
+    padding: 10,
+  },
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  eventLocation: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 5,
+  },
+  eventMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  eventDate: {
+    fontSize: 12,
+    color: '#777',
+    marginLeft: 5,
+  },
+  noEventsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noEventsText: {
+    fontSize: 16,
+    color: '#aaa',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+});

@@ -2947,3 +2947,31 @@ app.get('/organizer-stats', async (req, res) => {
     res.status(500).json({message: 'Error fetching organizer stats'});
   }
 });
+
+app.get('/vip-events', async (req, res) => {
+  try {
+    console.log('📌 VIP Etkinlikler getiriliyor...');
+
+    const vipEvents = await Event.find()
+      .populate('organizer')
+      .sort({date: 1}); 
+
+    const filteredVipEvents = vipEvents.filter(
+      event => event.organizer && event.organizer.vipBadge === true,
+    );
+
+    if (!filteredVipEvents.length) {
+      console.warn('⚠️ VIP Etkinlik bulunamadı.');
+      return res.status(404).json({message: 'No VIP events found'});
+    }
+
+    console.log(
+      '✅ VIP Etkinlikler başarıyla getirildi:',
+      filteredVipEvents.length,
+    );
+    res.status(200).json(filteredVipEvents);
+  } catch (error) {
+    console.error('❌ Error fetching VIP events:', error);
+    res.status(500).json({message: 'Failed to fetch VIP events'});
+  }
+});
