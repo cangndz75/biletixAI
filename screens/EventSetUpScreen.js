@@ -326,28 +326,46 @@ const EventSetUpScreen = () => {
     }
   };
 
-  const renderGoingSection = () => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('EventAttendees', {eventId})}>
-      <FlatList
-        horizontal
-        data={item.attendees}
-        keyExtractor={(attendee, index) => attendee._id + index}
-        renderItem={({item: attendee}) => (
-          <Image
-            source={{uri: attendee.image || 'https://via.placeholder.com/50'}}
-            style={{
-              width: 50,
-              height: 50,
-              borderRadius: 25,
-              marginHorizontal: 5,
-            }}
-          />
-        )}
-        contentContainerStyle={{marginVertical: 10}}
-      />
-    </TouchableOpacity>
-  );
+  const renderGoingSection = () => {
+    if (!item.attendees || item.attendees.length === 0 || !item.vipBadge) {
+      return null;
+    }
+
+    const lastAttendees = item.attendees.slice(-5);
+
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginVertical: 10,
+        }}>
+        <FlatList
+          horizontal
+          data={lastAttendees}
+          keyExtractor={attendee => attendee._id}
+          renderItem={({item: attendee}) => (
+            <Image
+              source={{uri: attendee.image || 'https://via.placeholder.com/50'}}
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                marginHorizontal: 5,
+                borderWidth: 2,
+                borderColor: '#4CAF50',
+              }}
+            />
+          )}
+        />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('EventAttendees', {eventId})}
+          style={{marginLeft: 10}}>
+          <Ionicons name="arrow-forward-circle" size={30} color="#1E90FF" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderReviewSection = () => (
     <View style={{marginVertical: 10, paddingHorizontal: 16}}>
@@ -365,23 +383,25 @@ const EventSetUpScreen = () => {
         </TouchableOpacity>
       </Animated.View>
 
-      <Text style={{fontWeight: 'bold', fontSize: 18, marginBottom: 10}}>
+      {/* <Text style={{fontWeight: 'bold', fontSize: 18, marginBottom: 10}}>
         Reviews
-      </Text>
+      </Text> */}
 
       {/* {renderRatingStars()} */}
 
-      <TouchableOpacity
-        style={styles.reviewButton}
-        onPress={() => navigation.navigate('ReviewScreen', {eventId})}>
-        <Ionicons
-          name="heart"
-          size={20}
-          color="white"
-          style={{marginRight: 8}}
-        />
-        <Text style={styles.reviewButtonText}>Leave a review</Text>
-      </TouchableOpacity>
+      {isJoined && new Date(item?.time) < new Date() && (
+        <TouchableOpacity
+          style={styles.reviewButton}
+          onPress={() => navigation.navigate('ReviewScreen', {eventId})}>
+          <Ionicons
+            name="heart"
+            size={20}
+            color="white"
+            style={{marginRight: 8}}
+          />
+          <Text style={styles.reviewButtonText}>Leave a review</Text>
+        </TouchableOpacity>
+      )}
 
       <View style={{height: 1, backgroundColor: '#ddd', marginVertical: 10}} />
 
@@ -579,19 +599,86 @@ const EventSetUpScreen = () => {
         </View>
 
         <View style={{padding: 16}}>
-          <Text style={{fontSize: 24, fontWeight: 'bold'}}>
-            {item?.title || 'Event Title'}
-          </Text>
-          <View style={{flexDirection: 'row', marginVertical: 10}}>
-            <MaterialIcons name="location-on" size={24} color="#5c6bc0" />
-            <Text style={{marginLeft: 10}}>
-              {item?.location || 'Event Location'}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+            <Text style={{fontSize: 24, fontWeight: 'bold', marginLeft: 3}}>
+              {item?.title || 'Event Title'}
             </Text>
+
+            {item?.attendees?.length > 0 && (
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Text style={{fontSize: 16, fontWeight: 'bold', marginLeft: 5}}>
+                  {item?.attendees?.length}
+                </Text>
+                <Text> </Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: isJoined ? 'green' : 'gray',
+                  }}>
+                  Going
+                </Text>
+              </View>
+            )}
+          </View>
+          {item?.location && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: 4,
+              }}>
+              <Ionicons name="location-outline" size={18} color="gray" />
+              <Text style={{fontSize: 16, color: 'gray'}}>
+                {item?.location}
+              </Text>
+            </View>
+          )}
+          <View style={styles.organizerCard}>
+            <View style={styles.organizerInfo}>
+              {item?.organizer?.image ? (
+                <Image
+                  source={{uri: item.organizer.image}}
+                  style={styles.organizerImage}
+                />
+              ) : (
+                <View style={styles.organizerIcon}>
+                  <Text style={styles.organizerInitial}>
+                    {item?.organizer?.firstName
+                      ? item.organizer.firstName.charAt(0)
+                      : 'E'}
+                  </Text>
+                </View>
+              )}
+              <View>
+                <Text style={styles.organizerName}>
+                  {item?.organizer?.firstName && item?.organizer?.lastName
+                    ? `${item.organizer.firstName} ${item.organizer.lastName}`
+                    : 'Event Organizer'}
+                </Text>
+                <Text style={styles.organizerRole}>Event Creator</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.plusButton}
+              onPress={() =>
+                navigation.navigate('ProfileView', {
+                  userId: item?.organizer?._id,
+                })
+              }>
+              <Ionicons
+                name="chevron-forward-outline"
+                size={22}
+                color="#F5A623"
+              />
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.organizerText}>
-            Hosted by: {renderOrganizerName()}
-          </Text>
           {renderGoingSection()}
 
           <View style={{flexDirection: 'row', marginTop: 10}}>
@@ -798,5 +885,58 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  organizerCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginLeft: -15,
+  },
+  organizerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  organizerImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  organizerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1E3A8A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  organizerInitial: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#F5A623',
+  },
+  organizerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  organizerRole: {
+    fontSize: 12,
+    color: '#999',
+  },
+  plusButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#F5A623',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 10,
   },
 });

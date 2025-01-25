@@ -87,7 +87,6 @@ const ProfileViewScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Kullanıcı Profili */}
       <View style={styles.profileCard}>
         <Image
           source={{uri: userData.image || 'https://via.placeholder.com/100'}}
@@ -99,7 +98,6 @@ const ProfileViewScreen = () => {
         </Text>
         <Text style={styles.username}>@{userData.username}</Text>
 
-        {/* Eğer Kullanıcı Private ise */}
         {userData.isPrivate ? (
           <View style={styles.privateContainer}>
             <Ionicons name="lock-closed" size={20} color="#666" />
@@ -117,25 +115,28 @@ const ProfileViewScreen = () => {
               </Text>
             </View>
 
-            {/* Eğer giriş yapan kişi VIP ise butonları göster */}
-            {userData.vipBadge && (
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={
-                    isFollowing ? styles.unfollowButton : styles.followButton
-                  }
-                  onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
-                  <Text style={styles.followButtonText}>
-                    {isFollowing ? 'Unfollow' : 'Follow'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.messageButton}
-                  onPress={() => navigation.navigate('ChatRoom', {userId})}>
-                  <Text style={styles.messageButtonText}>Message</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {loggedInUserId &&
+              userData.isPrivate === false &&
+              userData.vipBadge && (
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={
+                      isFollowing ? styles.unfollowButton : styles.followButton
+                    }
+                    onPress={
+                      isFollowing ? handleUnfollow : handleFollowRequest
+                    }>
+                    <Text style={styles.followButtonText}>
+                      {isFollowing ? 'Unfollow' : 'Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.messageButton}
+                    onPress={() => navigation.navigate('ChatRoom', {userId})}>
+                    <Text style={styles.messageButtonText}>Message</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
           </>
         )}
       </View>

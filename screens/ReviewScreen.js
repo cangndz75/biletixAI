@@ -16,6 +16,7 @@ import {BottomModal, ModalContent, SlideAnimation} from 'react-native-modals';
 import {TextInput} from 'react-native-paper';
 import {AuthContext} from '../AuthContext';
 import {useFocusEffect} from '@react-navigation/native';
+import {SwipeListView} from 'react-native-swipe-list-view';
 
 const ReviewScreen = ({route, navigation}) => {
   const {userId} = useContext(AuthContext);
@@ -29,6 +30,8 @@ const ReviewScreen = ({route, navigation}) => {
   const [rating, setRating] = useState(5);
   const [userReview, setUserReview] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [eventDatePassed, setEventDatePassed] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -38,11 +41,51 @@ const ReviewScreen = ({route, navigation}) => {
   useEffect(() => {
     if (eventId) {
       fetchReviews();
+      checkEventDate();
     } else {
       Alert.alert('Error', 'No event ID provided.');
       navigation.goBack();
     }
   }, [eventId]);
+
+  const checkEventDate = () => {
+    if (route?.params?.eventDate) {
+      const eventDateTime = new Date(route.params.eventDate).getTime();
+      const currentDateTime = new Date().getTime();
+      setEventDatePassed(eventDateTime < currentDateTime);
+    }
+
+    if (route?.params?.attendees?.some(attendee => attendee._id === userId)) {
+      setIsJoined(true);
+    }
+  };
+
+  const deleteReview = async reviewId => {
+    try {
+      await axios.delete(
+        `https://biletixai.onrender.com/events/${eventId}/reviews/${reviewId}`,
+      );
+      setUserReview(null);
+      fetchReviews();
+      Alert.alert('Success', 'Your review has been deleted.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete review.');
+    }
+  };
+
+  const renderHiddenItem = ({item}) => {
+    if (item.userId !== userId) return null;
+
+    return (
+      <View style={styles.hiddenItemContainer}>
+        <TouchableOpacity
+          style={[styles.hiddenButton, {backgroundColor: 'red'}]}
+          onPress={() => deleteReview(item._id)}>
+          <Text style={styles.hiddenButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const fetchReviews = async () => {
     try {
@@ -101,24 +144,8 @@ const ReviewScreen = ({route, navigation}) => {
     }
   };
 
-  const deleteReview = async () => {
-    try {
-      await axios.delete(
-        `https://biletixai.onrender.com/events/${eventId}/reviews/${userReview._id}`,
-      );
-      setUserReview(null);
-      fetchReviews();
-      Alert.alert('Success', 'Your review has been deleted.');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to delete review.');
-    }
-  };
-
   const renderReviewItem = ({item}) => (
-    <Animated.View
-      entering={FadeInUp}
-      exiting={FadeOutDown}
-      style={styles.reviewCard}>
+    <View style={styles.reviewCard}>
       <View style={styles.reviewHeader}>
         <Image
           source={{uri: item.userImage || 'https://via.placeholder.com/50'}}
@@ -146,7 +173,7 @@ const ReviewScreen = ({route, navigation}) => {
       </View>
 
       <Text style={styles.reviewText}>{item.review}</Text>
-    </Animated.View>
+    </View>
   );
 
   return (
@@ -207,13 +234,27 @@ const ReviewScreen = ({route, navigation}) => {
               ),
             )}
           </View>
-          <FlatList
+
+          {/* ✅ Kendi yorumlarını kaydırarak silebilme özelliği eklenmiş hali */}
+          <SwipeListView
             data={reviews}
-            keyExtractor={(_, index) => index.toString()}
+            keyExtractor={item => item._id}
             renderItem={renderReviewItem}
-            style={styles.reviewList}
+            renderHiddenItem={({item}) =>
+              item.userId === userId ? ( // Sadece kendi yorumları için göster
+                <View style={styles.hiddenItemContainer}>
+                  <TouchableOpacity
+                    style={[styles.hiddenButton, {backgroundColor: 'red'}]}
+                    onPress={() => deleteReview(item._id)}>
+                    <Text style={styles.hiddenButtonText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null
+            }
+            rightOpenValue={-75} // Kaydırma mesafesi
           />
-          {!userReview && (
+
+          {isJoined && eventDatePassed && !userReview && (
             <TouchableOpacity
               style={styles.floatingButton}
               onPress={() => setModalVisible(true)}>
