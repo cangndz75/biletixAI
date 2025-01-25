@@ -107,94 +107,128 @@ const CommunityDetailScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={28} color="white" />
-      </TouchableOpacity>
-
-      <Image
-        source={{
-          uri: community?.headerImage || 'https://via.placeholder.com/400x200',
-        }}
-        style={styles.headerImage}
-      />
-
-      <View style={styles.content}>
-        <View style={styles.profileInfo}>
-          <Image
-            source={{
-              uri: community.profileImage || 'https://via.placeholder.com/100',
-            }}
-            style={styles.profileImage}
-          />
-          <View style={styles.profileDetails}>
-            <Text style={styles.name}>{community.name}</Text>
-            <Text style={styles.members}>
-              {community.members.length} Katılımcı
-            </Text>
-          </View>
+      <View style={styles.headerContainer}>
+        <Image
+          source={{
+            uri:
+              community?.headerImage || 'https://via.placeholder.com/400x200',
+          }}
+          style={styles.headerImage}
+        />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+        <View style={styles.headerOverlay}>
+          <Text style={styles.headerTitle}>{community.name}</Text>
+          <Text style={styles.locationText}>
+            {community.members.length} Members
+          </Text>
         </View>
-
-        {isJoined ? (
-          <Text style={styles.joinedText}>Topluluğa Katıldınız ✅</Text>
-        ) : isPending ? (
-          <TouchableOpacity
-            style={styles.pendingButton}
-            onPress={cancelRequest}
-            disabled={loadingRequest}>
-            {loadingRequest ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.pendingButtonText}>
-                Request Sent - Cancel
-              </Text>
-            )}
-          </TouchableOpacity>
-        ) : community.isPrivate ? (
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={joinCommunityWithQuestions}
-            disabled={loadingJoin}>
-            {loadingJoin ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.joinButtonText}>
-                Soruları Cevapla ve Katıl
-              </Text>
-            )}
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={joinCommunity}
-            disabled={loadingRequest}>
-            {loadingRequest ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.joinButtonText}>Katıl</Text>
-            )}
-          </TouchableOpacity>
-        )}
-
-        <Text style={styles.description}>{community.description}</Text>
       </View>
+
+      <View style={styles.organizerSection}>
+        <Image
+          source={{
+            uri: community.organizer?.image || 'https://via.placeholder.com/50',
+          }}
+          style={styles.organizerImage}
+        />
+        <View style={styles.organizerInfo}>
+          <Text style={styles.organizerName}>
+            {community.organizer?.firstName} {community.organizer?.lastName}
+          </Text>
+          <Text style={styles.organizerRole}>Community Organizer</Text>
+        </View>
+      </View>
+
+      <View style={styles.aboutSection}>
+        <Text style={styles.aboutTitle}>About Community</Text>
+        <Text style={styles.aboutText}>{community.description}</Text>
+      </View>
+
+      {isJoined ? (
+        <Text style={styles.joinedText}>Topluluğa Katıldınız ✅</Text>
+      ) : isPending ? (
+        <TouchableOpacity
+          style={styles.pendingButton}
+          onPress={cancelRequest}
+          disabled={loadingRequest}>
+          {loadingRequest ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.pendingButtonText}>Request Sent - Cancel</Text>
+          )}
+        </TouchableOpacity>
+      ) : community.isPrivate ? (
+        <TouchableOpacity
+          style={styles.joinButton}
+          onPress={joinCommunityWithQuestions}
+          disabled={loadingJoin}>
+          {loadingJoin ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.joinButtonText}>Soruları Cevapla ve Katıl</Text>
+          )}
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.joinButton}
+          onPress={joinCommunity}
+          disabled={loadingRequest}>
+          {loadingRequest ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.joinButtonText}>Katıl</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
-  headerImage: {width: '100%', height: 200},
+  headerContainer: {position: 'relative'},
+  headerImage: {width: '100%', height: 250, resizeMode: 'cover'},
   backButton: {
     position: 'absolute',
     top: 40,
     left: 20,
-    zIndex: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     padding: 10,
     borderRadius: 50,
   },
+  headerOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+  },
+  headerTitle: {fontSize: 28, fontWeight: 'bold', color: 'white'},
+  locationText: {fontSize: 16, color: 'white'},
+
+  organizerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    margin: 15,
+  },
+  organizerImage: {width: 50, height: 50, borderRadius: 25},
+  organizerInfo: {marginLeft: 10},
+  organizerName: {fontSize: 18, fontWeight: 'bold', color: '#333'},
+  organizerRole: {fontSize: 14, color: '#777'},
+
+  aboutSection: {marginBottom: 20, paddingHorizontal: 15},
+  aboutTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#333',
+  },
+  aboutText: {fontSize: 14, color: '#555'},
   content: {padding: 20},
   profileInfo: {flexDirection: 'row', alignItems: 'center', marginBottom: 15},
   profileImage: {width: 80, height: 80, borderRadius: 40},
@@ -211,10 +245,10 @@ const styles = StyleSheet.create({
   joinButtonText: {color: '#fff', fontWeight: 'bold'},
   pendingButton: {
     backgroundColor: 'gray',
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginVertical: 15,
+    marginHorizontal: 15,
   },
   pendingButtonText: {color: '#fff', fontWeight: 'bold'},
   joinedText: {
