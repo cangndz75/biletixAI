@@ -60,17 +60,21 @@ const OrganizerStats = () => {
             <>
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Total Events</Text>
-                <Text style={styles.cardText}>{stats.totalEvents}</Text>
+                <Text style={styles.cardText}>{stats?.totalEvents ?? 0}</Text>
               </View>
 
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Total Attendees</Text>
-                <Text style={styles.cardText}>{stats.totalAttendees}</Text>
+                <Text style={styles.cardText}>
+                  {stats?.totalAttendees ?? 0}
+                </Text>
               </View>
 
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Total Communities</Text>
-                <Text style={styles.cardText}>{stats.totalCommunities}</Text>
+                <Text style={styles.cardText}>
+                  {stats?.totalCommunities ?? 0}
+                </Text>
               </View>
 
               <Text style={styles.subtitle}>

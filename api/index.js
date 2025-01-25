@@ -2888,29 +2888,13 @@ app.get('/organizer-stats', async (req, res) => {
         .json({message: `Access denied. User role is: ${user.role}`});
     }
 
-    const totalEvents = user.events.length;
-    const totalCommunities = user.community.length;
+    const totalEvents = user.events ? user.events.length : 0;
+    const totalCommunities = user.community ? user.community.length : 0;
 
     const totalAttendees = await Event.aggregate([
       {$match: {organizer: mongoose.Types.ObjectId(userId)}},
       {$unwind: '$attendees'},
       {$group: {_id: null, total: {$sum: 1}}},
-    ]);
-
-    const last7DaysEvents = await Event.aggregate([
-      {
-        $match: {
-          organizer: mongoose.Types.ObjectId(userId),
-          date: {$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)},
-        },
-      },
-      {
-        $project: {
-          date: {$dateToString: {format: '%Y-%m-%d', date: '$date'}},
-          attendeesCount: {$size: '$attendees'},
-        },
-      },
-      {$sort: {date: 1}},
     ]);
 
     const last30DaysEvents = await Event.aggregate([
@@ -2929,28 +2913,20 @@ app.get('/organizer-stats', async (req, res) => {
       {$sort: {date: 1}},
     ]);
 
-    const last7DaysCommunities = await Community.aggregate([
+    const last7DaysEvents = await Event.aggregate([
       {
-        $match: {organizer: mongoose.Types.ObjectId(userId)},
+        $match: {
+          organizer: mongoose.Types.ObjectId(userId),
+          date: {$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)},
+        },
       },
       {
         $project: {
-          name: 1,
-          membersCount: {$size: '$members'},
+          date: {$dateToString: {format: '%Y-%m-%d', date: '$date'}},
+          attendeesCount: {$size: '$attendees'},
         },
       },
-    ]);
-
-    const last30DaysCommunities = await Community.aggregate([
-      {
-        $match: {organizer: mongoose.Types.ObjectId(userId)},
-      },
-      {
-        $project: {
-          name: 1,
-          membersCount: {$size: '$members'},
-        },
-      },
+      {$sort: {date: 1}},
     ]);
 
     const topEvents = await Event.find({organizer: userId})
@@ -2962,10 +2938,8 @@ app.get('/organizer-stats', async (req, res) => {
       totalEvents,
       totalAttendees: totalAttendees.length ? totalAttendees[0].total : 0,
       totalCommunities,
-      last7DaysEvents,
       last30DaysEvents,
-      last7DaysCommunities,
-      last30DaysCommunities,
+      last7DaysEvents,
       topEvents,
     });
   } catch (error) {
