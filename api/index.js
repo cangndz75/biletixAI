@@ -2889,17 +2889,34 @@ app.get('/organizer-stats', async (req, res) => {
     }
 
     const totalEvents = user.events.length;
+    const totalCommunities = user.community.length;
 
     const totalAttendees = await Event.aggregate([
-      {$match: {organizer: userId}},
+      {$match: {organizer: mongoose.Types.ObjectId(userId)}},
       {$unwind: '$attendees'},
       {$group: {_id: null, total: {$sum: 1}}},
+    ]);
+
+    const last7DaysEvents = await Event.aggregate([
+      {
+        $match: {
+          organizer: mongoose.Types.ObjectId(userId),
+          date: {$gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)},
+        },
+      },
+      {
+        $project: {
+          date: {$dateToString: {format: '%Y-%m-%d', date: '$date'}},
+          attendeesCount: {$size: '$attendees'},
+        },
+      },
+      {$sort: {date: 1}},
     ]);
 
     const last30DaysEvents = await Event.aggregate([
       {
         $match: {
-          organizer: userId,
+          organizer: mongoose.Types.ObjectId(userId),
           date: {$gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)},
         },
       },
@@ -2912,25 +2929,44 @@ app.get('/organizer-stats', async (req, res) => {
       {$sort: {date: 1}},
     ]);
 
+    const last7DaysCommunities = await Community.aggregate([
+      {
+        $match: {organizer: mongoose.Types.ObjectId(userId)},
+      },
+      {
+        $project: {
+          name: 1,
+          membersCount: {$size: '$members'},
+        },
+      },
+    ]);
+
+    const last30DaysCommunities = await Community.aggregate([
+      {
+        $match: {organizer: mongoose.Types.ObjectId(userId)},
+      },
+      {
+        $project: {
+          name: 1,
+          membersCount: {$size: '$members'},
+        },
+      },
+    ]);
+
     const topEvents = await Event.find({organizer: userId})
       .sort({attendees: -1})
       .limit(5)
       .select('title attendees date');
 
-    const totalCommunities = user.community.length;
-
-    console.log(`📊 Stats for ${userId}: `, {
-      totalEvents,
-      totalAttendees,
-      totalCommunities,
-    });
-
     res.status(200).json({
       totalEvents,
       totalAttendees: totalAttendees.length ? totalAttendees[0].total : 0,
-      last30DaysEvents,
-      topEvents,
       totalCommunities,
+      last7DaysEvents,
+      last30DaysEvents,
+      last7DaysCommunities,
+      last30DaysCommunities,
+      topEvents,
     });
   } catch (error) {
     console.error('❌ Organizer Stats Error:', error);

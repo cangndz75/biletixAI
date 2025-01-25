@@ -32,7 +32,7 @@ const AdminDashboard = () => {
       const response = await axios.get(
         `https://biletixai.onrender.com/user/${userId}`,
       );
-      setUser(response.data); // Kullanıcı bilgilerini al
+      setUser(response.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -80,7 +80,6 @@ const AdminDashboard = () => {
       route: 'AdminCreateCommunity',
     },
     {title: 'Venue', icon: 'business-outline', route: 'AdminCreateVenue'},
-    {title: 'Settings', icon: 'settings-outline', route: 'Settings'},
   ];
 
   if (user?.role === 'organizer' && user?.vipBadge) {
