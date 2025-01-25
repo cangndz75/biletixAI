@@ -79,12 +79,12 @@ const AdminAdScreen = () => {
       const adData = {
         title,
         description,
-        imageUrl: image, // 📌 `image` yerine `imageUrl` kullan!
+        imageUrl: image,
         redirectUrl: url,
         organizer: userId,
       };
 
-      console.log('📤 Gönderilen Ad Verisi:', JSON.stringify(adData, null, 2)); // 📌 Log ekle
+      console.log('📤 Gönderilen Ad Verisi:', JSON.stringify(adData, null, 2));
 
       const response = await axios.post(
         'https://biletixai.onrender.com/add-ad',
