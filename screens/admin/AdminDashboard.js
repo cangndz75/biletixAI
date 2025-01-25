@@ -91,6 +91,14 @@ const AdminDashboard = () => {
     });
   }
 
+  if (user?.role === 'organizer') {
+    dashboardItems.push({
+      title: 'Organizer Stats',
+      icon: 'stats-chart-outline',
+      route: 'OrganizerStats',
+    });
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView}>

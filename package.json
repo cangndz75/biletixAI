@@ -35,6 +35,7 @@
     "react-native": "0.75.3",
     "react-native-alert-notification": "^0.4.0",
     "react-native-animatable": "^1.4.0",
+    "react-native-chart-kit": "^6.12.0",
     "react-native-cn-quill": "^0.7.18",
     "react-native-collapsible": "^1.6.2",
     "react-native-config": "^1.5.3",

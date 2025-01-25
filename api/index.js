@@ -2828,7 +2828,7 @@ app.delete('/posts/:id/delete', async (req, res) => {
 app.post('/add-ad', async (req, res) => {
   const {organizer, title, description, imageUrl, redirectUrl} = req.body;
 
-  console.log('✅ Gelen Ad Verisi:', req.body); 
+  console.log('✅ Gelen Ad Verisi:', req.body);
 
   if (!organizer || !title || !description || !imageUrl) {
     console.error('❌ Eksik alanlar:', {
@@ -2865,5 +2865,73 @@ app.get('/ads', async (req, res) => {
   } catch (error) {
     console.error('❌ Error fetching ads:', error);
     res.status(500).json({message: 'Error fetching ads'});
+  }
+});
+
+app.get('/organizer-stats', async (req, res) => {
+  try {
+    const {userId} = req.query;
+
+    if (!userId) {
+      return res.status(400).json({message: 'User ID is required.'});
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({message: 'User not found.'});
+    }
+
+    if (user.role !== 'organizer') {
+      return res
+        .status(403)
+        .json({message: 'Access denied. Not an organizer.'});
+    }
+
+    const totalEvents = await Event.countDocuments({organizer: userId});
+
+    const totalAttendees = await Event.aggregate([
+      {$match: {organizer: userId}},
+      {$group: {_id: null, total: {$sum: {$size: '$attendees'}}}},
+    ]);
+
+    const last30DaysEvents = await Event.aggregate([
+      {
+        $match: {
+          organizer: userId,
+          date: {$gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)},
+        },
+      },
+      {$group: {_id: '$date', attendees: {$sum: {$size: '$attendees'}}}},
+      {$sort: {_id: 1}},
+    ]);
+
+    const topEvents = await Event.find({organizer: userId})
+      .sort({attendees: -1})
+      .limit(5)
+      .select('title attendees date');
+
+    const totalCommunities = await Community.countDocuments({
+      organizer: userId,
+    });
+
+    const totalCommunityMembers = await Community.aggregate([
+      {$match: {organizer: userId}},
+      {$group: {_id: null, total: {$sum: {$size: '$members'}}}},
+    ]);
+
+    res.status(200).json({
+      totalEvents,
+      totalAttendees: totalAttendees.length ? totalAttendees[0].total : 0,
+      last30DaysEvents,
+      topEvents,
+      totalCommunities,
+      totalCommunityMembers: totalCommunityMembers.length
+        ? totalCommunityMembers[0].total
+        : 0,
+    });
+  } catch (error) {
+    console.error('❌ Organizer Stats Error:', error);
+    res.status(500).json({message: 'Error fetching organizer stats'});
   }
 });

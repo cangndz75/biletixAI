@@ -63,6 +63,7 @@ import StartScreen from '../screens/StartScreen';
 import LocationScreen from '../screens/LocationScreen';
 import EventsForLocation from '../screens/EventsForLocation';
 import AdminAdScreen from '../screens/admin/AdminAdScreen';
+import OrganizerStats from '../screens/admin/OrganizerStats';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -428,6 +429,11 @@ const MainStack = () => (
     <Stack.Screen
       name="AdminAdScreen"
       component={AdminAdScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="OrganizerStats"
+      component={OrganizerStats}
       options={{headerShown: false}}
     />
   </Stack.Navigator>
