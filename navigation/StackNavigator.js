@@ -1,7 +1,10 @@
-import React, {useContext} from 'react';
+import React, {useContext, useEffect} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {NavigationContainer} from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import {AuthContext} from '../AuthContext';
@@ -57,8 +60,12 @@ import ETicketScreen from '../screens/ETicketScreen';
 import StaffQrScreen from '../screens/StaffQrScreen';
 import RequestForOrganizer from '../screens/super-admin/RequestForOrganizer';
 import StartScreen from '../screens/StartScreen';
+import LocationScreen from '../screens/LocationScreen';
+import EventsForLocation from '../screens/EventsForLocation';
+import AdminAdScreen from '../screens/admin/AdminAdScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const navigationRef = createNavigationContainerRef();
 
 const BottomTabs = () => {
   const {role} = useContext(AuthContext);
@@ -402,6 +409,27 @@ const MainStack = () => (
       component={StartScreen}
       options={{headerShown: false}}
     />
+    <Stack.Screen
+      name="LocationScreen"
+      component={LocationScreen}
+      initialParams={{onCitySelect: () => {}, onDistrictSelect: () => {}}}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="EventsForLocation"
+      component={EventsForLocation}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="EventScreen"
+      component={EventScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="AdminAdScreen"
+      component={AdminAdScreen}
+      options={{headerShown: false}}
+    />
   </Stack.Navigator>
 );
 
@@ -428,6 +456,19 @@ const AuthStack = () => (
 const StackNavigator = () => {
   const {role} = useContext(AuthContext);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('StartScreen');
+      }
+    };
+
+    if (module.hot) {
+      module.hot.accept(() => {
+        handleRefresh();
+      });
+    }
+  }, []);
   return role ? <MainStack /> : <AuthStack />;
 };
 

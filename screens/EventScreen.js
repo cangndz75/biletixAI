@@ -1,4 +1,4 @@
-import React, {useState, useContext, useEffect, useCallback} from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import UpComingEvent from '../components/UpComingEvent';
 import FilterModal from '../components/FilterModal';
+
+const API_BASE_URL = 'https://biletixai.onrender.com';
 
 const EventScreen = () => {
   const {user} = useContext(AuthContext);
@@ -31,7 +33,14 @@ const EventScreen = () => {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({});
 
-  const categories = ['All', 'Sports', 'Music', 'Football'];
+  const categories = [
+    'All',
+    'Concert',
+    'Sports',
+    'Music',
+    'Theatre',
+    'Football',
+  ];
 
   useEffect(() => {
     fetchEvents();
@@ -40,7 +49,7 @@ const EventScreen = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://biletixai.onrender.com/events');
+      const response = await axios.get(`${API_BASE_URL}/events`);
       setEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -63,38 +72,37 @@ const EventScreen = () => {
   });
 
   const renderHeader = () => (
-    <View style={{padding: 12, backgroundColor: '#7b61ff'}}>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <Text style={{color: 'white', fontSize: 16, fontWeight: 'bold'}}>
-          {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
-        </Text>
-        <Ionicons name="notifications-outline" size={24} color="white" />
+    <View style={{padding: 12, backgroundColor: '#F5F5F5'}}>
+      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <Pressable onPress={() => navigation.goBack()} style={{padding: 8}}>
+          <Ionicons name="arrow-back-outline" size={24} color="#444" />
+        </Pressable>
+        <Pressable
+          onPress={() => navigation.navigate('SearchScreen')}
+          style={{
+            flex: 1,
+            backgroundColor: '#fff',
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderRadius: 12,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            elevation: 3,
+          }}>
+          <Ionicons name="search-outline" size={20} color="#888" />
+          <TextInput
+            placeholder="Search Event"
+            style={{flex: 1, marginLeft: 10}}
+            editable={false}
+          />
+          <Ionicons
+            onPress={() => setFilterModalVisible(true)}
+            name="filter-outline"
+            size={24}
+            color="#444"
+          />
+        </Pressable>
       </View>
-
-      <Pressable
-        onPress={() => navigation.navigate('SearchScreen')}
-        style={{
-          marginTop: 15,
-          backgroundColor: 'white',
-          flexDirection: 'row',
-          alignItems: 'center',
-          borderRadius: 8,
-          paddingHorizontal: 10,
-          paddingVertical: 5,
-        }}>
-        <Ionicons name="search-outline" size={20} color="gray" />
-        <TextInput
-          placeholder="Search Event"
-          style={{flex: 1, marginLeft: 10}}
-          editable={false}
-        />
-        <Ionicons
-          onPress={() => setFilterModalVisible(true)}
-          name="filter-outline"
-          size={24}
-          color="#7b61ff"
-        />
-      </Pressable>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={{marginTop: 15, flexDirection: 'row'}}>
@@ -104,7 +112,7 @@ const EventScreen = () => {
               onPress={() => setSelectedCategory(category)}
               style={{
                 backgroundColor:
-                  selectedCategory === category ? '#ff6b6b' : '#ddd',
+                  selectedCategory === category ? '#FF6B6B' : '#E0E0E0',
                 borderRadius: 20,
                 paddingHorizontal: 15,
                 paddingVertical: 8,
@@ -112,7 +120,7 @@ const EventScreen = () => {
               }}>
               <Text
                 style={{
-                  color: selectedCategory === category ? 'white' : '#000',
+                  color: selectedCategory === category ? '#fff' : '#333',
                 }}>
                 {category}
               </Text>
@@ -123,39 +131,50 @@ const EventScreen = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <ActivityIndicator size="large" color="#07bc0c" />
-      </View>
-    );
-  }
-
   return (
-    <>
-      <FlatList
-        ListHeaderComponent={
-          <>
-            {renderHeader()}
-            <FilterModal
-              visible={filterModalVisible}
-              onClose={() => setFilterModalVisible(false)}
-              onApply={filters => {
-                setAppliedFilters(filters);
-                setFilterModalVisible(false);
-              }}
-              onReset={() => {
-                setAppliedFilters({});
-                setFilterModalVisible(false);
-              }}
-            />
-          </>
-        }
-        data={filteredEvents}
-        renderItem={({item}) => <UpComingEvent item={item} />}
-        keyExtractor={item => item._id}
+    <View style={{flex: 1, backgroundColor: '#FAFAFA'}}>
+      {loading ? (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <ActivityIndicator size="large" color="#FF6B6B" />
+        </View>
+      ) : (
+        <>
+          <FlatList
+            ListHeaderComponent={renderHeader}
+            data={filteredEvents}
+            numColumns={2}
+            keyExtractor={item => item._id}
+            renderItem={({item}) => <UpComingEvent item={item} />}
+            columnWrapperStyle={{
+              justifyContent: 'space-between',
+              paddingHorizontal: 10,
+            }}
+            ListEmptyComponent={
+              <View style={{alignItems: 'center', marginTop: 50}}>
+                <Ionicons name="calendar-outline" size={48} color="#888" />
+                <Text style={{fontSize: 18, color: '#888', marginTop: 8}}>
+                  No Events Available
+                </Text>
+              </View>
+            }
+          />
+        </>
+      )}
+
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={filters => {
+          setAppliedFilters(filters);
+          setFilterModalVisible(false);
+        }}
+        onReset={() => {
+          setAppliedFilters({});
+          fetchEvents();
+          setFilterModalVisible(false);
+        }}
       />
-    </>
+    </View>
   );
 };
 

@@ -38,6 +38,8 @@ const HomeScreen = () => {
   const {userId} = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const categories = [
     'All',
@@ -47,9 +49,25 @@ const HomeScreen = () => {
     'Theatre',
     'Dance',
   ];
-  const filterEventsByCategory = (events, category) => {
-    if (category === 'All') return events;
-    return events.filter(event => event.eventType === category.toLowerCase());
+  const filterEventsByCategoryAndLocation = (
+    events,
+    category,
+    city,
+    district,
+  ) => {
+    let filtered = events;
+    if (category !== 'All') {
+      filtered = filtered.filter(
+        event => event.eventType === category.toLowerCase(),
+      );
+    }
+    if (city) {
+      filtered = filtered.filter(event => event.city === city);
+    }
+    if (district) {
+      filtered = filtered.filter(event => event.district === district);
+    }
+    return filtered;
   };
   const active = useSharedValue(false);
   const progress = useDerivedValue(() => {
@@ -76,19 +94,12 @@ const HomeScreen = () => {
       borderRadius,
     };
   });
-  const filteredEvents = filterEventsByCategory(eventList, selectedCategory);
-  const fetchUserData = async () => {
-    const token = await AsyncStorage.getItem('token');
-    if (userId && token) {
-      const response = await axios.get(
-        `https://biletixai.onrender.com/user/${userId}`,
-        {headers: {Authorization: `Bearer ${token}`}},
-      );
-      setUser(response.data);
-    } else {
-      setUser(null);
-    }
-  };
+  const filteredEvents = filterEventsByCategoryAndLocation(
+    eventList,
+    selectedCategory,
+    selectedCity,
+    selectedDistrict,
+  );
 
   const fetchEvents = async () => {
     try {
@@ -118,6 +129,21 @@ const HomeScreen = () => {
       fetchEvents();
     }, []),
   );
+
+  const fetchUserData = async () => {
+    if (!userId) return;
+
+    try {
+      const response = await axios.get(
+        `https://biletixai.onrender.com/user/${userId}`,
+      );
+      if (response.status === 200) {
+        setUser(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,24 +224,24 @@ const HomeScreen = () => {
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image
-            source={{uri: 'https://example.com/profile.jpg'}}
-            style={{width: 50, height: 50, borderRadius: 25, marginRight: 10}}
-          />
-          <View>
-            <Text style={{color: '#777', fontSize: 16}}>Good Morning 👋</Text>
-            <Text style={{fontSize: 18, fontWeight: 'bold'}}>
-              {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
-            </Text>
-          </View>
+          <Text style={{color: '#777', fontSize: 16}}>Hi 👋</Text>
+          <Text style={{fontSize: 18, fontWeight: 'bold', marginLeft: 5}}>
+            {user && user.firstName
+              ? `${user.firstName} ${user.lastName}`
+              : 'Guest'}
+          </Text>
         </View>
-
         <TouchableOpacity
-          onPress={() => navigation.navigate('NotificationScreen')}>
-          <Ionicons name="notifications-outline" size={28} color="#333" />
+          onPress={() =>
+            navigation.navigate('LocationScreen', {
+              setSelectedCity,
+              setSelectedDistrict,
+            })
+          }
+          style={{padding: 10}}>
+          <Ionicons name="location-outline" size={28} color="#333" />
         </TouchableOpacity>
       </View>
-
       <View
         style={{
           flexDirection: 'row',
@@ -245,20 +271,30 @@ const HomeScreen = () => {
         showsHorizontalScrollIndicator={false}
         style={{marginBottom: 20}}>
         {[
-          {title: 'Concert', image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png'},
+          {
+            title: 'Concert',
+            eventType: 'Concert',
+            image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png',
+          },
           {
             title: 'Sport Events',
+            eventType: 'Sports',
             image:
               'https://media.istockphoto.com/id/469569148/tr/foto%C4%9Fraf/soccer-fans-at-stadium.jpg?s=2048x2048&w=is&k=20&c=9lF6InxcOnYcJXsuYoFScnmtyrRrnXu3F21B5FRuEF4=',
           },
           {
             title: 'Theatre',
+            eventType: 'Theatre',
             image:
               'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
           },
-          {title: 'Book Fair', image: 'https://picsum.photos/203'},
         ].map((category, index) => (
-          <Pressable key={index} style={{marginRight: 10}}>
+          <Pressable
+            key={index}
+            onPress={() =>
+              navigation.navigate('EventScreen', {category: category.eventType})
+            }
+            style={{marginRight: 10}}>
             <ImageBackground
               source={{uri: category.image}}
               style={{

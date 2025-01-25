@@ -12,17 +12,20 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Slider from '@react-native-community/slider';
 
 const categories = [
+  {name: 'Concert', icon: 'musical-notes-outline'},
   {name: 'Sports', icon: 'basketball-outline'},
-  {name: 'Music', icon: 'musical-notes-outline'},
   {name: 'Art', icon: 'color-palette-outline'},
   {name: 'Food', icon: 'restaurant-outline'},
   {name: 'Theatre', icon: 'film-outline'},
 ];
 
-const FilterModal = ({visible, onClose, onApply}) => {
+const capitalizeFirstLetter = text =>
+  text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+
+const FilterModal = ({visible, onClose, onApply, onReset}) => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [priceRange, setPriceRange] = useState([20, 120]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [location, setLocation] = useState('');
 
@@ -43,7 +46,8 @@ const FilterModal = ({visible, onClose, onApply}) => {
     setSelectedCategories([]);
     setPriceRange([20, 120]);
     setLocation('');
-    setSelectedDate(new Date());
+    setSelectedDate(null);
+    onReset();
   };
 
   return (
@@ -118,14 +122,14 @@ const FilterModal = ({visible, onClose, onApply}) => {
                 }}>
                 <Ionicons name="calendar-outline" size={24} color="#7b61ff" />
                 <Text style={{marginLeft: 10}}>
-                  {selectedDate.toDateString()}
+                  {selectedDate ? selectedDate.toDateString() : 'Select Date'}
                 </Text>
               </View>
             </Pressable>
 
             {showDatePicker && (
               <DateTimePicker
-                value={selectedDate}
+                value={selectedDate || new Date()}
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
@@ -191,7 +195,9 @@ const FilterModal = ({visible, onClose, onApply}) => {
               <Pressable
                 onPress={() => {
                   onApply({
-                    selectedCategories,
+                    selectedCategories: selectedCategories.map(
+                      capitalizeFirstLetter,
+                    ),
                     priceRange,
                     location,
                     selectedDate,

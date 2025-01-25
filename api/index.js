@@ -13,6 +13,7 @@ const Community = require('./models/community');
 const Post = require('./models/post');
 const {QUESTIONS} = require('../shared/questions');
 const Question = require('./models/question');
+const Ad = require('./models/ad');
 const moment = require('moment');
 const app = express();
 const port = process.env.PORT || 8000;
@@ -461,12 +462,37 @@ addVenues().catch(err => {
 });
 
 app.get('/venues', async (req, res) => {
+  const {city, district} = req.query;
+
+  if (!city || !district) {
+    return res
+      .status(400)
+      .json({message: 'City and district parameters are required'});
+  }
+
   try {
-    const venues = await Venue.find();
-    res.status(200).json(venues);
+    const filteredVenues = venues.filter(venue => {
+      const [venueDistrict, venueCity] = venue.location
+        .split(', ')
+        .map(v => v.trim());
+      return (
+        venueCity.toLowerCase() === city.toLowerCase() &&
+        venueDistrict.toLowerCase() === district.toLowerCase()
+      );
+    });
+
+    if (filteredVenues.length === 0) {
+      return res
+        .status(404)
+        .json({message: 'No venues found for this location'});
+    }
+
+    res.status(200).json(filteredVenues);
   } catch (error) {
     console.error('Error fetching venues:', error);
-    res.status(500).send('Internal Server Error');
+    res
+      .status(500)
+      .json({message: 'Internal server error', error: error.message});
   }
 });
 
@@ -1288,21 +1314,28 @@ app.get('/event/:eventId/organizer', async (req, res) => {
 });
 
 app.get('/events/:eventId', async (req, res) => {
-  const {eventId} = req.params;
-
-  console.log('Fetching event with ID:', eventId);
-
-  if (!mongoose.Types.ObjectId.isValid(eventId)) {
-    return res.status(400).json({message: 'Invalid event ID'});
-  }
-
   try {
+    const {eventId} = req.params;
+
+    console.log('Fetching event with ID:', eventId);
+
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      console.warn('Invalid event ID:', eventId);
+      return res.status(400).json({message: 'Invalid event ID format'});
+    }
+
     const event = await Event.findById(eventId)
-      .populate('organizer')
-      .populate('attendees');
+      .populate({
+        path: 'organizer',
+        select: 'firstName lastName email image',
+      })
+      .populate({
+        path: 'attendees',
+        select: 'firstName lastName email image',
+      });
 
     if (!event) {
-      console.warn('Event not found.');
+      console.warn(`Event not found: ${eventId}`);
       return res.status(404).json({message: 'Event not found'});
     }
 
@@ -1310,7 +1343,7 @@ app.get('/events/:eventId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching event:', error);
     res.status(500).json({
-      message: 'Internal server error',
+      message: 'Internal Server Error',
       error: error.message,
     });
   }
@@ -2789,5 +2822,40 @@ app.delete('/posts/:id/delete', async (req, res) => {
     res.status(200).json({message: '✅ Post deleted successfully'});
   } catch (error) {
     res.status(500).json({message: '❌ Failed to delete post.'});
+  }
+});
+
+app.post('/ads', async (req, res) => {
+  const {organizer, title, description, imageUrl, redirectUrl} = req.body;
+
+  if (!organizer || !title || !description || !imageUrl) {
+    return res
+      .status(400)
+      .json({message: 'All required fields must be filled'});
+  }
+
+  try {
+    const newAd = new Ad({
+      organizer,
+      title,
+      description,
+      imageUrl,
+      redirectUrl,
+    });
+    await newAd.save();
+    res.status(201).json({message: 'Ad successfully created', ad: newAd});
+  } catch (error) {
+    console.error('Error adding ad:', error);
+    res.status(500).json({message: 'Error adding ad'});
+  }
+});
+
+router.get('/ads', async (req, res) => {
+  try {
+    const ads = await Ad.find().populate('organizer', 'name email');
+    res.status(200).json(ads);
+  } catch (error) {
+    console.error('Error fetching ads:', error);
+    res.status(500).json({message: 'Error fetching ads'});
   }
 });

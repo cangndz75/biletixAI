@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Modal,
+  Image,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Linking} from 'react-native';
@@ -19,6 +20,7 @@ const OrganizerSubscribe = () => {
   const navigation = useNavigation();
   const priceId = 'price_1Qjp1ZBMq2jPTvoIEnXqxV92';
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isReturningFromPayment, setIsReturningFromPayment] = useState(false);
 
   const handleSubscribe = async () => {
     if (!userId) {
@@ -43,10 +45,8 @@ const OrganizerSubscribe = () => {
 
       const {url} = await response.json();
       if (url) {
+        setIsReturningFromPayment(true);
         Linking.openURL(url);
-        setTimeout(() => {
-          setShowSuccessModal(true);
-        }, 5000);
       } else {
         alert('Payment URL could not be retrieved.');
       }
@@ -57,13 +57,12 @@ const OrganizerSubscribe = () => {
   };
 
   useEffect(() => {
-    if (showSuccessModal) {
+    if (isReturningFromPayment) {
       setTimeout(() => {
-        setShowSuccessModal(false);
-        navigation.navigate('HomeScreen');
+        setShowSuccessModal(true);
       }, 3000);
     }
-  }, [showSuccessModal]);
+  }, [isReturningFromPayment]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -89,15 +88,26 @@ const OrganizerSubscribe = () => {
         <Text style={styles.subscribeText}>Subscribe Now - $15.00 / Month</Text>
       </TouchableOpacity>
 
-      <Modal visible={showSuccessModal} transparent animationType="fade">
+      <Modal visible={showSuccessModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Ionicons name="checkmark-circle" size={50} color="green" />
+            <Image
+              source={{
+                uri: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
+              }}
+              style={styles.successIcon}
+            />
             <Text style={styles.modalTitle}>Payment Success</Text>
-            <Text>Your Organizer Plus subscription is active!</Text>
+            <Text style={styles.modalText}>
+              Your Organizer Plus subscription is now active! Enjoy exclusive
+              features.
+            </Text>
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => navigation.navigate('HomeScreen')}>
+              onPress={() => {
+                setShowSuccessModal(false);
+                navigation.navigate('AdminDashboard');
+              }}>
               <Text style={styles.modalButtonText}>Go to Homepage</Text>
             </TouchableOpacity>
           </View>
@@ -143,6 +153,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subscribeText: {color: 'white', fontSize: 18, fontWeight: 'bold'},
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    width: '80%',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  successIcon: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  modalText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 15,
+  },
+  modalButton: {
+    backgroundColor: '#6200EE',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export default OrganizerSubscribe;
