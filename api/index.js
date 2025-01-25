@@ -2825,10 +2825,18 @@ app.delete('/posts/:id/delete', async (req, res) => {
   }
 });
 
-app.post('/ads', async (req, res) => {
+app.post('/add-ad', async (req, res) => {
   const {organizer, title, description, imageUrl, redirectUrl} = req.body;
 
+  console.log('✅ Gelen Ad Verisi:', req.body); 
+
   if (!organizer || !title || !description || !imageUrl) {
+    console.error('❌ Eksik alanlar:', {
+      organizer,
+      title,
+      description,
+      imageUrl,
+    });
     return res
       .status(400)
       .json({message: 'All required fields must be filled'});
@@ -2845,17 +2853,17 @@ app.post('/ads', async (req, res) => {
     await newAd.save();
     res.status(201).json({message: 'Ad successfully created', ad: newAd});
   } catch (error) {
-    console.error('Error adding ad:', error);
+    console.error('❌ Error adding ad:', error);
     res.status(500).json({message: 'Error adding ad'});
   }
 });
 
-router.get('/ads', async (req, res) => {
+app.get('/ads', async (req, res) => {
   try {
     const ads = await Ad.find().populate('organizer', 'name email');
     res.status(200).json(ads);
   } catch (error) {
-    console.error('Error fetching ads:', error);
+    console.error('❌ Error fetching ads:', error);
     res.status(500).json({message: 'Error fetching ads'});
   }
 });

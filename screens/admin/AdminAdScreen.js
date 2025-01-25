@@ -40,18 +40,21 @@ const AdminAdScreen = () => {
       });
       formData.append('upload_preset', UPLOAD_PRESET);
 
+      console.log('📤 Resim Yükleniyor:', selectedImage.uri);
+
       const response = await axios.post(CLOUDINARY_URL, formData, {
         headers: {'Content-Type': 'multipart/form-data'},
       });
 
       if (response.data.secure_url) {
         setImage(response.data.secure_url);
+        console.log('✅ Cloudinary URL:', response.data.secure_url);
       } else {
         Alert.alert('Error', 'Image upload failed.');
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to upload image.');
-      console.error('Cloudinary Upload Error:', error);
+      console.error('❌ Cloudinary Upload Error:', error);
     } finally {
       setLoading(false);
     }
@@ -76,17 +79,32 @@ const AdminAdScreen = () => {
       const adData = {
         title,
         description,
-        image,
-        url,
+        imageUrl: image, // 📌 `image` yerine `imageUrl` kullan!
+        redirectUrl: url,
         organizer: userId,
       };
 
-      await axios.post('https://biletixai.onrender.com/ads', adData);
+      console.log('📤 Gönderilen Ad Verisi:', JSON.stringify(adData, null, 2)); // 📌 Log ekle
+
+      const response = await axios.post(
+        'https://biletixai.onrender.com/add-ad',
+        adData,
+        {
+          headers: {'Content-Type': 'application/json'},
+        },
+      );
+
       Alert.alert('Success', 'Advertisement added successfully!');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', 'Failed to add advertisement.');
-      console.error('Ad Creation Error:', error);
+      console.error(
+        '❌ Ad Creation Error:',
+        error.response?.data || error.message,
+      );
+      Alert.alert(
+        'Error',
+        `Failed to add advertisement. ${error.response?.data?.message || ''}`,
+      );
     } finally {
       setLoading(false);
     }
