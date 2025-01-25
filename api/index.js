@@ -2960,10 +2960,6 @@ app.get('/vip-events', async (req, res) => {
       event => event.organizer && event.organizer.vipBadge === true,
     );
 
-    if (!filteredVipEvents.length) {
-      console.warn('⚠️ VIP Etkinlik bulunamadı.');
-      return res.status(404).json({message: 'No VIP events found'});
-    }
 
     console.log(
       '✅ VIP Etkinlikler başarıyla getirildi:',

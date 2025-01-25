@@ -197,9 +197,17 @@ const HomeScreen = () => {
       const response = await axios.get(
         'https://biletixai.onrender.com/vip-events',
       );
-      setVipEvents(response.data);
+      if (response.data && response.data.length > 0) {
+        setVipEvents(response.data);
+      } else {
+        setVipEvents([]);
+      }
     } catch (error) {
-      console.error('Error fetching VIP events:', error);
+      console.error(
+        '❌ Error fetching VIP events:',
+        error.response?.data || error.message,
+      );
+      setVipEvents([]);
     } finally {
       setIsLoadingVip(false);
     }
