@@ -49,10 +49,10 @@ const SuperAdminDashboard = ({navigation}) => {
     try {
       const [eventsRes, organizersRes, pendingRes, staffRes] =
         await Promise.all([
-          axios.get(`${API_BASE_URL}/events/count`),
-          axios.get(`${API_BASE_URL}/users/count?role=organizer`),
-          axios.get(`${API_BASE_URL}/users/count?status=pending`),
-          axios.get(`${API_BASE_URL}/users/count?role=staff`),
+          axios.get(`${API_BASE_URL}/total-events`),
+          axios.get(`${API_BASE_URL}/total-organizers`),
+          axios.get(`${API_BASE_URL}/pending-approvals`),
+          axios.get(`${API_BASE_URL}/staff-members`),
         ]);
 
       setDashboardStats({
@@ -110,14 +110,6 @@ const SuperAdminDashboard = ({navigation}) => {
             <Text style={styles.location}>Istanbul, Turkey</Text>
           </View>
         </View>
-      </View>
-
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color="#888" />
-        <TextInput
-          placeholder="Search events, users..."
-          style={styles.searchInput}
-        />
       </View>
 
       <View style={styles.cardContainer}>

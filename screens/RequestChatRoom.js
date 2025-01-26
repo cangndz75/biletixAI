@@ -105,7 +105,7 @@ import {
               paddingVertical: 8,
               borderRadius: 20,
             }}>
-            <Text style={{textAlign: 'center', color: 'white'}}>Send</Text>
+            <Text style={{textAlign: 'center', color: 'white'}}>Send1</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

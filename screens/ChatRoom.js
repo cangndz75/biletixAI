@@ -53,24 +53,32 @@ const ChatRoom = () => {
   }, [socket]);
 
   const sendMessage = async () => {
+    const receiverId = route?.params?.receiverId;
+
+    if (!receiverId) {
+      console.error('HATA: Receiver ID bulunamadı!');
+      return;
+    }
+
     try {
       console.log('Gönderilen Mesaj:', {
         senderId: userId,
-        receiverId: route?.params?.receiverId,
+        receiverId,
         message,
       });
 
       await axios.post('https://biletixai.onrender.com/sendMessage', {
         senderId: userId,
-        receiverId: route?.params?.receiverId,
+        receiverId,
         message,
       });
 
       socket.emit('sendMessage', {
         senderId: userId,
-        receiverId: route?.params?.receiverId,
+        receiverId,
         message,
       });
+
       setMessage('');
       fetchMessages();
     } catch (error) {
@@ -158,7 +166,7 @@ const ChatRoom = () => {
           <Feather name="mic" size={24} color="gray" />
         </View>
         <Pressable onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Text style={styles.sendButtonText}>Send2</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

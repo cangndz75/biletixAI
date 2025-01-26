@@ -44,6 +44,7 @@ const EventSetUpScreen = () => {
   const [isJoined, setIsJoined] = useState(false);
   const [rating, setRating] = useState(5);
   const [expanded, setExpanded] = useState(false);
+  const [attendees, setAttendees] = useState([]);
   useFocusEffect(
     React.useCallback(() => {
       fetchEventDetails();
@@ -54,6 +55,10 @@ const EventSetUpScreen = () => {
   useEffect(() => {
     fetchReviews();
   }, []);
+
+  useEffect(() => {
+    console.log('Updated Event Data:', item); // 💡 Güncellenmiş event verisini logla
+  }, [item]);
 
   useEffect(() => {
     const fetchUserAndEventDetails = async () => {
@@ -81,17 +86,36 @@ const EventSetUpScreen = () => {
     try {
       const response = await axios.get(
         `https://biletixai.onrender.com/events/${eventId}`,
-        {
-          params: {userId},
-        },
+        {params: {userId}},
       );
-      console.log('Event data:', response.data);
 
-      if (response.data.attendees?.some(attendee => attendee._id === userId)) {
-        setIsJoined(true);
-      } else {
-        setIsJoined(false);
+      let eventAttendees =
+        response.data.attendees || response.data.data?.attendees || [];
+
+      console.log('Attendees Response:', eventAttendees);
+
+      // Eğer attendees nesne içeriyorsa, doğrudan kaydet
+      if (eventAttendees.length > 0 && typeof eventAttendees[0] === 'object') {
+        setAttendees(eventAttendees);
+        return;
       }
+
+      // Eğer attendees sadece ID listesi içeriyorsa, kullanıcı bilgilerini çek
+      const attendeesData = await Promise.all(
+        eventAttendees.map(async attendeeId => {
+          try {
+            const userRes = await axios.get(
+              `https://biletixai.onrender.com/user/${attendeeId}`,
+            );
+            return userRes.data;
+          } catch (error) {
+            console.error(`Error fetching attendee ${attendeeId}:`, error);
+            return null;
+          }
+        }),
+      );
+
+      setAttendees(attendeesData.filter(user => user !== null));
     } catch (error) {
       console.error('Error fetching event details:', error);
       Alert.alert('Error', 'Unable to fetch event details.');
@@ -327,11 +351,11 @@ const EventSetUpScreen = () => {
   };
 
   const renderGoingSection = () => {
-    if (!item.attendees || item.attendees.length === 0 || !item.vipBadge) {
+    console.log('Attendees Data:', attendees);
+
+    if (!attendees || attendees.length === 0) {
       return null;
     }
-
-    const lastAttendees = item.attendees.slice(-5);
 
     return (
       <View
@@ -342,11 +366,16 @@ const EventSetUpScreen = () => {
         }}>
         <FlatList
           horizontal
-          data={lastAttendees}
+          data={attendees.slice(-5)}
           keyExtractor={attendee => attendee._id}
           renderItem={({item: attendee}) => (
             <Image
-              source={{uri: attendee.image || 'https://via.placeholder.com/50'}}
+              source={{
+                uri:
+                  attendee.image && attendee.image.startsWith('http')
+                    ? attendee.image
+                    : 'https://via.placeholder.com/50',
+              }}
               style={{
                 width: 50,
                 height: 50,

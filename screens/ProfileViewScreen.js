@@ -17,7 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ProfileViewScreen = () => {
   const route = useRoute();
-  const {userId} = route.params;
+  const {userId} = route.params || {};
   const {userId: loggedInUserId} = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,9 +27,13 @@ const ProfileViewScreen = () => {
   const isOrganizer = userData?.role === 'organizer';
 
   useEffect(() => {
+    if (!userId) {
+      Alert.alert('Error', 'User ID not found!');
+      navigation.goBack();
+      return;
+    }
     fetchUserData();
   }, [userId]);
-
   const fetchUserData = async () => {
     try {
       const response = await axios.get(
@@ -120,33 +124,38 @@ const ProfileViewScreen = () => {
               </Text>
             </View>
 
-            {loggedInUserId &&
-              userData.isPrivate === false &&
-              userData.vipBadge && (
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={
-                      isFollowing ? styles.unfollowButton : styles.followButton
+            {loggedInUserId && userData.vipBadge && !userData.isPrivate && (
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={
+                    isFollowing ? styles.unfollowButton : styles.followButton
+                  }
+                  onPress={isFollowing ? handleUnfollow : handleFollowRequest}>
+                  <Text style={styles.followButtonText}>
+                    {isFollowing ? 'Unfollow' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={() => {
+                    if (!userId) {
+                      Alert.alert('Error', 'Receiver ID bulunamadı!');
+                      return;
                     }
-                    onPress={
-                      isFollowing ? handleUnfollow : handleFollowRequest
-                    }>
-                    <Text style={styles.followButtonText}>
-                      {isFollowing ? 'Unfollow' : 'Follow'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.messageButton}
-                    onPress={() => navigation.navigate('ChatRoom', {userId})}>
-                    <Text style={styles.messageButtonText}>Message</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+                    navigation.navigate('ChatRoom', {
+                      receiverId: userId,
+                      name: `${userData.firstName} ${userData.lastName}`,
+                    });
+                  }}>
+                  <Text style={styles.messageButtonText}>Message</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </>
         )}
       </View>
 
-      {!userData.isPrivate && (
+      {!userData.isPrivate ? (
         <View
           style={{
             flexDirection: 'row',
@@ -154,13 +163,7 @@ const ProfileViewScreen = () => {
             width: '100%',
             marginVertical: 10,
           }}>
-          {[
-            'About',
-            'Events',
-            ...(userData.role !== 'organizer' && userData.role !== 'super_admin'
-              ? ['Reviews']
-              : []),
-          ].map(tab => (
+          {['About', 'Events'].map(tab => (
             <TouchableOpacity
               key={tab}
               style={{
@@ -174,13 +177,17 @@ const ProfileViewScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
+      ) : (
+        <View style={styles.privateAccountMessage}>
+          <Ionicons name="lock-closed" size={24} color="gray" />
+          <Text style={styles.privateText}>This Account is Private</Text>
+        </View>
       )}
 
       {!userData.isPrivate && (
         <View style={styles.tabContent}>
           {selectedTab === 'About' && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>About Me</Text>
               <Text style={styles.aboutText}>
                 {userData.aboutMe || 'No information available'}
               </Text>
@@ -204,7 +211,6 @@ const ProfileViewScreen = () => {
           )}
           {selectedTab === 'Events' && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Upcoming Events</Text>
               {userData.events?.length > 0 ? (
                 userData.events.map((event, index) => (
                   <View key={index} style={styles.eventCard}>
@@ -213,7 +219,7 @@ const ProfileViewScreen = () => {
                   </View>
                 ))
               ) : (
-                <Text>No events to display.</Text>
+                <Text>No participated events to display.</Text>
               )}
             </View>
           )}
@@ -263,7 +269,19 @@ const styles = StyleSheet.create({
   tabText: {fontSize: 16, fontWeight: '600'},
   tabContent: {padding: 20},
   privateContainer: {flexDirection: 'row', alignItems: 'center', marginTop: 10},
-  privateText: {marginLeft: 5, fontSize: 16, color: '#666'},
+  privateAccountMessage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    padding: 20,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 10,
+  },
+  privateText: {
+    fontSize: 16,
+    color: 'gray',
+    marginTop: 5,
+  },
   vipBadge: {flexDirection: 'row', alignItems: 'center', marginTop: 5},
   vipText: {color: 'gold', fontWeight: 'bold', marginLeft: 5},
   cardTitle: {fontSize: 18, fontWeight: 'bold', marginBottom: 10},
