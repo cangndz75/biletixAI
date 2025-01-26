@@ -3059,3 +3059,50 @@ app.put('/venues/:venueId/amenities', async (req, res) => {
     res.status(500).json({ message: 'Failed to update amenities' });
   }
 });
+
+app.get('/total-events', async (req, res) => {
+  try {
+    const totalEvents = await Event.countDocuments();
+    res.json({ count: totalEvents });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching total events', error });
+  }
+});
+
+app.get('/total-organizers', async (req, res) => {
+  try {
+    const totalOrganizers = await User.countDocuments({ role: 'organizer' });
+    res.json({ count: totalOrganizers });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching total organizers', error });
+  }
+});
+
+app.get('/pending-approvals', async (req, res) => {
+  try {
+    const pendingApprovals = await User.countDocuments({
+      "organizerApplication.status": "pending"
+    });
+    res.json({ count: pendingApprovals });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending approvals', error });
+  }
+});
+
+app.get('/staff-members', async (req, res) => {
+  try {
+    const staffMembers = await User.countDocuments({ role: 'staff' });
+    res.json({ count: staffMembers });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching staff members', error });
+  }
+});
+
+app.get('/total-users', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    res.json({ count: totalUsers });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching total users', error });
+  }
+});

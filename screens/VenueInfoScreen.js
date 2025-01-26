@@ -24,7 +24,7 @@ const ITEM_WIDTH = (width - 48) / 2;
 const VenueInfoScreen = () => {
   const route = useRoute();
   const {venueId} = route.params;
-  const {userId, role} = useContext(AuthContext); // 🆕 role artık alınıyor
+  const {userId, role} = useContext(AuthContext);
   const [venue, setVenue] = useState(null);
   const [amenities, setAmenities] = useState([]);
   const [events, setEvents] = useState([]);
@@ -33,6 +33,22 @@ const VenueInfoScreen = () => {
   const [selectedTab, setSelectedTab] = useState('Events');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+
+  const handleAddAmenities = async () => {
+    try {
+      const response = await axios.put(
+        `https://biletixai.onrender.com/venues/${venueId}/amenities`,
+        {
+          amenities,
+        },
+      );
+      setVenue(prev => ({...prev, amenities: response.data.amenities}));
+      alert('Amenities updated successfully!');
+    } catch (error) {
+      console.error('Error updating amenities:', error);
+      alert('Failed to update amenities. Please try again.');
+    }
+  };
 
   useEffect(() => {
     console.log('Route params:', route.params);
@@ -98,7 +114,6 @@ const VenueInfoScreen = () => {
     );
   }
 
-  // 🆕 Eksik renderEventItem fonksiyonunu ekledim
   const renderEventItem = ({item}) => (
     <View
       style={{
@@ -149,10 +164,8 @@ const VenueInfoScreen = () => {
             </Text>
           </View>
 
-          {/* 🆕 Amenities bileşeni */}
           <Amenities venueId={venueId} />
 
-          {/* 🆕 Sadece super_admin amenities ekleyebilir */}
           {role === 'super_admin' && (
             <View style={{marginTop: 20}}>
               <TextInput

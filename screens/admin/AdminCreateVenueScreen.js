@@ -3,13 +3,19 @@ import {
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   ScrollView,
   Image,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
+import {launchImageLibrary} from 'react-native-image-picker';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dhe3yon5d/image/upload';
+const UPLOAD_PRESET = 'eventmate';
 
 const AdminCreateVenueScreen = ({navigation}) => {
   const [venueData, setVenueData] = useState({
@@ -19,9 +25,51 @@ const AdminCreateVenueScreen = ({navigation}) => {
     address: '',
     image: '',
   });
+  const [uploading, setUploading] = useState(false);
 
   const handleInputChange = (key, value) => {
     setVenueData(prevState => ({...prevState, [key]: value}));
+  };
+
+  const openImagePicker = () => {
+    launchImageLibrary({mediaType: 'photo'}, response => {
+      if (response.assets) {
+        const imageUri = response.assets[0].uri;
+        uploadImageToCloudinary(imageUri);
+      }
+    });
+  };
+
+  const uploadImageToCloudinary = async imageUri => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: `venue_${Date.now()}.jpg`,
+    });
+    formData.append('upload_preset', UPLOAD_PRESET);
+
+    try {
+      const response = await axios.post(CLOUDINARY_URL, formData, {
+        headers: {'Content-Type': 'multipart/form-data'},
+      });
+
+      if (response.data.secure_url) {
+        setVenueData(prevState => ({
+          ...prevState,
+          image: response.data.secure_url,
+        }));
+        Alert.alert('Success', 'Image uploaded successfully!');
+      } else {
+        Alert.alert('Error', 'Failed to upload image.');
+      }
+    } catch (error) {
+      console.error('Cloudinary Upload Error:', error);
+      Alert.alert('Error', 'Image upload failed.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -50,6 +98,12 @@ const AdminCreateVenueScreen = ({navigation}) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={28} color="#000" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Create New Venue</Text>
 
       <TextInput
@@ -81,18 +135,24 @@ const AdminCreateVenueScreen = ({navigation}) => {
         onChangeText={text => handleInputChange('address', text)}
       />
 
-      <TextInput
-        placeholder="Image URL"
-        style={styles.input}
-        value={venueData.image}
-        onChangeText={text => handleInputChange('image', text)}
-      />
-
-      <Button title="Create Venue" onPress={handleSubmit} />
+      <TouchableOpacity onPress={openImagePicker} style={styles.uploadButton}>
+        {uploading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.uploadText}>
+            <Ionicons name="cloud-upload-outline" size={18} color="#fff" />{' '}
+            Upload Image
+          </Text>
+        )}
+      </TouchableOpacity>
 
       {venueData.image ? (
         <Image source={{uri: venueData.image}} style={styles.imagePreview} />
       ) : null}
+
+      <TouchableOpacity onPress={handleSubmit} style={styles.createButton}>
+        <Text style={styles.createButtonText}>Create Venue</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -100,21 +160,74 @@ const AdminCreateVenueScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+    backgroundColor: '#f8f9fa',
+    flexGrow: 1,
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 8,
+    elevation: 3,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
-    borderBottomWidth: 1,
-    marginBottom: 20,
-    paddingVertical: 8,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    fontSize: 16,
+    elevation: 2,
+  },
+  uploadButton: {
+    width: '100%',
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  uploadText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 5,
   },
   imagePreview: {
     width: '100%',
     height: 200,
+    marginTop: 10,
+    borderRadius: 10,
+    resizeMode: 'cover',
+    borderColor: '#ddd',
+    borderWidth: 1,
+  },
+  createButton: {
+    width: '100%',
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
     marginTop: 20,
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
