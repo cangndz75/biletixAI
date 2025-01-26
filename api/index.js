@@ -483,6 +483,23 @@ app.get('/venues/location', async (req, res) => {
 
   console.log(`API Received: city=${city}, district=${district}`);
 
+  const normalizeString = str => {
+    return str
+      .toLocaleLowerCase('tr-TR') 
+      .replace(/ı/g, 'i')
+      .replace(/İ/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/Ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/Ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/Ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/Ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/Ç/g, 'c');
+  };
+
   try {
     const venues = await Venue.find();
     const filteredVenues = venues.filter(venue => {
@@ -494,8 +511,8 @@ app.get('/venues/location', async (req, res) => {
         .map(v => v.trim());
 
       return (
-        venueCity.toLowerCase() === city.toLowerCase() &&
-        venueDistrict.toLowerCase() === district.toLowerCase()
+        normalizeString(venueCity) === normalizeString(city) &&
+        normalizeString(venueDistrict) === normalizeString(district)
       );
     });
 

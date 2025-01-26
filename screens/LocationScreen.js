@@ -14,6 +14,19 @@ const LocationScreen = ({route}) => {
   const navigation = useNavigation();
   const [selectedCity, setCity] = useState(null);
 
+  const handleCityPress = (city) => {
+    console.log(`City selected: ${city}`);
+    setCity(city);
+  };
+
+  const handleDistrictPress = (district) => {
+    console.log(`District selected: ${district}`);
+    navigation.navigate('EventsForLocation', {
+      city: selectedCity,
+      district: district,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -28,7 +41,7 @@ const LocationScreen = ({route}) => {
           data={Object.keys(cities)}
           keyExtractor={item => item}
           renderItem={({item}) => (
-            <TouchableOpacity style={styles.item} onPress={() => setCity(item)}>
+            <TouchableOpacity style={styles.item} onPress={() => handleCityPress(item)}>
               <Text style={styles.text}>{item}</Text>
             </TouchableOpacity>
           )}
@@ -40,12 +53,7 @@ const LocationScreen = ({route}) => {
           renderItem={({item}) => (
             <TouchableOpacity
               style={styles.item}
-              onPress={() => {
-                navigation.navigate('EventsForLocation', {
-                  city: selectedCity,
-                  district: item,
-                });
-              }}>
+              onPress={() => handleDistrictPress(item)}>
               <Text style={styles.text}>{item}</Text>
             </TouchableOpacity>
           )}

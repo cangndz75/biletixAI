@@ -22,14 +22,33 @@ const EventsForLocation = () => {
   const navigation = useNavigation();
 
   const {city, district} = route.params;
+
   useEffect(() => {
     console.log('Updated Venues:', venues);
   }, [venues]);
 
+  // Türkçe karakterleri normalize eden fonksiyon
+  const normalizeString = str => {
+    return str
+      .toLocaleLowerCase('tr-TR') // Türkçe küçük harfe çevir
+      .replace(/ı/g, 'i')
+      .replace(/İ/g, 'i')
+      .replace(/ğ/g, 'g')
+      .replace(/Ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/Ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/Ş/g, 's')
+      .replace(/ö/g, 'o')
+      .replace(/Ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/Ç/g, 'c');
+  };
+
   useEffect(() => {
     const fetchVenuesForLocation = async () => {
-      const encodedCity = encodeURIComponent(city);
-      const encodedDistrict = encodeURIComponent(district);
+      const encodedCity = encodeURIComponent(normalizeString(city));
+      const encodedDistrict = encodeURIComponent(normalizeString(district));
 
       console.log(`Fetching venues for: city=${city}, district=${district}`);
       console.log(
