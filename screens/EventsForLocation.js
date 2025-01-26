@@ -22,13 +22,25 @@ const EventsForLocation = () => {
   const navigation = useNavigation();
 
   const {city, district} = route.params;
+  useEffect(() => {
+    console.log('Updated Venues:', venues);
+  }, [venues]);
 
   useEffect(() => {
     const fetchVenuesForLocation = async () => {
+      const encodedCity = encodeURIComponent(city);
+      const encodedDistrict = encodeURIComponent(district);
+
+      console.log(`Fetching venues for: city=${city}, district=${district}`);
+      console.log(
+        `Encoded URL: ${API_BASE_URL}/venues/location?city=${encodedCity}&district=${encodedDistrict}`,
+      );
+
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/venues/location?city=${city}&district=${district}`,
+          `${API_BASE_URL}/venues/location?city=${encodedCity}&district=${encodedDistrict}`,
         );
+        console.log('Fetched Venues:', response.data);
         if (response.status === 200) {
           setVenues(response.data);
         }
@@ -48,6 +60,8 @@ const EventsForLocation = () => {
         const response = await axios.get(`${API_BASE_URL}/events`);
         if (response.status === 200) {
           const venueNames = venues.map(venue => venue.name);
+          console.log('Venue Names:', venueNames);
+
           const filteredEvents = response.data.filter(event =>
             venueNames.includes(event.location),
           );

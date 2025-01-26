@@ -466,12 +466,11 @@ app.get('/venues', async (req, res) => {
     res.status(200).json(venues);
   } catch (error) {
     console.error('Error fetching venues:', error);
-    res.status(500).json({message: 'Internal server error'});
   }
 });
 
 app.get('/venues/location', async (req, res) => {
-  const {city, district} = req.query;
+  let {city, district} = req.query;
 
   if (!city || !district) {
     return res
@@ -479,8 +478,13 @@ app.get('/venues/location', async (req, res) => {
       .json({message: 'City and district parameters are required'});
   }
 
+  city = decodeURIComponent(city).trim();
+  district = decodeURIComponent(district).trim();
+
+  console.log(`API Received: city=${city}, district=${district}`);
+
   try {
-    const venues = await Venue.find(); 
+    const venues = await Venue.find();
     const filteredVenues = venues.filter(venue => {
       if (!venue.location || !venue.location.includes(', ')) {
         return false;
@@ -488,6 +492,7 @@ app.get('/venues/location', async (req, res) => {
       const [venueDistrict, venueCity] = venue.location
         .split(', ')
         .map(v => v.trim());
+
       return (
         venueCity.toLowerCase() === city.toLowerCase() &&
         venueDistrict.toLowerCase() === district.toLowerCase()
@@ -495,11 +500,13 @@ app.get('/venues/location', async (req, res) => {
     });
 
     if (filteredVenues.length === 0) {
+      console.log(`No venues found for: city=${city}, district=${district}`);
       return res
         .status(404)
         .json({message: 'No venues found for this location'});
     }
 
+    console.log(`Venues found:`, filteredVenues);
     res.status(200).json(filteredVenues);
   } catch (error) {
     console.error('Error fetching venues:', error);

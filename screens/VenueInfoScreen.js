@@ -33,7 +33,24 @@ const VenueInfoScreen = () => {
   const [comment, setComment] = useState('');
 
   useEffect(() => {
+    console.log('Route params:', route.params); 
+
+    if (!route.params || !route.params.venueId) {
+      console.error('Venue ID is missing from route params!');
+      setLoading(false);
+      return;
+    }
+
+    const {venueId} = route.params; 
+    console.log('Venue ID:', venueId);
+
     const fetchVenueAndEvents = async () => {
+      if (!venueId || venueId.length !== 24) {
+        console.error('Invalid Venue ID:', venueId);
+        setLoading(false);
+        return;
+      }
+
       try {
         const venueResponse = await axios.get(
           `https://biletixai.onrender.com/venues/${venueId}`,
@@ -57,7 +74,7 @@ const VenueInfoScreen = () => {
     };
 
     fetchVenueAndEvents();
-  }, [venueId]);
+  }, [route.params]);
 
   const handleReviewSubmit = async () => {
     if (!comment.trim() || rating === 0) return;

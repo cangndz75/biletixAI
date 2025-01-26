@@ -90,9 +90,10 @@ const BookScreen = ({navigation}) => {
         renderItem={({item}) => (
           <VenueCard
             item={item}
-            onPress={() =>
-              navigation.navigate('VenueInfo', {venueId: item._id})
-            }
+            onPress={() => {
+              console.log('Navigating to VenueInfo with ID:', item._id); 
+              navigation.navigate('VenueInfo', {venueId: item._id});
+            }}
           />
         )}
         keyExtractor={item =>
