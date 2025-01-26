@@ -255,9 +255,7 @@ const HomeScreen = () => {
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Text style={{color: '#777', fontSize: 16}}>Hi 👋</Text>
           <Text style={{fontSize: 18, fontWeight: 'bold', marginLeft: 5}}>
-            {user && user.firstName
-              ? `${user.firstName} ${user.lastName}`
-              : 'Guest'}
+            {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
           </Text>
         </View>
         <TouchableOpacity
@@ -286,7 +284,7 @@ const HomeScreen = () => {
             title: 'Conference',
             eventType: 'Conference',
             image:
-              'https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+              'https://plus.unsplash.com/premium_photo-1679547203090-6313a91d4478?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
           },
           {
             title: 'Theatre',

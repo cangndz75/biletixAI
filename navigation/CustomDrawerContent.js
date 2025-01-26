@@ -63,6 +63,13 @@ function CustomDrawerContent(props) {
 
       <TouchableOpacity
         style={styles.menuItem}
+        onPress={() => navigation.navigate('BecomeOrganizerScreen')}>
+        <Ionicons name="people-outline" size={22} color="white" />
+        <Text style={styles.menuText}>Be Organizer</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.menuItem}
         onPress={() => navigation.dispatch(DrawerActions.closeDrawer())}>
         <Ionicons name="arrow-back" size={22} color="white" />
         <Text style={[styles.menuText, {color: 'white'}]}>Close</Text>

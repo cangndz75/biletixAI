@@ -235,13 +235,12 @@ const ReviewScreen = ({route, navigation}) => {
             )}
           </View>
 
-          {/* ✅ Kendi yorumlarını kaydırarak silebilme özelliği eklenmiş hali */}
           <SwipeListView
             data={reviews}
             keyExtractor={item => item._id}
             renderItem={renderReviewItem}
             renderHiddenItem={({item}) =>
-              item.userId === userId ? ( // Sadece kendi yorumları için göster
+              item.userId === userId ? ( 
                 <View style={styles.hiddenItemContainer}>
                   <TouchableOpacity
                     style={[styles.hiddenButton, {backgroundColor: 'red'}]}
@@ -251,7 +250,7 @@ const ReviewScreen = ({route, navigation}) => {
                 </View>
               ) : null
             }
-            rightOpenValue={-75} // Kaydırma mesafesi
+            rightOpenValue={-75} 
           />
 
           {isJoined && eventDatePassed && !userReview && (

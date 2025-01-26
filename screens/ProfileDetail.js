@@ -38,7 +38,6 @@ const ProfileDetailScreen = () => {
 
   useEffect(() => {
     if (!userId) {
-      console.warn('⚠️ userId is null, redirecting to Login screen...');
       navigation.reset({
         index: 0,
         routes: [{name: 'StartScreen'}],
