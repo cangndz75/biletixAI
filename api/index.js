@@ -48,24 +48,47 @@ app.post(
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const userId = session.metadata ? session.metadata.userId : null;
+      const userId = session.metadata?.userId;
+      const eventId = session.metadata?.eventId;
 
       console.log(`✅ Payment successful for User ID: ${userId}`);
 
-      if (userId) {
-        try {
-          const user = await User.findById(userId);
-          if (!user) {
-            console.error('❌ User not found');
-            return res.status(404).json({error: 'User not found'});
-          }
+      if (!userId) {
+        console.error('❌ User ID is missing from metadata');
+        return res.status(400).json({error: 'User ID is required'});
+      }
 
-          let newSubscriptionType;
-          if (user.role === 'organizer') {
-            newSubscriptionType = 'OrganizerPlus';
-          } else {
-            newSubscriptionType = 'UserPlus';
+      try {
+        const user = await User.findById(userId);
+        if (!user) {
+          console.error('❌ User not found');
+          return res.status(404).json({error: 'User not found'});
+        }
+
+        if (eventId) {
+          try {
+            const event = await Event.findById(eventId);
+            if (!event) {
+              console.error('❌ Event not found');
+              return res.status(404).json({error: 'Event not found'});
+            }
+
+            if (!event.attendees.includes(userId)) {
+              event.attendees.push(userId);
+              await event.save();
+              console.log(`✅ User ${userId} added to event ${eventId}`);
+            } else {
+              console.log(
+                `⚠️ User ${userId} is already attending event ${eventId}`,
+              );
+            }
+          } catch (error) {
+            console.error('❌ Error updating event:', error.message);
           }
+        }
+        else {
+          let newSubscriptionType =
+            user.role === 'organizer' ? 'OrganizerPlus' : 'UserPlus';
 
           const updatedUser = await User.findByIdAndUpdate(
             userId,
@@ -81,11 +104,9 @@ app.post(
             `✅ ${newSubscriptionType} subscription updated for User ID: ${userId}`,
           );
           console.log('✅ Updated User:', updatedUser);
-        } catch (error) {
-          console.error('❌ Error updating user:', error.message);
         }
-      } else {
-        console.error('❌ User ID is missing from metadata');
+      } catch (error) {
+        console.error('❌ Error updating user:', error.message);
       }
     }
 
@@ -3140,5 +3161,45 @@ app.get('/total-users', async (req, res) => {
     res.json({count: totalUsers});
   } catch (error) {
     res.status(500).json({message: 'Error fetching total users', error});
+  }
+});
+
+app.post('/create-checkout-session/event', async (req, res) => {
+  try {
+    const {price, userId, eventId} = req.body;
+
+    if (!price || !userId || !eventId) {
+      return res
+        .status(400)
+        .json({error: 'Price, User ID, and Event ID are required'});
+    }
+
+    console.log(
+      `Creating event payment session for user: ${userId} for event: ${eventId}`,
+    );
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {name: 'Event Ticket'},
+            unit_amount: Math.round(price * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {userId, eventId},
+      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+    });
+
+    console.log('✅ Event payment checkout session created:', session.id);
+    res.json({url: session.url});
+  } catch (error) {
+    console.error('🚨 Stripe Event Payment Error:', error);
+    res.status(500).json({error: error.message});
   }
 });

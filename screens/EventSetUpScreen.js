@@ -476,6 +476,28 @@ const EventSetUpScreen = () => {
     </View>
   );
 
+  const handleEventPayment = async () => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/create-checkout-session/event`,
+        {
+          price: item.price,
+          userId,
+          eventId: item._id,
+        },
+      );
+
+      if (response.data.url) {
+        navigation.navigate('WebViewScreen', {url: response.data.url});
+      } else {
+        alert('Payment URL could not be retrieved.');
+      }
+    } catch (error) {
+      console.error('Payment Error:', error);
+      alert('Something went wrong. Please try again.');
+    }
+  };
+
   const renderActionButton = () => {
     if (isJoined) {
       return (
@@ -496,6 +518,29 @@ const EventSetUpScreen = () => {
             You participated in this event.
           </Text>
         </View>
+      );
+    }
+
+    if (item.isPaid) {
+      return (
+        <TouchableOpacity
+          onPress={handlePayment}
+          style={{
+            backgroundColor: '#4CAF50',
+            padding: 15,
+            margin: 10,
+            borderRadius: 4,
+          }}>
+          <Text
+            style={{
+              color: 'white',
+              textAlign: 'center',
+              fontSize: 15,
+              fontWeight: '500',
+            }}>
+            Pay and Join (${item.price})
+          </Text>
+        </TouchableOpacity>
       );
     }
 
@@ -775,94 +820,102 @@ const EventSetUpScreen = () => {
           ) : (
             renderReviewSection()
           )}
-
-          <BottomModal
-            visible={modalVisible}
-            onTouchOutside={() => setModalVisible(false)}
-            modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}>
-            <ModalContent style={{padding: 20}}>
-              <TextInput
-                value={comment}
-                onChangeText={setComment}
-                placeholder="Add a comment..."
-                style={{
-                  borderColor: '#ccc',
-                  borderWidth: 1,
-                  borderRadius: 8,
-                  padding: 10,
-                  height: 100,
-                  textAlignVertical: 'top',
-                  marginBottom: 10,
-                }}
-              />
-              <TouchableOpacity
-                onPress={submitReview}
-                style={{
-                  backgroundColor: 'green',
-                  padding: 15,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                }}>
-                <Text style={{color: 'white', fontWeight: 'bold'}}>
-                  Submit Review
-                </Text>
-              </TouchableOpacity>
-            </ModalContent>
-          </BottomModal>
-          <BottomModal
-            onBackdropPress={() => setModalVisible(false)}
-            swipeDirection={['up', 'down']}
-            swipeThreshold={200}
-            modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}
-            visible={modalVisible}
-            onTouchOutside={() => setModalVisible(false)}>
-            <ModalContent
-              style={{width: '100%', height: 400, backgroundColor: 'white'}}>
-              <View>
-                <Text style={{fontSize: 15, fontWeight: '500', color: 'gray'}}>
-                  Join Event
-                </Text>
-                <Text style={{marginTop: 25, color: 'gray'}}>
-                  Please enter a message to send with your join request.
-                </Text>
-                <View
-                  style={{
-                    borderColor: '#E0E0E0',
-                    borderWidth: 1,
-                    padding: 10,
-                    borderRadius: 10,
-                    height: 200,
-                    marginTop: 20,
-                  }}>
+          {!item.isPaid && (
+            <>
+              <BottomModal
+                visible={modalVisible}
+                onTouchOutside={() => setModalVisible(false)}
+                modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}>
+                <ModalContent style={{padding: 20}}>
                   <TextInput
                     value={comment}
-                    onChangeText={text => setComment(text)}
-                    placeholder="Send a message to the host along with your request!"
-                    style={{height: 100, textAlignVertical: 'top'}}
-                  />
-                  <Pressable
-                    onPress={sendJoinRequest}
+                    onChangeText={setComment}
+                    placeholder="Add a comment..."
                     style={{
-                      marginTop: 'auto',
-                      backgroundColor: 'green',
-                      borderRadius: 5,
-                      justifyContent: 'center',
+                      borderColor: '#ccc',
+                      borderWidth: 1,
+                      borderRadius: 8,
                       padding: 10,
+                      height: 100,
+                      textAlignVertical: 'top',
+                      marginBottom: 10,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={submitReview}
+                    style={{
+                      backgroundColor: 'green',
+                      padding: 15,
+                      borderRadius: 8,
+                      alignItems: 'center',
                     }}>
-                    <Text
-                      style={{
-                        color: 'white',
-                        textAlign: 'center',
-                        fontSize: 15,
-                        fontWeight: '500',
-                      }}>
-                      Send Request
+                    <Text style={{color: 'white', fontWeight: 'bold'}}>
+                      Submit Review
                     </Text>
-                  </Pressable>
-                </View>
-              </View>
-            </ModalContent>
-          </BottomModal>
+                  </TouchableOpacity>
+                </ModalContent>
+              </BottomModal>
+              <BottomModal
+                onBackdropPress={() => setModalVisible(false)}
+                swipeDirection={['up', 'down']}
+                swipeThreshold={200}
+                modalAnimation={new SlideAnimation({slideFrom: 'bottom'})}
+                visible={modalVisible}
+                onTouchOutside={() => setModalVisible(false)}>
+                <ModalContent
+                  style={{
+                    width: '100%',
+                    height: 400,
+                    backgroundColor: 'white',
+                  }}>
+                  <View>
+                    <Text
+                      style={{fontSize: 15, fontWeight: '500', color: 'gray'}}>
+                      Join Event
+                    </Text>
+                    <Text style={{marginTop: 25, color: 'gray'}}>
+                      Please enter a message to send with your join request.
+                    </Text>
+                    <View
+                      style={{
+                        borderColor: '#E0E0E0',
+                        borderWidth: 1,
+                        padding: 10,
+                        borderRadius: 10,
+                        height: 200,
+                        marginTop: 20,
+                      }}>
+                      <TextInput
+                        value={comment}
+                        onChangeText={text => setComment(text)}
+                        placeholder="Send a message to the host along with your request!"
+                        style={{height: 100, textAlignVertical: 'top'}}
+                      />
+                      <Pressable
+                        onPress={sendJoinRequest}
+                        style={{
+                          marginTop: 'auto',
+                          backgroundColor: 'green',
+                          borderRadius: 5,
+                          justifyContent: 'center',
+                          padding: 10,
+                        }}>
+                        <Text
+                          style={{
+                            color: 'white',
+                            textAlign: 'center',
+                            fontSize: 15,
+                            fontWeight: '500',
+                          }}>
+                          Send Request
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </ModalContent>
+              </BottomModal>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

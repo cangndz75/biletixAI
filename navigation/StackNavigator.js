@@ -64,6 +64,7 @@ import LocationScreen from '../screens/LocationScreen';
 import EventsForLocation from '../screens/EventsForLocation';
 import AdminAdScreen from '../screens/admin/AdminAdScreen';
 import OrganizerStats from '../screens/admin/OrganizerStats';
+import WebViewScreen from '../screens/WebViewScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -398,6 +399,11 @@ const MainStack = () => (
     <Stack.Screen
       name="HomeScreen"
       component={HomeScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="WebViewScreen"
+      component={WebViewScreen}
       options={{headerShown: false}}
     />
     <Stack.Screen
