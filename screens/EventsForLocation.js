@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useContext} from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {AuthContext} from '../AuthContext';
 
 const API_BASE_URL = 'https://biletixai.onrender.com';
 
@@ -18,6 +19,7 @@ const EventsForLocation = () => {
   const [events, setEvents] = useState([]);
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {userId} = useContext(AuthContext);
   const route = useRoute();
   const navigation = useNavigation();
 
@@ -27,10 +29,9 @@ const EventsForLocation = () => {
     console.log('Updated Venues:', venues);
   }, [venues]);
 
-  // Türkçe karakterleri normalize eden fonksiyon
   const normalizeString = str => {
     return str
-      .toLocaleLowerCase('tr-TR') // Türkçe küçük harfe çevir
+      .toLocaleLowerCase('tr-TR')
       .replace(/ı/g, 'i')
       .replace(/İ/g, 'i')
       .replace(/ğ/g, 'g')
@@ -47,40 +48,48 @@ const EventsForLocation = () => {
 
   useEffect(() => {
     const fetchVenuesForLocation = async () => {
+      setLoading(true); 
       const encodedCity = encodeURIComponent(normalizeString(city));
       const encodedDistrict = encodeURIComponent(normalizeString(district));
+      const encodedUserId = encodeURIComponent(userId || '');
 
-      console.log(`Fetching venues for: city=${city}, district=${district}`);
-      console.log(
-        `Encoded URL: ${API_BASE_URL}/venues/location?city=${encodedCity}&district=${encodedDistrict}`,
-      );
+      console.log('Fetching venues for userId:', userId);
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/venues/location?city=${encodedCity}&district=${encodedDistrict}`,
+          `${API_BASE_URL}/venues/location?city=${encodedCity}&district=${encodedDistrict}&userId=${encodedUserId}`,
         );
-        console.log('Fetched Venues:', response.data);
+
         if (response.status === 200) {
-          setVenues(response.data);
+          setVenues(response.data || []);
         }
       } catch (error) {
-        console.error('Error fetching venues:', error);
+        if (error.response && error.response.status === 404) {
+          console.log(`No venues found for: ${district}, ${city}`);
+          setVenues([]);
+        } else {
+          console.error('Error fetching venues:', error);
+        }
+      } finally {
+        setLoading(false); 
       }
     };
 
     fetchVenuesForLocation();
-  }, [city, district]);
+  }, [city, district, userId]);
 
   useEffect(() => {
-    if (venues.length === 0) return;
+    if (venues.length === 0) {
+      setLoading(false); 
+      return;
+    }
 
     const fetchEventsForVenue = async () => {
+      setLoading(true);
       try {
         const response = await axios.get(`${API_BASE_URL}/events`);
         if (response.status === 200) {
           const venueNames = venues.map(venue => venue.name);
-          console.log('Venue Names:', venueNames);
-
           const filteredEvents = response.data.filter(event =>
             venueNames.includes(event.location),
           );
@@ -113,7 +122,7 @@ const EventsForLocation = () => {
         <ActivityIndicator
           size="large"
           color="#007bff"
-          style={{marginTop: 20}}
+          style={styles.loadingIndicator}
         />
       ) : events.length === 0 ? (
         <Text style={styles.noEventsText}>
@@ -127,11 +136,12 @@ const EventsForLocation = () => {
             <TouchableOpacity
               style={styles.eventCard}
               onPress={() => {
-                if (!item._id) {
+                const eventId = item._id || item.id; 
+                if (!eventId) {
                   console.error('Event ID is missing:', item);
                   return;
                 }
-                navigation.navigate('EventSetUp', {eventId: item._id});
+                navigation.navigate('EventSetUp', {eventId, userId});
               }}>
               <Image
                 source={{
@@ -162,6 +172,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#888',
     marginTop: 20,
+  },
+  loadingIndicator: {
+    marginTop: 50,
+    alignSelf: 'center',
   },
   eventCard: {
     flexDirection: 'row',

@@ -463,14 +463,16 @@ addVenues().catch(err => {
 
 app.get('/venues', async (req, res) => {
   try {
+    const venues = await Venue.find();
     res.status(200).json(venues);
   } catch (error) {
     console.error('Error fetching venues:', error);
+    res.status(500).send('Internal Server Error');
   }
 });
 
 app.get('/venues/location', async (req, res) => {
-  let {city, district} = req.query;
+  let {city, district, userId} = req.query;
 
   if (!city || !district) {
     return res
@@ -480,12 +482,15 @@ app.get('/venues/location', async (req, res) => {
 
   city = decodeURIComponent(city).trim();
   district = decodeURIComponent(district).trim();
+  userId = userId ? decodeURIComponent(userId).trim() : null;
 
-  console.log(`API Received: city=${city}, district=${district}`);
+  console.log(
+    `API Received: city=${city}, district=${district}, userId=${userId}`,
+  );
 
   const normalizeString = str => {
     return str
-      .toLocaleLowerCase('tr-TR') 
+      .toLocaleLowerCase('tr-TR')
       .replace(/ı/g, 'i')
       .replace(/İ/g, 'i')
       .replace(/ğ/g, 'g')
@@ -502,7 +507,7 @@ app.get('/venues/location', async (req, res) => {
 
   try {
     const venues = await Venue.find();
-    const filteredVenues = venues.filter(venue => {
+    let filteredVenues = venues.filter(venue => {
       if (!venue.location || !venue.location.includes(', ')) {
         return false;
       }
@@ -515,6 +520,20 @@ app.get('/venues/location', async (req, res) => {
         normalizeString(venueDistrict) === normalizeString(district)
       );
     });
+
+    if (userId) {
+      console.log(`Filtering venues based on userId: ${userId}`);
+
+      const user = await User.findById(userId);
+      if (user && user.favoriteVenues) {
+        filteredVenues = filteredVenues.sort((a, b) => {
+          return (
+            user.favoriteVenues.includes(b._id.toString()) -
+            user.favoriteVenues.includes(a._id.toString())
+          );
+        });
+      }
+    }
 
     if (filteredVenues.length === 0) {
       console.log(`No venues found for: city=${city}, district=${district}`);

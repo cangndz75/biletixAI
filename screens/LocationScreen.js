@@ -9,17 +9,16 @@ const cities = {
   Izmir: ['Konak', 'Bornova', 'Karşıyaka'],
 };
 
-const LocationScreen = ({route}) => {
-  const {setSelectedCity, setSelectedDistrict} = route.params;
+const LocationScreen = () => {
   const navigation = useNavigation();
-  const [selectedCity, setCity] = useState(null);
+  const [selectedCity, setSelectedCity] = useState(null); 
 
-  const handleCityPress = (city) => {
+  const handleCityPress = city => {
     console.log(`City selected: ${city}`);
-    setCity(city);
+    setSelectedCity(city);
   };
 
-  const handleDistrictPress = (district) => {
+  const handleDistrictPress = district => {
     console.log(`District selected: ${district}`);
     navigation.navigate('EventsForLocation', {
       city: selectedCity,
@@ -41,7 +40,9 @@ const LocationScreen = ({route}) => {
           data={Object.keys(cities)}
           keyExtractor={item => item}
           renderItem={({item}) => (
-            <TouchableOpacity style={styles.item} onPress={() => handleCityPress(item)}>
+            <TouchableOpacity
+              style={styles.item}
+              onPress={() => handleCityPress(item)}>
               <Text style={styles.text}>{item}</Text>
             </TouchableOpacity>
           )}
