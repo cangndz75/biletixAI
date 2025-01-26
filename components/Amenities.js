@@ -1,7 +1,19 @@
-import {StyleSheet, Text, View, FlatList} from 'react-native';
-import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import axios from 'axios';
 
-const Amenities = () => {
+const API_BASE_URL = 'https://biletixai.onrender.com';
+
+const Amenities = ({venueId}) => {
+  const [amenities, setAmenities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const services = [
     {id: '0', name: 'Bar'},
     {id: '1', name: 'Free Wi-Fi'},
@@ -15,17 +27,61 @@ const Amenities = () => {
     {id: '9', name: 'First Aid Station'},
   ];
 
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      if (!venueId) return;
+
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/venues/${venueId}/amenities`,
+        );
+        if (response.status === 200) {
+          const fetchedAmenities = response.data; 
+
+          const filteredAmenities = services.filter(service =>
+            fetchedAmenities.includes(service.name),
+          );
+
+          setAmenities(filteredAmenities);
+        }
+      } catch (error) {
+        console.error('Error fetching amenities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAmenities();
+  }, [venueId]);
+
   const renderAmenity = ({item}) => (
     <View style={styles.amenityCard}>
       <Text style={styles.amenityText}>{item.name}</Text>
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6347" />
+        <Text>Loading Amenities...</Text>
+      </View>
+    );
+  }
+
+  if (amenities.length === 0) {
+    return (
+      <View style={styles.noAmenitiesContainer}>
+        <Text style={styles.noAmenitiesText}>No Amenities Available</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Facilities & Amenities</Text>
       <FlatList
-        data={services}
+        data={amenities}
         renderItem={renderAmenity}
         keyExtractor={item => item.id}
         numColumns={3}
@@ -68,5 +124,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noAmenitiesContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noAmenitiesText: {
+    fontSize: 16,
+    color: '#777',
   },
 });

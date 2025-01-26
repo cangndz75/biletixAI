@@ -318,6 +318,15 @@ const venues = [
     location: 'Bostancı, İstanbul',
     address: 'Bostancı, Mehmet Şevki Paşa Cad. No:24, Kadıköy/İstanbul',
     bookings: [],
+    amenities: [
+      'Bar',
+      'Free Wi-Fi',
+      'Toilets',
+      'Parking',
+      'VIP Lounge',
+      'Food Stalls',
+      'First Aid Station',
+    ],
   },
   {
     name: 'Moda Sahnesi',
@@ -3022,5 +3031,31 @@ app.get('/vip-events', async (req, res) => {
   } catch (error) {
     console.error('❌ Error fetching VIP events:', error);
     res.status(500).json({message: 'Failed to fetch VIP events'});
+  }
+});
+
+app.put('/venues/:venueId/amenities', async (req, res) => {
+  try {
+    const { userId, amenities } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Unauthorized: You are not a super admin' });
+    }
+
+    const venue = await Venue.findByIdAndUpdate(
+      req.params.venueId,
+      { $set: { amenities } },
+      { new: true }
+    );
+
+    if (!venue) {
+      return res.status(404).json({ message: 'Venue not found' });
+    }
+
+    res.status(200).json({ message: 'Amenities updated successfully', venue });
+  } catch (error) {
+    console.error('Error updating amenities:', error);
+    res.status(500).json({ message: 'Failed to update amenities' });
   }
 });

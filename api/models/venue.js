@@ -21,6 +21,7 @@ const venueSchema = new Schema({
     },
   ],
   eventsAvailable: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  amenities: [{ type: String }],
 });
 
 const Venue = mongoose.model('Venue', venueSchema);

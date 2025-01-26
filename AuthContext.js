@@ -47,7 +47,7 @@ const AuthProvider = ({children}) => {
     try {
       await AsyncStorage.multiRemove(['userId', 'role', 'user']);
       setUserId(null);
-      setRole('user');
+      setRole(null);
       setUser(null);
     } catch (error) {
       console.error('Error clearing user data:', error);

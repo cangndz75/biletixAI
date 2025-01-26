@@ -16,6 +16,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import StarRating from 'react-native-star-rating-widget';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
+import Amenities from '../components/Amenities';
 
 const {width} = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -23,8 +24,9 @@ const ITEM_WIDTH = (width - 48) / 2;
 const VenueInfoScreen = () => {
   const route = useRoute();
   const {venueId} = route.params;
-  const {userId} = useContext(AuthContext);
+  const {userId, role} = useContext(AuthContext); // 🆕 role artık alınıyor
   const [venue, setVenue] = useState(null);
+  const [amenities, setAmenities] = useState([]);
   const [events, setEvents] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ const VenueInfoScreen = () => {
   const [comment, setComment] = useState('');
 
   useEffect(() => {
-    console.log('Route params:', route.params); 
+    console.log('Route params:', route.params);
 
     if (!route.params || !route.params.venueId) {
       console.error('Venue ID is missing from route params!');
@@ -41,21 +43,13 @@ const VenueInfoScreen = () => {
       return;
     }
 
-    const {venueId} = route.params; 
-    console.log('Venue ID:', venueId);
-
     const fetchVenueAndEvents = async () => {
-      if (!venueId || venueId.length !== 24) {
-        console.error('Invalid Venue ID:', venueId);
-        setLoading(false);
-        return;
-      }
-
       try {
         const venueResponse = await axios.get(
           `https://biletixai.onrender.com/venues/${venueId}`,
         );
         setVenue(venueResponse.data);
+        setAmenities(venueResponse.data.amenities || []);
 
         const eventsResponse = await axios.get(
           `https://biletixai.onrender.com/venues/${venueId}/events`,
@@ -104,6 +98,7 @@ const VenueInfoScreen = () => {
     );
   }
 
+  // 🆕 Eksik renderEventItem fonksiyonunu ekledim
   const renderEventItem = ({item}) => (
     <View
       style={{
@@ -126,65 +121,6 @@ const VenueInfoScreen = () => {
         <Text style={{fontSize: 12, color: '#777'}}>
           {item.location} on {item.date} at {item.time}
         </Text>
-      </View>
-    </View>
-  );
-
-  const renderReviews = () => (
-    <View style={{marginVertical: 10}}>
-      {reviews.length ? (
-        reviews.map((review, index) => (
-          <View
-            key={index}
-            style={{
-              marginBottom: 10,
-              padding: 10,
-              backgroundColor: '#f1f1f1',
-              borderRadius: 8,
-            }}>
-            <Text style={{fontWeight: 'bold'}}>
-              {review.userName || 'Anonymous'}
-            </Text>
-            <StarRating
-              rating={review.rating}
-              onChange={() => {}}
-              starSize={20}
-              readonly
-            />
-            <Text>{review.comment}</Text>
-            <Text style={{color: 'gray', fontSize: 12}}>
-              {new Date(review.reviewedAt).toLocaleDateString()}
-            </Text>
-          </View>
-        ))
-      ) : (
-        <Text>No comments available.</Text>
-      )}
-      <View style={{marginTop: 10}}>
-        <StarRating rating={rating} onChange={setRating} starSize={30} />
-        <TextInput
-          value={comment}
-          onChangeText={setComment}
-          placeholder="Type your review..."
-          style={{
-            marginTop: 10,
-            padding: 10,
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 8,
-          }}
-        />
-        <Pressable
-          onPress={handleReviewSubmit}
-          style={{
-            backgroundColor: 'green',
-            padding: 15,
-            marginTop: 10,
-            borderRadius: 8,
-            alignItems: 'center',
-          }}>
-          <Text style={{color: 'white'}}>Submit Review</Text>
-        </Pressable>
       </View>
     </View>
   );
@@ -212,16 +148,40 @@ const VenueInfoScreen = () => {
               {venue.location || 'Unknown Location'}
             </Text>
           </View>
-          <View style={{flexDirection: 'row', marginVertical: 5}}>
-            <MaterialCommunityIcons
-              name="account-outline"
-              size={24}
-              color="#555"
-            />
-            <Text style={{marginLeft: 8}}>
-              Organized by: {venue.organizer || 'Unknown'}
-            </Text>
-          </View>
+
+          {/* 🆕 Amenities bileşeni */}
+          <Amenities venueId={venueId} />
+
+          {/* 🆕 Sadece super_admin amenities ekleyebilir */}
+          {role === 'super_admin' && (
+            <View style={{marginTop: 20}}>
+              <TextInput
+                placeholder="Enter amenities (comma separated)"
+                value={amenities.join(', ')}
+                onChangeText={text =>
+                  setAmenities(text.split(',').map(a => a.trim()))
+                }
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ddd',
+                  padding: 10,
+                  borderRadius: 8,
+                  marginBottom: 10,
+                }}
+              />
+              <TouchableOpacity
+                onPress={handleAddAmenities}
+                style={{
+                  backgroundColor: 'green',
+                  padding: 10,
+                  borderRadius: 8,
+                  alignItems: 'center',
+                }}>
+                <Text style={{color: 'white'}}>Update Amenities</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={{flexDirection: 'row', marginTop: 10}}>
             <TouchableOpacity
               style={{
@@ -258,15 +218,6 @@ const VenueInfoScreen = () => {
         keyExtractor={item => item._id}
         numColumns={2}
         contentContainerStyle={{paddingHorizontal: 16}}
-        ListEmptyComponent={
-          selectedTab === 'Events' ? (
-            <Text style={{textAlign: 'center', marginVertical: 20}}>
-              No events available.
-            </Text>
-          ) : (
-            renderReviews()
-          )
-        }
       />
     </SafeAreaView>
   );
