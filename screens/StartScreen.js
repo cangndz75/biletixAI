@@ -27,24 +27,23 @@ const slides = [
     id: '1',
     title: 'Welcome',
     description:
-      'Discover and join amazing events around you. Stay connected and never miss an opportunity.',
-    image: require('../assets/cover.png'),
+      'Meet new people, expand your network and step into unforgettable experiences!',
+    image: require('../assets/onboard1.jpg'),
   },
   {
     id: '2',
     title: 'Find New Friends',
     description:
-      'Expand your network, meet new people, and engage in exciting experiences.',
-    image: require('../assets/cover.png'),
+      'Discover, participate and be part of the fun!',
+    image: require('../assets/onboard2.jpg'),
   },
   {
     id: '3',
     title: 'Start Your Journey',
-    description: 'Sign up now and explore events tailored to your interests!',
-    image: require('../assets/cover.png'),
+    description: 'Sign up now and discover events tailored to your interests!',
+    image: require('../assets/onboard3.jpg'),
   },
 ];
-
 
 const StartScreen = () => {
   const navigation = useNavigation();
@@ -64,7 +63,6 @@ const StartScreen = () => {
       currentIndex === slides.length - 1 ? withSpring(1) : withSpring(0);
     return {opacity: buttonOpacity.value};
   });
-
 
   return (
     <SafeAreaView style={styles.container}>

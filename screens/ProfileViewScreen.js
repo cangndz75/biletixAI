@@ -52,25 +52,45 @@ const ProfileViewScreen = () => {
 
   const handleFollowRequest = async () => {
     try {
-      await axios.post('https://biletixai.onrender.com/user/follow', {
-        fromUserId: loggedInUserId,
-        toUserId: userId,
-      });
-      setIsFollowing(true);
+      const response = await axios.post(
+        'https://biletixai.onrender.com/user/follow',
+        {fromUserId: loggedInUserId, toUserId: userId},
+      );
+
+      if (response.status === 200) {
+        setIsFollowing(true);
+        setUserData(prev => ({
+          ...prev,
+          followers: [...prev.followers, loggedInUserId],
+        }));
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to follow user.');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to follow user.',
+      );
     }
   };
 
   const handleUnfollow = async () => {
     try {
-      await axios.post('https://biletixai.onrender.com/user/unfollow', {
-        fromUserId: loggedInUserId,
-        toUserId: userId,
-      });
-      setIsFollowing(false);
+      const response = await axios.post(
+        'https://biletixai.onrender.com/user/unfollow',
+        {fromUserId: loggedInUserId, toUserId: userId},
+      );
+
+      if (response.status === 200) {
+        setIsFollowing(false);
+        setUserData(prev => ({
+          ...prev,
+          followers: prev.followers.filter(id => id !== loggedInUserId),
+        }));
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to unfollow user.');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Failed to unfollow user.',
+      );
     }
   };
 

@@ -35,7 +35,6 @@ const AdminCreateScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [timeModalVisible, setTimeModalVisible] = useState(false);
   const [taggedVenue, setTaggedVenue] = useState(null);
-  const [times] = useState(['10:00 AM', '12:00 PM', '02:00 PM', '04:00 PM']);
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState('');
   const [remainingEventLimit, setRemainingEventLimit] = useState(0);
@@ -104,14 +103,14 @@ const AdminCreateScreen = () => {
   };
   const dates = generateDates();
 
-  console.log('Dates', dates);
+  // console.log('Dates', dates);
 
   const generateContent = async field => {
     try {
-      if (!event || !taggedVenue) {
+      if (!event || !taggedVenue || !date || !timeInterval) {
         return Alert.alert(
           'Error',
-          'Please enter both event name and location.',
+          'Please enter event name, location, date, and time.',
         );
       }
 
@@ -120,11 +119,25 @@ const AdminCreateScreen = () => {
         {
           eventName: event,
           location: taggedVenue,
+          date,
+          time: timeInterval,
+          field,
         },
       );
 
       if (response.status === 200) {
-        const generatedContent = response.data.response.trim();
+        let generatedContent = response.data.response.trim();
+
+        if (field === 'tags') {
+          const tagsArray = generatedContent
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag.length > 0)
+            .slice(0, 10); 
+
+          generatedContent = tagsArray.join(', ');
+        }
+
         field === 'description'
           ? setDescription(generatedContent)
           : setTags(generatedContent);
@@ -136,15 +149,15 @@ const AdminCreateScreen = () => {
       Alert.alert('Error', 'Failed to generate content. Try again.');
     }
   };
-  useEffect(() => {
-    console.log('Selected Images:', images);
-  }, [images]);
-  console.log('Event:', event);
-  console.log('Location:', taggedVenue);
-  console.log('Date:', date);
-  console.log('Time:', timeInterval);
-  console.log('Type:', selectedType);
-  console.log('Participants:', noOfParticipants);
+  // useEffect(() => {
+  //   console.log('Selected Images:', images);
+  // }, [images]);
+  // console.log('Event:', event);
+  // console.log('Location:', taggedVenue);
+  // console.log('Date:', date);
+  // console.log('Time:', timeInterval);
+  // console.log('Type:', selectedType);
+  // console.log('Participants:', noOfParticipants);
 
   const createEvent = async () => {
     if (remainingEventLimit === 0) {
@@ -241,6 +254,20 @@ const AdminCreateScreen = () => {
     setDate(formattedDate);
     setModalVisible(false);
   };
+
+  const generateTimeSlots = () => {
+    const timeSlots = [];
+    for (let hour = 8; hour <= 23; hour++) {
+      for (let minutes of [0, 15, 30, 45]) {
+        const formattedHour = hour < 10 ? `0${hour}` : hour;
+        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+        timeSlots.push(`${formattedHour}:${formattedMinutes}`);
+      }
+    }
+    return timeSlots;
+  };
+
+  const times = generateTimeSlots();
 
   const selectTime = selectedTime => {
     setTimeInterval(selectedTime);
@@ -360,7 +387,7 @@ const AdminCreateScreen = () => {
               style={{textAlign: 'center', fontSize: 16, fontWeight: 'bold'}}>
               Choose a Time
             </Text>
-            <View style={{marginVertical: 20}}>
+            <ScrollView style={{marginVertical: 20}}>
               {times.map((time, index) => (
                 <Pressable
                   key={index}
@@ -369,7 +396,7 @@ const AdminCreateScreen = () => {
                   <Text style={{fontSize: 16}}>{time}</Text>
                 </Pressable>
               ))}
-            </View>
+            </ScrollView>
           </ModalContent>
         </BottomModal>
 

@@ -110,18 +110,23 @@ const HomeScreen = () => {
       const token = await AsyncStorage.getItem('token');
       const response = await axios.get(
         'https://biletixai.onrender.com/events',
-        {
-          headers: {Authorization: `Bearer ${token}`},
-        },
+        {headers: {Authorization: `Bearer ${token}`}},
       );
 
-      setEventList(response.data);
-      if (response.data.length > 0) {
-        setPopularEvent(response.data[0]);
+      if (response.data && Array.isArray(response.data)) {
+        setEventList(response.data);
+        if (response.data.length > 0) {
+          setPopularEvent(response.data[0]);
+        } else {
+          setPopularEvent(null);
+        }
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error('Error fetching events:', error);
-      setErrorMessage('Failed to load events. Please try again later.');
+      setEventList([]);
+      setPopularEvent(null);
+      setErrorMessage('No events available at the moment.');
     } finally {
       setIsLoading(false);
     }
@@ -136,19 +141,19 @@ const HomeScreen = () => {
 
   const fetchUserData = async () => {
     if (!userId) return;
-
     try {
       const response = await axios.get(
         `https://biletixai.onrender.com/user/${userId}`,
       );
-      if (response.status === 200) {
+      if (response.status === 200 && response.data) {
         setUser(response.data);
+      } else {
+        throw new Error('Invalid user data received');
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      setUser(null);
     }
   };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -165,7 +170,6 @@ const HomeScreen = () => {
           setPopularEvent(response.data[0]);
         }
       } catch (error) {
-        console.error('Error fetching events:', error);
         setErrorMessage('Failed to load events. Please try again later.');
       } finally {
         setIsLoading(false);
@@ -479,52 +483,8 @@ const HomeScreen = () => {
               {filteredEvents.map(item => (
                 <Pressable
                   key={item._id}
-                  onPress={() => navigation.navigate('Event', {item})}
-                  style={{
-                    width: 180,
-                    marginRight: 15,
-                    backgroundColor: '#fff',
-                    borderRadius: 15,
-                    shadowColor: '#000',
-                    shadowOffset: {width: 0, height: 2},
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 5,
-                  }}>
-                  <Image
-                    source={{
-                      uri:
-                        item.images && item.images.length > 0
-                          ? item.images[0]
-                          : 'https://via.placeholder.com/200',
-                    }}
-                    style={{
-                      width: '100%',
-                      height: 120,
-                      borderTopLeftRadius: 15,
-                      borderTopRightRadius: 15,
-                    }}
-                  />
-                  <View style={{padding: 10}}>
-                    <Text style={{fontSize: 16, fontWeight: '700'}}>
-                      {item.title}
-                    </Text>
-                    <Text style={{fontSize: 14, color: '#777', marginTop: 5}}>
-                      {item.location}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        marginTop: 5,
-                      }}>
-                      <Ionicons name="time-outline" size={14} color="#777" />
-                      <Text
-                        style={{fontSize: 12, color: '#777', marginLeft: 5}}>
-                        {item.date}
-                      </Text>
-                    </View>
-                  </View>
+                  onPress={() => navigation.navigate('Event', {item})}>
+                  ...
                 </Pressable>
               ))}
             </ScrollView>
@@ -534,6 +494,7 @@ const HomeScreen = () => {
                 flex: 1,
                 justifyContent: 'center',
                 alignItems: 'center',
+                padding: 20,
               }}>
               <Ionicons
                 name="calendar-outline"
@@ -543,12 +504,12 @@ const HomeScreen = () => {
               />
               <Text
                 style={{
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: '600',
                   color: '#888',
                   textAlign: 'center',
                 }}>
-                No Events
+                No events found.
               </Text>
             </View>
           )}

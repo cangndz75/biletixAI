@@ -562,19 +562,53 @@ app.get('/venues/location', async (req, res) => {
 });
 
 app.post('/generate', async (req, res) => {
-  const {eventName, location} = req.body;
+  const {eventName, location, date, time, field} = req.body;
 
-  if (!eventName || !location) {
+  if (!eventName || !location || !date || !time) {
     return res
       .status(400)
-      .json({message: 'Event name and location are required'});
+      .json({message: 'Event name, location, date, and time are required'});
   }
 
-  const prompt = `Generate a detailed description for the event: ${eventName} happening at ${location}.`;
+  let prompt;
+  if (field === 'description') {
+    prompt = `
+      Generate a detailed and engaging event description for:
+      - Event Name: ${eventName}
+      - Location: ${location}
+      - Date: ${date}
+      - Time: ${time}
+
+      The description should highlight the significance of the event, what attendees can expect, and why they should participate.
+    `;
+  } else if (field === 'tags') {
+    prompt = `
+      Generate 5 to 10 unique, relevant, and comma-separated tags for an event with:
+      - Event Name: ${eventName}
+      - Location: ${location}
+      - Date: ${date}
+      - Time: ${time}
+
+      Tags should be short, meaningful, and event-specific, separated by commas.
+    `;
+  } else {
+    return res.status(400).json({message: 'Invalid field type'});
+  }
 
   try {
     const response = await generateText(prompt);
-    res.status(200).json({response});
+
+    if (field === 'tags') {
+      const tagsArray = response
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+        .slice(0, 10);
+
+      res.status(200).json({response: tagsArray.join(', ')});
+    } else {
+      res.status(200).json({response});
+    }
   } catch (error) {
     console.error('Error generating content:', error.message);
     res.status(500).json({message: 'Failed to generate content'});
@@ -3036,73 +3070,75 @@ app.get('/vip-events', async (req, res) => {
 
 app.put('/venues/:venueId/amenities', async (req, res) => {
   try {
-    const { userId, amenities } = req.body;
+    const {userId, amenities} = req.body;
 
     const user = await User.findById(userId);
     if (!user || user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Unauthorized: You are not a super admin' });
+      return res
+        .status(403)
+        .json({message: 'Unauthorized: You are not a super admin'});
     }
 
     const venue = await Venue.findByIdAndUpdate(
       req.params.venueId,
-      { $set: { amenities } },
-      { new: true }
+      {$set: {amenities}},
+      {new: true},
     );
 
     if (!venue) {
-      return res.status(404).json({ message: 'Venue not found' });
+      return res.status(404).json({message: 'Venue not found'});
     }
 
-    res.status(200).json({ message: 'Amenities updated successfully', venue });
+    res.status(200).json({message: 'Amenities updated successfully', venue});
   } catch (error) {
     console.error('Error updating amenities:', error);
-    res.status(500).json({ message: 'Failed to update amenities' });
+    res.status(500).json({message: 'Failed to update amenities'});
   }
 });
 
 app.get('/total-events', async (req, res) => {
   try {
     const totalEvents = await Event.countDocuments();
-    res.json({ count: totalEvents });
+    res.json({count: totalEvents});
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching total events', error });
+    res.status(500).json({message: 'Error fetching total events', error});
   }
 });
 
 app.get('/total-organizers', async (req, res) => {
   try {
-    const totalOrganizers = await User.countDocuments({ role: 'organizer' });
-    res.json({ count: totalOrganizers });
+    const totalOrganizers = await User.countDocuments({role: 'organizer'});
+    res.json({count: totalOrganizers});
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching total organizers', error });
+    res.status(500).json({message: 'Error fetching total organizers', error});
   }
 });
 
 app.get('/pending-approvals', async (req, res) => {
   try {
     const pendingApprovals = await User.countDocuments({
-      "organizerApplication.status": "pending"
+      'organizerApplication.status': 'pending',
     });
-    res.json({ count: pendingApprovals });
+    res.json({count: pendingApprovals});
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching pending approvals', error });
+    res.status(500).json({message: 'Error fetching pending approvals', error});
   }
 });
 
 app.get('/staff-members', async (req, res) => {
   try {
-    const staffMembers = await User.countDocuments({ role: 'staff' });
-    res.json({ count: staffMembers });
+    const staffMembers = await User.countDocuments({role: 'staff'});
+    res.json({count: staffMembers});
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching staff members', error });
+    res.status(500).json({message: 'Error fetching staff members', error});
   }
 });
 
 app.get('/total-users', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    res.json({ count: totalUsers });
+    res.json({count: totalUsers});
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching total users', error });
+    res.status(500).json({message: 'Error fetching total users', error});
   }
 });
