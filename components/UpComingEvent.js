@@ -6,7 +6,13 @@ import {AuthContext} from '../AuthContext';
 
 const UpComingEvent = ({item}) => {
   const navigation = useNavigation();
-  const {role} = useContext(AuthContext);
+  const {role, userId} = useContext(AuthContext);
+
+  // Kullanıcı organizer ise ve kendi etkinliği değilse, hiç render etme
+  if (role === 'organizer' && item.organizer !== userId) {
+    return null;
+  }
+
   const handleNavigation = () => {
     const targetScreen =
       role === 'organizer' ? 'AdminEventSetUp' : 'EventSetUp';

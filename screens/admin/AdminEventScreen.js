@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {
   View,
   Text,
@@ -16,24 +16,37 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const AdminEventScreen = () => {
   const [events, setEvents] = useState([]);
-  const {userId, role} = useContext(AuthContext);
+  const {userId} = useContext(AuthContext);
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    if (userId && role === 'organizer') {
-      fetchOrganizerEvents();
+    if (userId) {
+      fetchUserDetails(); 
+      fetchOrganizerEvents(); 
     }
-  }, [userId, role]);
+  }, [userId]);
+
+  const fetchUserDetails = async () => {
+    try {
+      const response = await axios.get(
+        `https://biletixai.onrender.com/user/${userId}`,
+      );
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const fetchOrganizerEvents = async () => {
     try {
       setLoading(true);
-
-      // Fetch events filtered by organizer's userId
       const response = await axios.get(
         `https://biletixai.onrender.com/events`,
-        {params: {organizer: userId}}, // Filtering by organizer
+        {
+          params: {organizer: userId},
+        },
       );
 
       if (response.status === 200) {
@@ -67,7 +80,9 @@ const AdminEventScreen = () => {
                 onPress={() => navigation.goBack()}
                 style={styles.backIcon}
               />
-              <Text style={styles.headerTitle}>My Events</Text>
+              <Text style={styles.headerTitle}>
+                {user?.firstName ? `${user.firstName}'s Events` : 'My Events'}
+              </Text>
             </View>
 
             <Pressable
@@ -84,7 +99,7 @@ const AdminEventScreen = () => {
         data={events}
         renderItem={({item}) => <UpComingEvent item={item} />}
         keyExtractor={item => item._id}
-        numColumns={2} // Displays events in a 2-column grid
+        numColumns={2}
         columnWrapperStyle={{
           justifyContent: 'space-between',
           marginBottom: 12,
@@ -92,9 +107,13 @@ const AdminEventScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.eventList}
         ListEmptyComponent={
-          <View style={styles.centeredContainer}>
+          <View style={styles.emptyContainer}>
             <Ionicons name="calendar-outline" size={48} color="#888" />
-            <Text style={styles.noEventText}>No Events Found</Text>
+            <Text style={styles.noEventText}>
+              {user?.firstName
+                ? `${user.firstName}, you don't have any events yet.`
+                : "You don't have any events yet."}
+            </Text>
           </View>
         }
       />
@@ -108,7 +127,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9f9f9',
-    paddingHorizontal: 10, // Adds horizontal padding
+    paddingHorizontal: 10,
   },
   centeredContainer: {
     flex: 1,
@@ -116,10 +135,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  },
   noEventText: {
     fontSize: 18,
     color: '#888',
     marginTop: 8,
+    fontWeight: 'bold',
   },
   headerContainer: {
     marginBottom: 10,

@@ -41,12 +41,29 @@ const AdminDashboard = () => {
   };
 
   const loadThemePreference = async () => {
-    const savedMode = await AsyncStorage.getItem('theme');
-    setDarkMode(savedMode === 'dark');
+    try {
+      const savedMode = await AsyncStorage.getItem('theme');
+      if (savedMode !== null) {
+        setDarkMode(savedMode === 'dark');
+      }
+    } catch (error) {
+      console.error('Error loading theme preference:', error);
+    }
+  };
+
+  const toggleDarkMode = async () => {
+    try {
+      const newMode = !darkMode;
+      setDarkMode(newMode);
+      await AsyncStorage.setItem('theme', newMode ? 'dark' : 'light');
+    } catch (error) {
+      console.error('Error saving theme preference:', error);
+    }
   };
 
   const handleLogout = async () => {
     try {
+      await AsyncStorage.clear();
       await logout();
       navigation.reset({index: 0, routes: [{name: 'Login'}]});
     } catch (error) {
@@ -67,7 +84,12 @@ const AdminDashboard = () => {
 
   const dashboardItems = [
     {title: 'Create Event', icon: 'add-circle-outline', route: 'AdminCreate'},
-    {title: 'My Events', icon: 'calendar-outline', route: 'AdminEvents'},
+    {
+      title: 'My Events',
+      icon: 'calendar-outline',
+      route: 'AdminEvents',
+      action: () => navigation.navigate('AdminEvents', {organizerId: userId}),
+    },
     {
       title: 'Communities',
       icon: 'people-outline',
@@ -101,8 +123,10 @@ const AdminDashboard = () => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Admin Dashboard</Text>
-          <TouchableOpacity onPress={loadThemePreference}>
+          <Text style={styles.headerTitle}>
+            Organizer {user?.firstName ? ` - ${user.firstName} ${user.lastName}` : ''}
+          </Text>
+          <TouchableOpacity onPress={toggleDarkMode}>
             <Ionicons
               name={darkMode ? 'sunny-outline' : 'moon-outline'}
               size={24}

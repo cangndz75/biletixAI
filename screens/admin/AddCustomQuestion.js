@@ -1,12 +1,5 @@
 import React, {useState} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import {View, Text, TouchableOpacity, FlatList, StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import {QUESTIONS} from '../../shared/questions';
@@ -76,8 +69,7 @@ const AddCustomQuestion = ({navigation}) => {
         style={styles.addButton}
         onPress={() =>
           navigation.navigate('CreateCustomQuestion', {
-            customQuestions,
-            setCustomQuestions,
+            customQuestions, 
           })
         }>
         <Ionicons name="add-circle" size={24} color="white" />
