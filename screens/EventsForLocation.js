@@ -27,7 +27,7 @@ const EventsForLocation = () => {
     const fetchVenuesForLocation = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/venues?city=${city}&district=${district}`,
+          `${API_BASE_URL}/venues/location?city=${city}&district=${district}`,
         );
         if (response.status === 200) {
           setVenues(response.data);
@@ -61,7 +61,7 @@ const EventsForLocation = () => {
     };
 
     fetchEventsForVenue();
-  }, [venues]); 
+  }, [venues]);
 
   return (
     <View style={styles.container}>

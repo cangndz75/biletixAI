@@ -2,12 +2,12 @@ import React, {useEffect, useState} from 'react';
 import {
   FlatList,
   Image,
-  Pressable,
   SafeAreaView,
   Text,
   TextInput,
   View,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
@@ -21,9 +21,9 @@ const BookScreen = ({navigation}) => {
 
   const fetchVenues = async () => {
     try {
-      const response = await axios.get('http://10.0.2.2:8000/venues');
+      const response = await axios.get('https://biletixai.onrender.com/venues');
       setVenues(response.data);
-      setFilteredVenues(response.data); 
+      setFilteredVenues(response.data);
     } catch (error) {
       console.error('Error fetching venues:', error.message);
     } finally {
@@ -56,36 +56,33 @@ const BookScreen = ({navigation}) => {
     <SafeAreaView style={{flex: 1, backgroundColor: '#f5f5f5'}}>
       <View
         style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          padding: 12,
-        }}>
-        <Text style={{fontSize: 16, fontWeight: 'bold'}}>Can Gündüz</Text>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-          <Ionicons name="chatbox-outline" size={24} color="black" />
-          <Ionicons name="notifications-outline" size={24} color="black" />
-          <Image
-            source={{uri: 'https://lh3.googleusercontent.com/ogw/...'}}
-            style={{width: 30, height: 30, borderRadius: 15}}
-          />
-        </View>
-      </View>
-
-      <View
-        style={{
           marginHorizontal: 12,
-          backgroundColor: '#E8E8E8',
-          padding: 12,
+          backgroundColor: '#F5F5F5',
+          paddingVertical: 10,
+          paddingHorizontal: 15,
           flexDirection: 'row',
           borderRadius: 25,
+          marginTop: 10,
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.1,
+          shadowRadius: 5,
+          elevation: 3,
         }}>
         <TextInput
           placeholder="Search"
-          style={{flex: 1}}
+          placeholderTextColor="#888"
+          style={{
+            flex: 1,
+            fontSize: 16,
+            color: '#333',
+          }}
           value={searchQuery}
           onChangeText={handleSearch}
         />
-        <Ionicons name="search" size={24} color="black" />
+        <Pressable onPress={handleSearch} style={{marginLeft: 10}}>
+          <Ionicons name="search" size={22} color="#444" />
+        </Pressable>
       </View>
 
       <FlatList
@@ -98,8 +95,9 @@ const BookScreen = ({navigation}) => {
             }
           />
         )}
-        keyExtractor={item => item._id.toString()}
-        contentContainerStyle={{paddingBottom: 20}}
+        keyExtractor={item =>
+          item._id ? item._id.toString() : Math.random().toString()
+        }
       />
     </SafeAreaView>
   );

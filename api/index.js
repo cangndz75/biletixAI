@@ -470,6 +470,45 @@ app.get('/venues', async (req, res) => {
   }
 });
 
+app.get('/venues/location', async (req, res) => {
+  const {city, district} = req.query;
+
+  if (!city || !district) {
+    return res
+      .status(400)
+      .json({message: 'City and district parameters are required'});
+  }
+
+  try {
+    const venues = await Venue.find(); 
+    const filteredVenues = venues.filter(venue => {
+      if (!venue.location || !venue.location.includes(', ')) {
+        return false;
+      }
+      const [venueDistrict, venueCity] = venue.location
+        .split(', ')
+        .map(v => v.trim());
+      return (
+        venueCity.toLowerCase() === city.toLowerCase() &&
+        venueDistrict.toLowerCase() === district.toLowerCase()
+      );
+    });
+
+    if (filteredVenues.length === 0) {
+      return res
+        .status(404)
+        .json({message: 'No venues found for this location'});
+    }
+
+    res.status(200).json(filteredVenues);
+  } catch (error) {
+    console.error('Error fetching venues:', error);
+    res
+      .status(500)
+      .json({message: 'Internal server error', error: error.message});
+  }
+});
+
 app.post('/generate', async (req, res) => {
   const {eventName, location} = req.body;
 

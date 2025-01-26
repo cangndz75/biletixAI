@@ -271,29 +271,6 @@ const HomeScreen = () => {
           <Ionicons name="location-outline" size={28} color="#333" />
         </TouchableOpacity>
       </View>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: '#F5F5F5',
-          borderRadius: 10,
-          padding: 10,
-          marginBottom: 20,
-        }}>
-        <Ionicons
-          name="search-outline"
-          size={20}
-          color="#777"
-          style={{marginRight: 5}}
-        />
-        <TextInput
-          placeholder="What event are you looking for..."
-          style={{flex: 1, fontSize: 16}}
-        />
-        <TouchableOpacity onPress={() => navigation.navigate('SearchScreen')}>
-          <Ionicons name="options-outline" size={20} color="#777" />
-        </TouchableOpacity>
-      </View>
 
       <ScrollView
         horizontal
@@ -306,14 +283,26 @@ const HomeScreen = () => {
             image: 'https://i.ibb.co/HFrRNQm/Yeni-Proje.png',
           },
           {
-            title: 'Sport Events',
-            eventType: 'Sports',
+            title: 'Conference',
+            eventType: 'Conference',
             image:
-              'https://media.istockphoto.com/id/469569148/tr/foto%C4%9Fraf/soccer-fans-at-stadium.jpg?s=2048x2048&w=is&k=20&c=9lF6InxcOnYcJXsuYoFScnmtyrRrnXu3F21B5FRuEF4=',
+              'https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
           },
           {
             title: 'Theatre',
             eventType: 'Theatre',
+            image:
+              'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          },
+          {
+            title: 'Dance',
+            eventType: 'Dance',
+            image:
+              'https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+          },
+          {
+            title: 'Football',
+            eventType: 'Football',
             image:
               'https://images.pexels.com/photos/63328/wells-theatre-norfolk-virginian-seats-63328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
           },
@@ -328,7 +317,7 @@ const HomeScreen = () => {
               source={{uri: category.image}}
               style={{
                 width: 120,
-                height: 150,
+                height: 130,
                 borderRadius: 15,
                 overflow: 'hidden',
                 justifyContent: 'flex-end',
