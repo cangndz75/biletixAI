@@ -89,17 +89,11 @@ const EventScreen = () => {
             paddingVertical: 10,
             elevation: 3,
           }}>
-          <Ionicons name="search-outline" size={20} color="#888" />
+          {/* <Ionicons name="search-outline" size={20} color="#888" /> */}
           <TextInput
             placeholder="Search Event"
             style={{flex: 1, marginLeft: 10}}
             editable={false}
-          />
-          <Ionicons
-            onPress={() => setFilterModalVisible(true)}
-            name="filter-outline"
-            size={24}
-            color="#444"
           />
         </Pressable>
       </View>

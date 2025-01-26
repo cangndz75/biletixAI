@@ -604,8 +604,9 @@ const EventSetUpScreen = () => {
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
+              marginBottom: 5,
             }}>
-            <Text style={{fontSize: 24, fontWeight: 'bold', marginLeft: 3}}>
+            <Text style={{fontSize: 20, fontWeight: 'bold', marginLeft: 3}}>
               {item?.title || 'Event Title'}
             </Text>
 
@@ -626,19 +627,37 @@ const EventSetUpScreen = () => {
               </View>
             )}
           </View>
-          {item?.location && (
+
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginTop: 4,
+              justifyContent: 'space-between',
+            }}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Ionicons name="location-outline" size={18} color="gray" />
+              <Text style={{fontSize: 16, color: 'gray', marginLeft: 3}}>
+                {item?.location}
+              </Text>
+            </View>
+
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                marginTop: 4,
+                backgroundColor: '#F5F5F5',
+                paddingVertical: 5,
+                paddingHorizontal: 10,
+                borderRadius: 10,
               }}>
-              <Ionicons name="location-outline" size={18} color="gray" />
-              <Text style={{fontSize: 16, color: 'gray'}}>
-                {item?.location}
+              <Ionicons name="calendar-outline" size={18} color="#444" />
+              <Text style={{fontSize: 14, color: '#444', marginLeft: 5}}>
+                {item?.date}
               </Text>
             </View>
-          )}
+          </View>
+
           <View style={styles.organizerCard}>
             <View style={styles.organizerInfo}>
               {item?.organizer?.image ? (
@@ -664,6 +683,7 @@ const EventSetUpScreen = () => {
                 <Text style={styles.organizerRole}>Event Creator</Text>
               </View>
             </View>
+
             <TouchableOpacity
               style={styles.plusButton}
               onPress={() =>

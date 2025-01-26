@@ -462,37 +462,11 @@ addVenues().catch(err => {
 });
 
 app.get('/venues', async (req, res) => {
-  const {city, district} = req.query;
-
-  if (!city || !district) {
-    return res
-      .status(400)
-      .json({message: 'City and district parameters are required'});
-  }
-
   try {
-    const filteredVenues = venues.filter(venue => {
-      const [venueDistrict, venueCity] = venue.location
-        .split(', ')
-        .map(v => v.trim());
-      return (
-        venueCity.toLowerCase() === city.toLowerCase() &&
-        venueDistrict.toLowerCase() === district.toLowerCase()
-      );
-    });
-
-    if (filteredVenues.length === 0) {
-      return res
-        .status(404)
-        .json({message: 'No venues found for this location'});
-    }
-
-    res.status(200).json(filteredVenues);
+    res.status(200).json(venues);
   } catch (error) {
     console.error('Error fetching venues:', error);
-    res
-      .status(500)
-      .json({message: 'Internal server error', error: error.message});
+    res.status(500).json({message: 'Internal server error'});
   }
 });
 
@@ -2952,14 +2926,11 @@ app.get('/vip-events', async (req, res) => {
   try {
     console.log('📌 VIP Etkinlikler getiriliyor...');
 
-    const vipEvents = await Event.find()
-      .populate('organizer')
-      .sort({date: 1}); 
+    const vipEvents = await Event.find().populate('organizer').sort({date: 1});
 
     const filteredVipEvents = vipEvents.filter(
       event => event.organizer && event.organizer.vipBadge === true,
     );
-
 
     console.log(
       '✅ VIP Etkinlikler başarıyla getirildi:',

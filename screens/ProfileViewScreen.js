@@ -13,7 +13,7 @@ import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {AuthContext} from '../AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+// import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const ProfileViewScreen = () => {
   const route = useRoute();
@@ -24,6 +24,7 @@ const ProfileViewScreen = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [selectedTab, setSelectedTab] = useState('About');
   const navigation = useNavigation();
+  const isOrganizer = userData?.role === 'organizer';
 
   useEffect(() => {
     fetchUserData();
@@ -87,6 +88,11 @@ const ProfileViewScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
       <View style={styles.profileCard}>
         <Image
           source={{uri: userData.image || 'https://via.placeholder.com/100'}}
@@ -96,7 +102,7 @@ const ProfileViewScreen = () => {
           {`${userData.firstName} ${userData.lastName}`}{' '}
           {userData.vipBadge && <Ionicons name="star" size={18} color="gold" />}
         </Text>
-        <Text style={styles.username}>@{userData.username}</Text>
+        <Text style={styles.username}>{userData.email}</Text>
 
         {userData.isPrivate ? (
           <View style={styles.privateContainer}>
@@ -106,7 +112,6 @@ const ProfileViewScreen = () => {
         ) : (
           <>
             <View style={styles.stats}>
-              <Text style={styles.statText}>{userData.posts || 0} Posts</Text>
               <Text style={styles.statText}>
                 {userData.followers?.length || 0} Followers
               </Text>
@@ -141,21 +146,36 @@ const ProfileViewScreen = () => {
         )}
       </View>
 
-      {/* Tablara geçiş */}
       {!userData.isPrivate && (
-        <View style={styles.tabs}>
-          {['About', 'Interest', 'Events'].map(tab => (
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            width: '100%',
+            marginVertical: 10,
+          }}>
+          {[
+            'About',
+            'Events',
+            ...(userData.role !== 'organizer' && userData.role !== 'super_admin'
+              ? ['Reviews']
+              : []),
+          ].map(tab => (
             <TouchableOpacity
               key={tab}
-              style={selectedTab === tab ? styles.activeTab : styles.tab}
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderBottomWidth: selectedTab === tab ? 2 : 0,
+                borderBottomColor: '#7C3AED',
+              }}
               onPress={() => setSelectedTab(tab)}>
-              <Text style={styles.tabText}>{tab}</Text>
+              <Text style={{fontSize: 16, fontWeight: '600'}}>{tab}</Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Seçilen Tabın İçeriği */}
       {!userData.isPrivate && (
         <View style={styles.tabContent}>
           {selectedTab === 'About' && (
@@ -326,6 +346,12 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginTop: 10,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 1,
   },
 });
 
