@@ -1,6 +1,14 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {View, Text, Image, StyleSheet, ActivityIndicator} from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import {AuthContext} from '../AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import {DrawerActions, useNavigation} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -32,6 +40,19 @@ function CustomDrawerContent(props) {
     fetchUserData();
   }, [userId]);
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
+    } catch (error) {
+      console.error('Error during logout:', error.message);
+      Alert.alert('Error', 'Failed to log out.');
+    }
+  };
+
   return (
     <View style={styles.drawerContainer}>
       <View style={styles.profileSection}>
@@ -42,9 +63,7 @@ function CustomDrawerContent(props) {
         <Text style={styles.userName}>
           {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
         </Text>
-        <Text style={styles.userScore}>
-          ⭐ Score: {user?.vipBadge ? 'VIP' : '0.00'}
-        </Text>
+        <Text style={styles.userScore}>{user?.vipBadge ? 'VIP ⭐ ' : ''}</Text>
       </View>
 
       <TouchableOpacity
@@ -64,8 +83,27 @@ function CustomDrawerContent(props) {
       <TouchableOpacity
         style={styles.menuItem}
         onPress={() => navigation.navigate('BecomeOrganizerScreen')}>
-        <Ionicons name="people-outline" size={22} color="white" />
+        <Ionicons name="grid-outline" size={22} color="white" />
         <Text style={styles.menuText}>Be Organizer</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => navigation.navigate('EventScreen')}>
+        <Ionicons name="earth-outline" size={22} color="white" />
+        <Text style={styles.menuText}>Events</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => navigation.navigate('Profile', {userId})}>
+        <Ionicons name="people-circle-outline" size={22} color="white" />
+        <Text style={styles.menuText}>Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={22} color="white" />
+        <Text style={styles.menuText}>Logout</Text>
       </TouchableOpacity>
 
       <TouchableOpacity

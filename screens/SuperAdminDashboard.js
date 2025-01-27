@@ -93,7 +93,9 @@ const SuperAdminDashboard = ({navigation}) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{flexGrow: 1, paddingBottom: 50}}>
       <View style={styles.header}>
         <View style={styles.profileSection}>
           <Image
@@ -178,6 +180,49 @@ const SuperAdminDashboard = ({navigation}) => {
           <Text style={styles.newVenueText}>Add a New</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#2196F3',
+          padding: 12,
+          borderRadius: 8,
+          alignItems: 'center',
+        }}
+        onPress={() => navigation.navigate('SeeEventsScreen')}>
+        <Text style={{color: 'white', fontSize: 16, fontWeight: 'bold'}}>
+          See Events
+        </Text>
+      </TouchableOpacity>
+
+      <View style={{marginTop: 20}}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#4CAF50',
+            padding: 12,
+            borderRadius: 8,
+            alignItems: 'center',
+            marginBottom: 10,
+          }}
+          onPress={() => navigation.navigate('ManageOrganizersScreen')}>
+          <Text style={{color: 'white', fontSize: 16, fontWeight: 'bold'}}>
+            See Organizers
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#FF7043',
+            padding: 12,
+            borderRadius: 8,
+            alignItems: 'center',
+          }}
+          onPress={() => navigation.navigate('RequestForOrganizer')}>
+          <Text style={{color: 'white', fontSize: 16, fontWeight: 'bold'}}>
+            Request for Organizer
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{height: 20}} />
     </ScrollView>
   );
 };

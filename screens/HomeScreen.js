@@ -8,7 +8,6 @@ import {
   ImageBackground,
   TouchableOpacity,
   ActivityIndicator,
-  TextInput,
   StyleSheet,
 } from 'react-native';
 import {
@@ -33,7 +32,7 @@ import AdsCarousel from '../components/AdsCarousel';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const {favorites, setFavorites} = useContext(AuthContext);
+  const {favorites = [], setFavorites} = useContext(AuthContext);
   const [eventList, setEventList] = useState([]);
   const [popularEvent, setPopularEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,20 +112,19 @@ const HomeScreen = () => {
         {headers: {Authorization: `Bearer ${token}`}},
       );
 
-      if (response.data && Array.isArray(response.data)) {
-        setEventList(response.data);
-        if (response.data.length > 0) {
-          setPopularEvent(response.data[0]);
-        } else {
-          setPopularEvent(null);
-        }
-      } else {
-        throw new Error('Invalid response format');
+      const events = response.data;
+      setEventList(events);
+
+      if (events.length > 0) {
+        const latestEvent = events.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        )[0];
+
+        setPopularEvent(latestEvent);
       }
     } catch (error) {
-      setEventList([]);
-      setPopularEvent(null);
-      setErrorMessage('No events available at the moment.');
+      console.error('Error fetching events:', error);
+      setErrorMessage('Failed to load events. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -141,56 +139,77 @@ const HomeScreen = () => {
 
   const fetchUserData = async () => {
     if (!userId) return;
+
     try {
+      const token = await AsyncStorage.getItem('token');
       const response = await axios.get(
         `https://biletixai.onrender.com/user/${userId}`,
+        {headers: {Authorization: `Bearer ${token}`}},
       );
+
       if (response.status === 200 && response.data) {
         setUser(response.data);
       } else {
-        throw new Error('Invalid user data received');
+        console.warn('User data not found');
       }
     } catch (error) {
-      setUser(null);
+      console.error('Error fetching user data:', error);
     }
   };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchEvents = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
         const response = await axios.get(
           'https://biletixai.onrender.com/events',
-          {
-            headers: {Authorization: `Bearer ${token}`},
-          },
+          {headers: {Authorization: `Bearer ${token}`}},
         );
 
-        setEventList(response.data);
-        if (response.data.length > 0) {
-          setPopularEvent(response.data[0]);
+        const events = response.data;
+        setEventList(events);
+
+        if (events.length > 0) {
+          const latestEvent = events.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+          )[0];
+
+          setPopularEvent(latestEvent);
         }
       } catch (error) {
+        console.error('Error fetching events:', error);
         setErrorMessage('Failed to load events. Please try again later.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchEvents();
   }, []);
 
   const toggleFavorite = async eventId => {
     try {
-      const storedFavorites = await AsyncStorage.getItem('favorites');
-      const favoritesArray = storedFavorites ? JSON.parse(storedFavorites) : [];
-      const isFavorite = favoritesArray.includes(eventId);
+      const token = await AsyncStorage.getItem('token');
 
-      const updatedFavorites = isFavorite
-        ? favoritesArray.filter(id => id !== eventId)
-        : [...favoritesArray, eventId];
+      const currentFavorites = favorites || [];
 
-      await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-      setFavorites(updatedFavorites);
+      const response = await axios.post(
+        'https://biletixai.onrender.com/favorites',
+        {userId, eventId},
+        {headers: {Authorization: `Bearer ${token}`}},
+      );
+
+      if (response.status === 200) {
+        const updatedFavorites = response.data.isFavorited
+          ? [...currentFavorites, eventId]
+          : currentFavorites.filter(id => id !== eventId);
+
+        if (typeof setFavorites === 'function') {
+          setFavorites(updatedFavorites);
+        } else {
+          console.error('setFavorites is not defined!');
+        }
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
@@ -359,8 +378,9 @@ const HomeScreen = () => {
             <ImageBackground
               source={{
                 uri:
-                  popularEvent.organizerUrl ||
-                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqG-InngmdJ4Ifg1hcdSKJM9y9vdYIobP1Ya-1f10vV2yclcqd',
+                  popularEvent.images && popularEvent.images.length > 0
+                    ? popularEvent.images[0]
+                    : 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
               }}
               style={{height: 200, justifyContent: 'flex-end', padding: 10}}>
               <View
@@ -483,8 +503,52 @@ const HomeScreen = () => {
               {filteredEvents.map(item => (
                 <Pressable
                   key={item._id}
-                  onPress={() => navigation.navigate('Event', {item})}>
-                  ...
+                  onPress={() => navigation.navigate('Event', {item})}
+                  style={{
+                    width: 180,
+                    marginRight: 15,
+                    backgroundColor: '#fff',
+                    borderRadius: 15,
+                    shadowColor: '#000',
+                    shadowOffset: {width: 0, height: 2},
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 5,
+                  }}>
+                  <Image
+                    source={{
+                      uri:
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : 'https://via.placeholder.com/200',
+                    }}
+                    style={{
+                      width: '100%',
+                      height: 120,
+                      borderTopLeftRadius: 15,
+                      borderTopRightRadius: 15,
+                    }}
+                  />
+                  <View style={{padding: 10}}>
+                    <Text style={{fontSize: 16, fontWeight: '700'}}>
+                      {item.title}
+                    </Text>
+                    <Text style={{fontSize: 14, color: '#777', marginTop: 5}}>
+                      {item.location}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginTop: 5,
+                      }}>
+                      <Ionicons name="time-outline" size={14} color="#777" />
+                      <Text
+                        style={{fontSize: 12, color: '#777', marginLeft: 5}}>
+                        {item.date}
+                      </Text>
+                    </View>
+                  </View>
                 </Pressable>
               ))}
             </ScrollView>
@@ -494,7 +558,6 @@ const HomeScreen = () => {
                 flex: 1,
                 justifyContent: 'center',
                 alignItems: 'center',
-                padding: 20,
               }}>
               <Ionicons
                 name="calendar-outline"
@@ -504,12 +567,12 @@ const HomeScreen = () => {
               />
               <Text
                 style={{
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: '600',
                   color: '#888',
                   textAlign: 'center',
                 }}>
-                No events found.
+                No Events
               </Text>
             </View>
           )}
@@ -597,7 +660,7 @@ const HomeScreen = () => {
           borderColor: '#e0e0e0',
           marginTop: 20,
         }}>
-        <Text style={{fontSize: 14, color: '#888'}}>© 2024 EventMate</Text>
+        <Text style={{fontSize: 14, color: '#888'}}>© 2025 EventMate</Text>
       </View>
     </Animated.ScrollView>
   );

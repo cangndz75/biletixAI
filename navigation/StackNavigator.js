@@ -65,6 +65,7 @@ import EventsForLocation from '../screens/EventsForLocation';
 import AdminAdScreen from '../screens/admin/AdminAdScreen';
 import OrganizerStats from '../screens/admin/OrganizerStats';
 import WebViewScreen from '../screens/WebViewScreen';
+import SeeEventsScreen from '../screens/super-admin/SeeEventsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
@@ -389,6 +390,11 @@ const MainStack = () => (
     <Stack.Screen
       name="ETicketScreen"
       component={ETicketScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
+      name="SeeEventsScreen"
+      component={SeeEventsScreen}
       options={{headerShown: false}}
     />
     <Stack.Screen

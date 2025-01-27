@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
 
 const ManageOrganizersScreen = () => {
   const [organizers, setOrganizers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchOrganizers();
@@ -98,7 +100,13 @@ const ManageOrganizersScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Manage Organizers</Text>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={28} color="white" />
+      </TouchableOpacity>
+
+      <Text style={styles.title}>See Organizers</Text>
 
       <FlatList
         data={organizers}
@@ -169,6 +177,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    backgroundColor: 'grey',
+    padding: 10,
+    borderRadius: 50,
+    zIndex: 1,
   },
 });
 
