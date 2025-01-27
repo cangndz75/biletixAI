@@ -36,7 +36,9 @@ const Amenities = ({venueId}) => {
           `${API_BASE_URL}/venues/${venueId}/amenities`,
         );
         if (response.status === 200) {
-          const fetchedAmenities = response.data; 
+          const fetchedAmenities = Array.isArray(response.data)
+            ? response.data
+            : [];
 
           const filteredAmenities = services.filter(service =>
             fetchedAmenities.includes(service.name),
@@ -45,8 +47,6 @@ const Amenities = ({venueId}) => {
           setAmenities(filteredAmenities);
         }
       } catch (error) {
-        console.error('Error fetching amenities:', error);
-      } finally {
         setLoading(false);
       }
     };

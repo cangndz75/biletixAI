@@ -166,7 +166,7 @@ const ChatRoom = () => {
           <Feather name="mic" size={24} color="gray" />
         </View>
         <Pressable onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send2</Text>
+          <Text style={styles.sendButtonText}>Send</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

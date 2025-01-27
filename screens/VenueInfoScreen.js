@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import {useRoute} from '@react-navigation/native';
+import {useRoute, useNavigation} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
@@ -20,6 +20,7 @@ const ITEM_WIDTH = (width - 48) / 2;
 
 const VenueInfoScreen = () => {
   const route = useRoute();
+  const navigation = useNavigation();
   const {venueId} = route.params;
   const {userId} = useContext(AuthContext);
   const [venue, setVenue] = useState(null);
@@ -109,6 +110,19 @@ const VenueInfoScreen = () => {
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#f5f5f5'}}>
+      <TouchableOpacity 
+        onPress={() => navigation.goBack()} 
+        style={{
+          position: 'absolute',
+          top: 40, 
+          left: 20, 
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          padding: 10,
+          borderRadius: 20,
+          zIndex: 1,
+        }}>
+        <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+      </TouchableOpacity>
       <FlatList
         ListHeaderComponent={
           <>

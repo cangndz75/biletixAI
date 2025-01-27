@@ -19,7 +19,7 @@ const WebViewScreen = ({route, navigation}) => {
         )}
         onNavigationStateChange={navState => {
           if (navState.url.includes('/success')) {
-            navigation.replace('HomeScreen'); 
+            navigation.replace('Profile'); 
           }
           if (navState.url.includes('/cancel')) {
             navigation.goBack(); 

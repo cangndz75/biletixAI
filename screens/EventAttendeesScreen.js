@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useContext} from 'react';
 import {
   FlatList,
   View,
@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; 
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import {AuthContext} from '../AuthContext'; // AuthContext'ten userId çekiyoruz.
 
 const EventAttendeesScreen = () => {
   const route = useRoute();
@@ -19,6 +20,7 @@ const EventAttendeesScreen = () => {
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+  const {userId} = useContext(AuthContext); // Giriş yapan kullanıcının ID'sini alıyoruz.
 
   useEffect(() => {
     const fetchAttendees = async () => {
@@ -38,18 +40,26 @@ const EventAttendeesScreen = () => {
   }, [eventId]);
 
   const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.attendeeItem}
-      onPress={() => navigation.navigate('ProfileView', {userId: item._id})}>
+    <View style={styles.attendeeItem}>
       <Image
         source={{uri: item.image || 'https://via.placeholder.com/50'}}
         style={styles.profileImage}
       />
       <View style={{marginLeft: 10}}>
         <Text style={styles.name}>{`${item.firstName} ${item.lastName}`}</Text>
-        {/* <Text style={styles.username}>@{item.username}</Text> */}
       </View>
-    </TouchableOpacity>
+
+      {/* Eğer item._id, giriş yapan userId ile eşleşmiyorsa tıklanabilir olsun */}
+      {item._id !== userId && (
+        <TouchableOpacity
+          style={styles.viewProfileButton}
+          onPress={() =>
+            navigation.navigate('ProfileView', {userId: item._id})
+          }>
+          <Text style={styles.viewProfileText}>View</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
   if (loading) {
@@ -115,9 +125,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  username: {
+  viewProfileButton: {
+    marginLeft: 'auto',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+  viewProfileText: {
+    color: 'white',
     fontSize: 14,
-    color: '#888',
+    fontWeight: 'bold',
   },
   listContainer: {
     paddingBottom: 20,

@@ -32,7 +32,7 @@ const API_BASE_URL = 'https://biletixai.onrender.com';
 const EventSetUpScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {userId} = useContext(AuthContext);
+  const {userId, user} = useContext(AuthContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [comment, setComment] = useState('');
   const [reviews, setReviews] = useState([]);
@@ -698,7 +698,7 @@ const EventSetUpScreen = () => {
               {item?.title || 'Event Title'}
             </Text>
 
-            {item?.attendees?.length > 0 && (
+            {item?.attendees?.length > 0 && user?.vipBadge && (
               <View style={{flexDirection: 'row', alignItems: 'center'}}>
                 <Text style={{fontSize: 16, fontWeight: 'bold', marginLeft: 5}}>
                   {item?.attendees?.length}
