@@ -131,7 +131,6 @@ const ChatRoom = () => {
     <KeyboardAvoidingView style={{flex: 1, backgroundColor: 'white'}}>
       <ScrollView>
         {messages.map((item, index) => {
-          // senderId'nin doğrudan ObjectId veya nesne olma durumuna göre kontrol
           const isMyMessage = item.senderId?._id
             ? item.senderId._id === userId
             : item.senderId === userId;

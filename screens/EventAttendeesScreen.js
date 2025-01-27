@@ -12,7 +12,7 @@ import {
 import axios from 'axios';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {AuthContext} from '../AuthContext'; // AuthContext'ten userId çekiyoruz.
+import {AuthContext} from '../AuthContext'; 
 
 const EventAttendeesScreen = () => {
   const route = useRoute();
@@ -20,7 +20,7 @@ const EventAttendeesScreen = () => {
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
-  const {userId} = useContext(AuthContext); // Giriş yapan kullanıcının ID'sini alıyoruz.
+  const {userId} = useContext(AuthContext);
 
   useEffect(() => {
     const fetchAttendees = async () => {
@@ -49,7 +49,6 @@ const EventAttendeesScreen = () => {
         <Text style={styles.name}>{`${item.firstName} ${item.lastName}`}</Text>
       </View>
 
-      {/* Eğer item._id, giriş yapan userId ile eşleşmiyorsa tıklanabilir olsun */}
       {item._id !== userId && (
         <TouchableOpacity
           style={styles.viewProfileButton}

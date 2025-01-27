@@ -29,12 +29,8 @@ const AdminCreateCommunityScreen = () => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [headerImage, setHeaderImage] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
-  const [selectedQuestions, setSelectedQuestions] = useState(
-    route.params?.selectedQuestions || [],
-  );
-  const [customQuestions, setCustomQuestions] = useState(
-    route.params?.customQuestions || [],
-  );
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [customQuestions, setCustomQuestions] = useState([]);
 
   useEffect(() => {
     if (route.params?.selectedQuestions) {
@@ -52,18 +48,21 @@ const AdminCreateCommunityScreen = () => {
     }
   };
 
-  const handlePrivateToggle = value => {
-    setIsPrivate(value);
-    if (value) {
-      navigation.navigate('AddCustomQuestion', {
-        selectedQuestions,
-        setSelectedQuestions,
-      });
-    }
+  const handleNavigateToQuestions = () => {
+    navigation.navigate('AddCustomQuestion', {
+      selectedQuestions,
+      customQuestions,
+    });
   };
 
   const handleCreateCommunity = async () => {
-    const formattedQuestions = [...selectedQuestions, ...customQuestions];
+    const formattedQuestions = [...selectedQuestions, ...customQuestions].map(
+      q => ({
+        text: q.text,
+        type: q.type || 'text',
+        options: q.options || [],
+      }),
+    );
 
     const communityData = {
       name: communityName.trim(),
@@ -83,7 +82,7 @@ const AdminCreateCommunityScreen = () => {
 
     try {
       const response = await axios.post(
-        'http://10.0.2.2:8000/communities',
+        'https://biletixai.onrender.com/communities',
         communityData,
         {
           headers: {'Content-Type': 'application/json'},
@@ -169,23 +168,18 @@ const AdminCreateCommunityScreen = () => {
           <Text style={{fontSize: 16}}>Make Community Private</Text>
           <Switch
             value={isPrivate}
-            onValueChange={handlePrivateToggle}
+            onValueChange={setIsPrivate}
             style={{marginLeft: 10}}
           />
         </View>
 
-        {isPrivate && selectedQuestions.length > 0 && (
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionHeader}>Selected Questions:</Text>
-            {selectedQuestions.map((q, index) => {
-              const question = QUESTIONS.find(question => question.id === q.id);
-              return question ? (
-                <Text key={index} style={styles.questionText}>
-                  - {question.text}
-                </Text>
-              ) : null;
-            })}
-          </View>
+        {isPrivate && (
+          <TouchableOpacity
+            onPress={handleNavigateToQuestions}
+            style={styles.questionButton}>
+            <Ionicons name="list-outline" size={24} color="white" />
+            <Text style={styles.buttonText}>Manage Questions</Text>
+          </TouchableOpacity>
         )}
 
         <TouchableOpacity
@@ -220,21 +214,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 20,
   },
-  questionContainer: {
-    backgroundColor: '#f9f9f9',
-    padding: 15,
+  questionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007bff',
+    paddingVertical: 15,
     borderRadius: 10,
     marginBottom: 20,
   },
-  questionHeader: {fontSize: 18, fontWeight: 'bold', marginBottom: 10},
-  questionText: {fontSize: 16, marginBottom: 5},
   createButton: {
     backgroundColor: '#07bc0c',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
   },
-  buttonText: {color: 'white', fontSize: 16},
+  buttonText: {color: 'white', fontSize: 16, marginLeft: 5},
   backButton: {marginRight: 10},
 });
 

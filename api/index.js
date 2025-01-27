@@ -1846,7 +1846,12 @@ app.post('/communities', async (req, res) => {
         let existingQuestion = await Question.findOne({text: question.text});
 
         if (!existingQuestion) {
-          existingQuestion = await new Question(question).save();
+          existingQuestion = new Question({
+            text: question.text,
+            type: question.type,
+            options: question.options,
+          });
+          await existingQuestion.save();
         }
 
         questionIds.push(existingQuestion._id);
