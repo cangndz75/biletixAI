@@ -9,7 +9,9 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const CreateCustomQuestion = ({navigation, route}) => {
-  const {customQuestions, setCustomQuestions} = route.params;
+  const [customQuestions, setCustomQuestions] = useState(
+    route.params?.customQuestions || [],
+  );
 
   const [newQuestion, setNewQuestion] = useState('');
   const [questionType, setQuestionType] = useState('text');
@@ -35,8 +37,12 @@ const CreateCustomQuestion = ({navigation, route}) => {
       options: questionType === 'multiple_choice' ? options : [],
     };
 
-    setCustomQuestions([...customQuestions, question]);
-    navigation.goBack();
+    const updatedQuestions = [...customQuestions, question];
+    setCustomQuestions(updatedQuestions);
+
+    navigation.navigate('AddCustomQuestion', {
+      customQuestions: updatedQuestions,
+    });
   };
 
   return (

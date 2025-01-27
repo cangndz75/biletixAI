@@ -100,7 +100,7 @@ const AdminDashboard = () => {
       icon: 'people-outline',
       route: 'AdminCreateCommunity',
     },
-    {title: 'Venue', icon: 'business-outline', route: 'AdminCreateVenue'},
+    {title: 'Create Venue', icon: 'business-outline', route: 'AdminCreateVenue'},
   ];
 
   if (user?.role === 'organizer' && user?.vipBadge) {

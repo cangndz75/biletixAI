@@ -53,7 +53,6 @@ const AdminCommunityDetailScreen = () => {
 
   const saveEdit = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
       let updateUrl = `https://biletixai.onrender.com/communities/${communityId}`;
 
       if (editField === 'name') {
@@ -62,22 +61,18 @@ const AdminCommunityDetailScreen = () => {
         updateUrl += '/description';
       }
 
-      await axios.put(
-        updateUrl,
-        {[editField]: editValue},
-        {
-          headers: {Authorization: `Bearer ${token}`},
-        },
-      );
+      await axios.put(updateUrl, {[editField]: editValue});
 
       setModalVisible(false);
-      fetchCommunityDetails(); // Refresh the page after saving
+      fetchCommunityDetails(); 
     } catch (error) {
-      console.error('Error updating community:', error.message);
+      console.error(
+        'Error updating community:',
+        error.response?.data || error.message,
+      );
       Alert.alert('Error', 'Failed to update community.');
     }
   };
-
   if (!community) {
     return <ActivityIndicator size="large" color="#007bff" />;
   }

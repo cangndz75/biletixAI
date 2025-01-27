@@ -85,8 +85,7 @@ app.post(
           } catch (error) {
             console.error('❌ Error updating event:', error.message);
           }
-        }
-        else {
+        } else {
           let newSubscriptionType =
             user.role === 'organizer' ? 'OrganizerPlus' : 'UserPlus';
 
@@ -2078,61 +2077,53 @@ app.get('/communities/:communityId', async (req, res) => {
   }
 });
 
-app.put(
-  '/communities/:communityId/name',
-  authenticateToken,
-  async (req, res) => {
-    const {communityId} = req.params;
-    const {name} = req.body;
+app.put('/communities/:communityId/name', async (req, res) => {
+  const {communityId} = req.params;
+  const {name} = req.body;
 
-    console.log('Update request for community name:', name);
+  console.log('Update request for community name:', name);
 
-    try {
-      const community = await Community.findByIdAndUpdate(
-        communityId,
-        {name},
-        {new: true},
-      );
-      if (!community) {
-        console.error('Community not found for ID:', communityId);
-        return res.status(404).json({message: 'Community not found'});
-      }
-
-      res.status(200).json(community);
-    } catch (error) {
-      console.error('Error updating community name:', error);
-      res.status(500).json({message: 'Internal Server Error'});
+  try {
+    const community = await Community.findByIdAndUpdate(
+      communityId,
+      {name},
+      {new: true},
+    );
+    if (!community) {
+      console.error('Community not found for ID:', communityId);
+      return res.status(404).json({message: 'Community not found'});
     }
-  },
-);
 
-app.put(
-  '/communities/:communityId/description',
-  authenticateToken,
-  async (req, res) => {
-    const {communityId} = req.params;
-    const {description} = req.body;
+    res.status(200).json(community);
+  } catch (error) {
+    console.error('Error updating community name:', error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
 
-    console.log('Update request for community description:', description);
+app.put('/communities/:communityId/description', async (req, res) => {
+  const {communityId} = req.params;
+  const {description} = req.body;
 
-    try {
-      const community = await Community.findByIdAndUpdate(
-        communityId,
-        {description},
-        {new: true},
-      );
-      if (!community) {
-        console.error('Community not found for ID:', communityId);
-        return res.status(404).json({message: 'Community not found'});
-      }
+  console.log('Update request for community description:', description);
 
-      res.status(200).json(community);
-    } catch (error) {
-      console.error('Error updating community description:', error);
-      res.status(500).json({message: 'Internal Server Error'});
+  try {
+    const community = await Community.findByIdAndUpdate(
+      communityId,
+      {description},
+      {new: true},
+    );
+    if (!community) {
+      console.error('Community not found for ID:', communityId);
+      return res.status(404).json({message: 'Community not found'});
     }
-  },
-);
+
+    res.status(200).json(community);
+  } catch (error) {
+    console.error('Error updating community description:', error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
 
 app.post('/communities/:communityId/send-request', async (req, res) => {
   const {communityId} = req.params;

@@ -17,18 +17,41 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dhe3yon5d/image/upload';
 const UPLOAD_PRESET = 'eventmate';
 
+const AMENITIES_LIST = [
+  'Bar',
+  'Free Wi-Fi',
+  'Toilets',
+  'Changing Rooms',
+  'Drinking Water',
+  'Food Stalls',
+  'VIP Lounge',
+  'Coat Check',
+  'Parking',
+  'First Aid Station',
+];
+
 const AdminCreateVenueScreen = ({navigation}) => {
   const [venueData, setVenueData] = useState({
     name: '',
-    rating: '',
     location: '',
     address: '',
     image: '',
+    amenities: [],
   });
   const [uploading, setUploading] = useState(false);
 
   const handleInputChange = (key, value) => {
     setVenueData(prevState => ({...prevState, [key]: value}));
+  };
+
+  const toggleAmenity = amenity => {
+    setVenueData(prevState => {
+      const updatedAmenities = prevState.amenities.includes(amenity)
+        ? prevState.amenities.filter(item => item !== amenity)
+        : [...prevState.amenities, amenity];
+
+      return {...prevState, amenities: updatedAmenities};
+    });
   };
 
   const openImagePicker = () => {
@@ -114,14 +137,6 @@ const AdminCreateVenueScreen = ({navigation}) => {
       />
 
       <TextInput
-        placeholder="Rating (e.g., 4.5)"
-        style={styles.input}
-        keyboardType="numeric"
-        value={venueData.rating}
-        onChangeText={text => handleInputChange('rating', text)}
-      />
-
-      <TextInput
         placeholder="Location"
         style={styles.input}
         value={venueData.location}
@@ -134,6 +149,28 @@ const AdminCreateVenueScreen = ({navigation}) => {
         value={venueData.address}
         onChangeText={text => handleInputChange('address', text)}
       />
+
+      <Text style={styles.subtitle}>Select Amenities</Text>
+      <View style={styles.amenitiesContainer}>
+        {AMENITIES_LIST.map((amenity, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.amenityItem,
+              venueData.amenities.includes(amenity) && styles.selectedAmenity,
+            ]}
+            onPress={() => toggleAmenity(amenity)}>
+            <Text
+              style={[
+                styles.amenityText,
+                venueData.amenities.includes(amenity) &&
+                  styles.selectedAmenityText,
+              ]}>
+              {amenity}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <TouchableOpacity onPress={openImagePicker} style={styles.uploadButton}>
         {uploading ? (
@@ -175,10 +212,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#333',
   },
   input: {
     width: '100%',
@@ -186,48 +224,44 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 15,
     fontSize: 16,
     elevation: 2,
   },
-  uploadButton: {
+  amenitiesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     width: '100%',
+    marginBottom: 20,
+  },
+  amenityItem: {
+    backgroundColor: '#eee',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    margin: 5,
+  },
+  selectedAmenity: {
+    backgroundColor: '#007bff',
+  },
+  selectedAmenityText: {
+    color: '#fff',
+  },
+  uploadButton: {
     backgroundColor: '#007bff',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  uploadText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 200,
-    marginTop: 10,
-    borderRadius: 10,
-    resizeMode: 'cover',
-    borderColor: '#ddd',
-    borderWidth: 1,
   },
   createButton: {
-    width: '100%',
     backgroundColor: '#28a745',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
-  },
-  createButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
 
