@@ -4,16 +4,13 @@ import {
   Text,
   Image,
   FlatList,
-  TextInput,
-  SafeAreaView,
   ActivityIndicator,
+  SafeAreaView,
   TouchableOpacity,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import StarRating from 'react-native-star-rating-widget';
 import axios from 'axios';
 import {AuthContext} from '../AuthContext';
 import Amenities from '../components/Amenities';
@@ -24,84 +21,54 @@ const ITEM_WIDTH = (width - 48) / 2;
 const VenueInfoScreen = () => {
   const route = useRoute();
   const {venueId} = route.params;
-  const {userId, role} = useContext(AuthContext);
+  const {userId} = useContext(AuthContext);
   const [venue, setVenue] = useState(null);
-  const [amenities, setAmenities] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('Events');
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-
-  const handleAddAmenities = async () => {
-    try {
-      const response = await axios.put(
-        `https://biletixai.onrender.com/venues/${venueId}/amenities`,
-        {
-          amenities,
-        },
-      );
-      setVenue(prev => ({...prev, amenities: response.data.amenities}));
-      alert('Amenities updated successfully!');
-    } catch (error) {
-      console.error('Error updating amenities:', error);
-      alert('Failed to update amenities. Please try again.');
-    }
-  };
 
   useEffect(() => {
-    console.log('Route params:', route.params);
-
-    if (!route.params || !route.params.venueId) {
-      console.error('Venue ID is missing from route params!');
-      setLoading(false);
-      return;
-    }
-
-    const fetchVenueAndEvents = async () => {
+    const fetchVenue = async () => {
       try {
-        const venueResponse = await axios.get(
+        const response = await axios.get(
           `https://biletixai.onrender.com/venues/${venueId}`,
         );
-        setVenue(venueResponse.data);
-        setAmenities(venueResponse.data.amenities || []);
-
-        const eventsResponse = await axios.get(
-          `https://biletixai.onrender.com/venues/${venueId}/events`,
-        );
-        setEvents(eventsResponse.data);
-
-        const reviewsResponse = await axios.get(
-          `https://biletixai.onrender.com/venues/${venueId}/reviews`,
-        );
-        setReviews(reviewsResponse.data);
+        setVenue(response.data);
       } catch (error) {
-        console.error('Error fetching venue, events, and reviews:', error);
+        console.error('Error fetching venue:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVenueAndEvents();
-  }, [route.params]);
+    fetchVenue();
+  }, [venueId]);
 
-  const handleReviewSubmit = async () => {
-    if (!comment.trim() || rating === 0) return;
+  const fetchVenueAndEvents = async () => {
     try {
-      const response = await axios.post(
-        `https://biletixai.onrender.com/venues/${venueId}/reviews`,
-        {
-          userId,
-          rating,
-          comment,
-        },
+      console.log('Route params:', route.params);
+
+      const venueResponse = await axios.get(
+        `https://biletixai.onrender.com/venues/${venueId}`,
       );
-      setReviews(prev => [...prev, response.data.review]);
-      setComment('');
-      setRating(0);
+      setVenue(venueResponse.data);
+      setAmenities(venueResponse.data.amenities || []);
+
+      const eventsResponse = await axios.get(
+        `https://biletixai.onrender.com/venues/${venueId}/events`,
+      );
+      setEvents(eventsResponse.data);
+
+      const reviewsResponse = await axios.get(
+        `https://biletixai.onrender.com/venues/${venueId}/reviews`,
+      );
+      setReviews(reviewsResponse.data);
+
+      console.log('Fetched Venue Data:', venueResponse.data);
+      console.log('Fetched Events Data:', eventsResponse.data);
     } catch (error) {
-      console.error('Error submitting review:', error);
+      console.error('Error fetching venue, events, and reviews:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,93 +107,49 @@ const VenueInfoScreen = () => {
     </View>
   );
 
-  const renderHeader = () => {
-    if (!venue) return null;
-
-    return (
-      <>
-        <Image
-          style={{width: '100%', height: 250, resizeMode: 'cover'}}
-          source={{uri: venue.image || 'https://via.placeholder.com/250'}}
-        />
-        <View style={{padding: 16, backgroundColor: '#fff', borderRadius: 20}}>
-          <Text style={{fontSize: 24, fontWeight: 'bold'}}>
-            {venue.name || 'Unknown Venue'}
-          </Text>
-          <View style={{flexDirection: 'row', marginVertical: 5}}>
-            <MaterialCommunityIcons
-              name="map-marker-outline"
-              size={24}
-              color="#555"
-            />
-            <Text style={{marginLeft: 8}}>
-              {venue.location || 'Unknown Location'}
-            </Text>
-          </View>
-
-          <Amenities venueId={venueId} />
-
-          {role === 'super_admin' && (
-            <View style={{marginTop: 20}}>
-              <TextInput
-                placeholder="Enter amenities (comma separated)"
-                value={amenities.join(', ')}
-                onChangeText={text =>
-                  setAmenities(text.split(',').map(a => a.trim()))
-                }
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  padding: 10,
-                  borderRadius: 8,
-                  marginBottom: 10,
-                }}
-              />
-              <TouchableOpacity
-                onPress={handleAddAmenities}
-                style={{
-                  backgroundColor: 'green',
-                  padding: 10,
-                  borderRadius: 8,
-                  alignItems: 'center',
-                }}>
-                <Text style={{color: 'white'}}>Update Amenities</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={{flexDirection: 'row', marginTop: 10}}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                padding: 10,
-                borderBottomWidth: selectedTab === 'Events' ? 2 : 0,
-              }}
-              onPress={() => setSelectedTab('Events')}>
-              <Text>Events</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                padding: 10,
-                borderBottomWidth: selectedTab === 'Reviews' ? 2 : 0,
-              }}
-              onPress={() => setSelectedTab('Reviews')}>
-              <Text>Reviews</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </>
-    );
-  };
-
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#f5f5f5'}}>
       <FlatList
-        ListHeaderComponent={renderHeader}
-        data={selectedTab === 'Events' ? events : []}
+        ListHeaderComponent={
+          <>
+            <Image
+              style={{width: '100%', height: 250, resizeMode: 'cover'}}
+              source={{uri: venue.image || 'https://via.placeholder.com/250'}}
+            />
+            <View
+              style={{padding: 16, backgroundColor: '#fff', borderRadius: 20}}>
+              <Text style={{fontSize: 24, fontWeight: 'bold'}}>
+                {venue.name || 'Unknown Venue'}
+              </Text>
+              <View style={{flexDirection: 'row', marginVertical: 5}}>
+                <MaterialCommunityIcons
+                  name="map-marker-outline"
+                  size={24}
+                  color="#555"
+                />
+                <Text style={{marginLeft: 8}}>
+                  {venue.location || 'Unknown Location'}
+                </Text>
+              </View>
+
+              <Amenities venueId={venueId} />
+
+              <View style={{flexDirection: 'row', marginTop: 10}}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    padding: 10,
+                    borderBottomWidth: selectedTab === 'Events' ? 2 : 0,
+                  }}
+                  onPress={() => setSelectedTab('Events')}>
+                  <Text>Events</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        }
+        data={selectedTab === 'Events' ? venue.eventsAvailable : []} 
         renderItem={selectedTab === 'Events' ? renderEventItem : null}
         keyExtractor={item => item._id}
         numColumns={2}

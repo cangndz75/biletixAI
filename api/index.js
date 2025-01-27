@@ -719,7 +719,6 @@ app.get('/events', async (req, res) => {
       filter = {attendees: new mongoose.Types.ObjectId(userId)};
     }
 
-
     const events = await Event.find(filter).populate('organizer');
 
     if (!events || events.length === 0) {
@@ -3188,5 +3187,26 @@ app.post('/create-checkout-session/event', async (req, res) => {
   } catch (error) {
     console.error('🚨 Stripe Event Payment Error:', error);
     res.status(500).json({error: error.message});
+  }
+});
+
+app.get('/amenities', async (req, res) => {
+  try {
+    const amenities = [
+      'Bar',
+      'Free Wi-Fi',
+      'Toilets',
+      'Changing Rooms',
+      'Drinking Water',
+      'Food Stalls',
+      'VIP Lounge',
+      'Coat Check',
+      'Parking',
+      'First Aid Station',
+    ];
+    res.status(200).json({amenities});
+  } catch (error) {
+    console.error('Error fetching amenities:', error);
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
