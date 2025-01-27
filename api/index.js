@@ -2901,7 +2901,7 @@ app.get('/user/:userId/subscription', async (req, res) => {
 });
 
 app.get('/success', (req, res) => {
-  res.send('<h1>Payment Successful! 🎉</h1>');
+  res.send('<h1>Payment Successful!! 🎉</h1>');
 });
 
 app.get('/cancel', (req, res) => {

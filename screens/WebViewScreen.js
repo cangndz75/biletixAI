@@ -1,20 +1,32 @@
 import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import WebView from 'react-native-webview';
+import {View, ActivityIndicator} from 'react-native';
+import {WebView} from 'react-native-webview';
 
-const WebViewScreen = ({ route }) => {
-  const { url } = route.params;
+const WebViewScreen = ({route, navigation}) => {
+  const {url} = route.params;
 
   return (
-    <WebView
-      source={{ uri: url }}
-      startInLoadingState
-      renderLoading={() => (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#0000ff" />
-        </View>
-      )}
-    />
+    <View style={{flex: 1}}>
+      <WebView
+        source={{uri: url}}
+        startInLoadingState
+        renderLoading={() => (
+          <ActivityIndicator
+            size="large"
+            color="#0000ff"
+            style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}
+          />
+        )}
+        onNavigationStateChange={navState => {
+          if (navState.url.includes('/success')) {
+            navigation.replace('HomeScreen'); 
+          }
+          if (navState.url.includes('/cancel')) {
+            navigation.goBack(); 
+          }
+        }}
+      />
+    </View>
   );
 };
 

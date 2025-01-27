@@ -38,7 +38,7 @@ const InterestSelectionScreen = ({navigation}) => {
         const response = await axios.get(
           `https://biletixai.onrender.com/user/${userId}/interests`,
         );
-  
+
         if (response.data.interests) {
           setSelectedInterests(response.data.interests);
         } else {
@@ -59,13 +59,13 @@ const InterestSelectionScreen = ({navigation}) => {
         setIsLoading(false);
       }
     };
-  
+
     if (userId) {
       fetchUserInterests();
     } else {
       console.warn('User ID is not available');
     }
-  }, [userId]);  
+  }, [userId]);
 
   const toggleInterest = interest => {
     if (selectedInterests.includes(interest)) {
@@ -86,17 +86,16 @@ const InterestSelectionScreen = ({navigation}) => {
     try {
       await axios.post(
         `https://biletixai.onrender.com/user/${userId}/interests`,
-        { interests: selectedInterests },
+        {interests: selectedInterests},
       );
-  
+
       Dialog.show({
         type: ALERT_TYPE.SUCCESS,
         title: 'Başarılı!',
         textBody: 'İlgi alanlarınız kaydedildi!',
         button: 'Tamam',
       });
-  
-      navigation.navigate('ProfileDetail');
+      navigation.replace('Profile');
     } catch (error) {
       console.error('Error saving interests:', error);
       Dialog.show({
@@ -107,7 +106,6 @@ const InterestSelectionScreen = ({navigation}) => {
       });
     }
   };
-  
 
   if (isLoading) {
     return (
@@ -183,14 +181,14 @@ const InterestSelectionScreen = ({navigation}) => {
             marginTop: 30,
           }}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ProfileDetail')}
+            onPress={() => navigation.goBack()}
             style={{
               backgroundColor: '#007bff',
               paddingVertical: 10,
               paddingHorizontal: 30,
               borderRadius: 20,
             }}>
-            <Text style={{color: '#fff', fontWeight: 'bold'}}>Skip</Text>
+            <Text style={{color: '#fff', fontWeight: 'bold'}}>Back</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={saveInterests}

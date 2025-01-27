@@ -292,6 +292,11 @@ const MainStack = () => (
       options={{headerShown: false}}
     />
     <Stack.Screen
+      name="Profile"
+      component={ProfileDetailScreen}
+      options={{headerShown: false}}
+    />
+    <Stack.Screen
       name="ChatRoom"
       component={ChatRoom}
       options={{headerShown: false}}

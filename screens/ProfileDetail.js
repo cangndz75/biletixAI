@@ -35,6 +35,14 @@ const ProfileDetailScreen = () => {
   const isFocused = useIsFocused();
   const [loading, setLoading] = useState(true);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [interests, setInterests] = useState([]);
+
+  useEffect(() => {
+    if (isFocused && userId) {
+      fetchUser();
+      fetchUserInterests();
+    }
+  }, [isFocused, userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -85,6 +93,19 @@ const ProfileDetailScreen = () => {
       console.log('✅ Logged-in user:', user);
     }
   }, [user]);
+
+  const fetchUserInterests = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/user/${userId}/interests`,
+      );
+      if (response.status === 200) {
+        setInterests(response.data.interests);
+      }
+    } catch (error) {
+      console.error('Error fetching interests:', error.message);
+    }
+  };
 
   const handlePrivacyToggle = async () => {
     try {
@@ -209,6 +230,24 @@ const ProfileDetailScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          zIndex: 10,
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          borderRadius: 50,
+          padding: 8,
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: 2},
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 3,
+        }}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={{paddingBottom: 20}}>
         <View style={styles.header}>
           <Pressable onPress={() => setVisible(true)}>
@@ -247,13 +286,23 @@ const ProfileDetailScreen = () => {
         </TouchableOpacity>
 
         <View style={styles.aboutMeContainer}>
-          <View style={styles.headerRow}>
-            <Text style={styles.aboutMeTitle}>About Me</Text>
-            <TouchableOpacity onPress={handleOpenModal}>
-              <Text style={styles.editText}>Edit</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 10,
+            }}>
+            <Text style={{fontSize: 20, fontWeight: 'bold', color: '#333'}}>
+              About Me
+            </Text>
+            <TouchableOpacity
+              onPress={handleOpenModal}
+              style={{padding: 6, borderRadius: 20}}>
+              <Ionicons name="create-outline" size={20} color="#007bff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.aboutMeDescription}>
+          <Text style={{fontSize: 16, color: 'gray', lineHeight: 22}}>
             {user?.aboutMe || 'Share something about yourself!'}
           </Text>
         </View>
@@ -262,19 +311,24 @@ const ProfileDetailScreen = () => {
           <View style={styles.headerRow}>
             <Text style={styles.interestsTitle}>Interests</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('InterestSelectionScreen')}>
-              <Text style={styles.editText}>Edit</Text>
+              onPress={() => navigation.navigate('InterestSelectionScreen')}
+              style={styles.editButton}>
+              <Ionicons name="create-outline" size={20} color="#007bff" />
             </TouchableOpacity>
           </View>
-          <View style={styles.tagsContainer}>
-            {user?.interests?.map((interest, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{interest}</Text>
-              </View>
-            ))}
+
+          <View style={styles.tagsWrapper}>
+            {interests.length > 0 ? (
+              interests.map((interest, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{interest}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noInterestsText}>No interests selected</Text>
+            )}
           </View>
         </View>
-
         <View style={styles.privacyContainer}>
           <Text style={styles.privacyText}>Make the account private</Text>
           <Switch
@@ -321,22 +375,69 @@ const ProfileDetailScreen = () => {
       </ScrollView>
 
       <Modal visible={isModalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit About Me</Text>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}>
+          <View
+            style={{
+              width: '85%',
+              backgroundColor: 'white',
+              padding: 20,
+              borderRadius: 15,
+            }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: 'bold',
+                marginBottom: 10,
+                textAlign: 'center',
+              }}>
+              Edit About Me
+            </Text>
             <TextInput
               value={aboutText}
               onChangeText={setAboutText}
-              style={styles.textInput}
+              style={{
+                borderColor: '#ddd',
+                borderWidth: 1,
+                borderRadius: 10,
+                padding: 12,
+                marginBottom: 15,
+                height: 80,
+                textAlignVertical: 'top',
+                fontSize: 16,
+                backgroundColor: '#f9f9f9',
+              }}
               multiline
             />
-            <TouchableOpacity onPress={updateAboutMe} style={styles.saveButton}>
-              <Text style={styles.saveButtonText}>Save</Text>
+            <TouchableOpacity
+              onPress={updateAboutMe}
+              style={{
+                backgroundColor: '#007bff',
+                padding: 12,
+                borderRadius: 10,
+                alignItems: 'center',
+                marginBottom: 10,
+              }}>
+              <Text style={{color: 'white', fontWeight: 'bold', fontSize: 16}}>
+                Save
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setIsModalVisible(false)}
-              style={styles.cancelButton}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              style={{
+                backgroundColor: '#ddd',
+                padding: 12,
+                borderRadius: 10,
+                alignItems: 'center',
+              }}>
+              <Text style={{color: '#333', fontWeight: 'bold', fontSize: 16}}>
+                Cancel
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -459,9 +560,58 @@ const styles = StyleSheet.create({
   interestsContainer: {
     backgroundColor: 'white',
     padding: 20,
-    marginVertical: 10,
-    borderRadius: 10,
+    marginVertical: 15,
+    borderRadius: 12,
     marginHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4, // Android için gölge efekti
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  interestsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  editButton: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+  },
+  tagsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tag: {
+    backgroundColor: '#e0f7fa',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    marginRight: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  tagText: {
+    color: '#007bff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  noInterestsText: {
+    fontSize: 16,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 5,
   },
   interestsTitle: {
     fontSize: 20,

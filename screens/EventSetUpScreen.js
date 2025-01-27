@@ -27,6 +27,7 @@ import {
   AlertNotificationRoot,
 } from 'react-native-alert-notification';
 import Animated, {FadeInUp, FadeOutDown} from 'react-native-reanimated';
+const API_BASE_URL = 'https://biletixai.onrender.com';
 
 const EventSetUpScreen = () => {
   const navigation = useNavigation();
@@ -57,7 +58,7 @@ const EventSetUpScreen = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Updated Event Data:', item); // 💡 Güncellenmiş event verisini logla
+    console.log('Updated Event Data:', item);
   }, [item]);
 
   useEffect(() => {
@@ -94,13 +95,14 @@ const EventSetUpScreen = () => {
 
       console.log('Attendees Response:', eventAttendees);
 
-      // Eğer attendees nesne içeriyorsa, doğrudan kaydet
+      const userJoined = eventAttendees.some(att => att._id === userId);
+      setIsJoined(userJoined);
+
       if (eventAttendees.length > 0 && typeof eventAttendees[0] === 'object') {
         setAttendees(eventAttendees);
         return;
       }
 
-      // Eğer attendees sadece ID listesi içeriyorsa, kullanıcı bilgilerini çek
       const attendeesData = await Promise.all(
         eventAttendees.map(async attendeeId => {
           try {
@@ -410,8 +412,20 @@ const EventSetUpScreen = () => {
           }}>
           <Text style={{color: '#1E90FF', fontWeight: '600'}}>See All</Text>
         </TouchableOpacity>
-      </Animated.View>
 
+        {reviews.length === 0 && (
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: 16,
+              color: 'gray',
+              marginTop: 10,
+            }}>
+            There are no comments on this event. {'\n'}
+            Press the “see all” button to check your commenting status.
+          </Text>
+        )}
+      </Animated.View>
       {/* <Text style={{fontWeight: 'bold', fontSize: 18, marginBottom: 10}}>
         Reviews
       </Text> */}
@@ -524,7 +538,7 @@ const EventSetUpScreen = () => {
     if (item.isPaid) {
       return (
         <TouchableOpacity
-          onPress={handlePayment}
+          onPress={handleEventPayment}
           style={{
             backgroundColor: '#4CAF50',
             padding: 15,
@@ -750,8 +764,10 @@ const EventSetUpScreen = () => {
               )}
               <View>
                 <Text style={styles.organizerName}>
-                  {item?.organizer?.firstName && item?.organizer?.lastName
-                    ? `${item.organizer.firstName} ${item.organizer.lastName}`
+                  {item?.organizer
+                    ? `${item.organizer?.firstName || ''} ${
+                        item.organizer?.lastName || ''
+                      }`.trim() || 'Event Organizer'
                     : 'Event Organizer'}
                 </Text>
                 <Text style={styles.organizerRole}>Event Creator</Text>

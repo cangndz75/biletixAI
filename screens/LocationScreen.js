@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const {width} = Dimensions.get('window');
@@ -39,7 +39,10 @@ const districts = {
 
 const LocationScreen = () => {
   const navigation = useNavigation();
-  const [selectedCity, setSelectedCity] = useState(null);
+  const route = useRoute();
+  const [selectedCity, setSelectedCity] = useState(
+    route.params?.selectedCity || null,
+  );
 
   const handleCityPress = city => {
     setSelectedCity(city);
@@ -48,12 +51,13 @@ const LocationScreen = () => {
   const handleDistrictPress = district => {
     navigation.navigate('EventsForLocation', {
       city: selectedCity,
-      district: district,
+      district,
     });
   };
 
   return (
     <View style={styles.container}>
+      {/* Geri Butonu */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}>
@@ -83,6 +87,7 @@ const LocationScreen = () => {
               </ImageBackground>
             </TouchableOpacity>
           )}
+          contentContainerStyle={styles.flatListContent}
         />
       ) : (
         <FlatList
@@ -95,6 +100,7 @@ const LocationScreen = () => {
               <Text style={styles.districtText}>{item}</Text>
             </TouchableOpacity>
           )}
+          contentContainerStyle={styles.flatListContent}
         />
       )}
     </View>
@@ -105,14 +111,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
+    paddingTop: 10,
   },
   backButton: {
-    marginVertical: 15,
-    marginLeft: 5,
+    alignSelf: 'flex-start',
+    padding: 10,
+    marginBottom: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
@@ -125,7 +133,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cityImage: {
-    width: width - 20,
+    width: width - 30,
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
@@ -142,12 +150,20 @@ const styles = StyleSheet.create({
   },
   districtCard: {
     paddingVertical: 15,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    marginBottom: 10,
   },
   districtText: {
     fontSize: 16,
     color: '#444',
+    fontWeight: 'bold',
+  },
+  flatListContent: {
+    paddingBottom: 20,
   },
 });
 
