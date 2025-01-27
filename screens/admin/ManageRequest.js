@@ -53,8 +53,8 @@ const ManageRequests = () => {
 
       if (response.status === 200) {
         Alert.alert('Success', 'Request accepted');
-        fetchEventDetails();
-        checkRequestStatus();
+        fetchRequests();
+        fetchAttendees();
       }
     } catch (error) {
       console.error('Failed to accept request:', error);
@@ -62,21 +62,6 @@ const ManageRequests = () => {
     }
   };
 
-  const rejectRequest = async (requestId, eventId) => {
-    try {
-      const response = await axios.post(`https://biletixai.onrender.com/reject`, {
-        requestId,
-        eventId,
-      });
-      if (response.status === 200) {
-        Alert.alert('Success', 'Request rejected');
-        fetchRequests();
-      }
-    } catch (error) {
-      console.error('Failed to reject request:', error);
-      Alert.alert('Error', 'Failed to reject request');
-    }
-  };
 
   return (
     <SafeAreaView>

@@ -491,7 +491,7 @@ const AdminCreateScreen = () => {
         <TouchableOpacity
           onPress={
             remainingEventLimit === 0
-              ? () => navigation.navigate('OrganizerSubscription')
+              ? () => navigation.navigate('OrganizerSubscribe')
               : createEvent
           }
           style={createButtonStyle}>

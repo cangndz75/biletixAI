@@ -110,17 +110,6 @@ const AdminEventSetUpScreen = () => {
     return dates;
   };
 
-  const selectDate = selectedDate => {
-    setEventData({...eventData, date: selectedDate});
-    setModalVisible(false);
-  };
-
-  const selectTime = selectedTime => {
-    setEventData({...eventData, time: selectedTime});
-    setTimeModalVisible(false);
-  };
-
-  const dates = generateDates();
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
