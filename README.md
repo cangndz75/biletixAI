@@ -69,25 +69,9 @@ Usage
 	•	Scan QR codes for event entry.
 	•	Get AI-based event recommendations.
 
-## 📸 Images
+## 📸 Screenshots
 
-![Screenshot 1](https://i.imgur.com/fMSWQto.png)  
-![Screenshot 2](https://i.imgur.com/0Tt44Po.png)  
-![Screenshot 3](https://i.imgur.com/6k1QYUo.png)  
-![Screenshot 4](https://i.imgur.com/TFkHEWb.png)  
-![Screenshot 5](https://i.imgur.com/0Wy8Kpr.png)  
-![Screenshot 6](https://i.imgur.com/7LWnVNI.png)  
-![Screenshot 7](https://i.imgur.com/RPZLY5E.png)  
-![Screenshot 8](https://i.imgur.com/SVMcQBp.png)  
-![Screenshot 9](https://i.imgur.com/pan4cLw.png)  
-![Screenshot 10](https://i.imgur.com/w2JmEOS.png)  
-![Screenshot 11](https://i.imgur.com/pkdbpC1.png)  
-![Screenshot 12](https://i.imgur.com/df3UJzy.png)  
-![Screenshot 13](https://i.imgur.com/3JOhSTa.png)  
-![Screenshot 14](https://i.imgur.com/034QJd1.png)  
-![Screenshot 15](https://i.imgur.com/xc8fpUE.png)  
-![Screenshot 16](https://i.imgur.com/XFjzn9E.png)  
-![Screenshot 17](https://i.imgur.com/Iye2Kou.png)
+[Click here to view all application screenshots.](https://github.com/cangndz75/biletixAI/issues/6)
 
-   
+
 @2025 | Can Gündüz
